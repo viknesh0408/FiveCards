@@ -1424,8 +1424,8 @@ body {
 
 /* ── Phone (default, ≤ 480px) ─────────────────────────── */
 :root {
-  --card-width: 60px;
-  --card-height: 90px;
+  --card-width: 68px;
+  --card-height: 100px;
 }
 
 /* Compact HUD on phones */
@@ -1681,8 +1681,8 @@ body {
 /* ── Small tablet (≥ 480px) ──────────────────────────── */
 @media (min-width: 480px) {
   :root {
-    --card-width: 60px;
-    --card-height: 90px;
+    --card-width: 72px;
+    --card-height: 106px;
   }
 
   .game-hud-header {
@@ -1712,8 +1712,8 @@ body {
 /* ── Tablet / landscape phone (≥ 640px) ─────────────── */
 @media (min-width: 640px) {
   :root {
-    --card-width: 70px;
-    --card-height: 104px;
+    --card-width: 80px;
+    --card-height: 116px;
   }
 
   .center-stacks {

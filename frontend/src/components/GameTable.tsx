@@ -306,11 +306,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {status === 'WAITING_FOR_PLAYERS' && (
-            <button className="btn-primary" style={{ padding: '6px 16px' }} onClick={onReady} disabled={self?.ready}>
-              {self?.ready ? 'Ready!' : 'I am Ready'}
-            </button>
-          )}
+
           <button 
             className="btn-secondary" 
             style={{ 
@@ -493,6 +489,14 @@ export const GameTable: React.FC<GameTableProps> = ({
                   </div>
                 ))}
               </div>
+              <button 
+                className="btn-primary" 
+                style={{ marginTop: '20px', width: '100%', padding: '12px 24px', fontSize: '1rem', fontWeight: 800 }} 
+                onClick={onReady} 
+                disabled={self?.ready}
+              >
+                {self?.ready ? '✓ Ready!' : 'I am Ready'}
+              </button>
             </div>
           )}
 

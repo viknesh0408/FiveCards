@@ -73,9 +73,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <button className="btn-secondary" onClick={() => setView('settings')}>
               Rules & Settings
             </button>
-            <button className="btn-secondary" onClick={() => alert('Thanks for playing! Close the browser tab to exit.')}>
-              Exit
-            </button>
           </div>
         </div>
       )}
@@ -229,11 +226,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       )}
 
       {view === 'settings' && (
-        <div className="menu-card glass-panel">
-          <h2 className="menu-title" style={{ fontSize: '2rem', marginBottom: '24px' }}>Game Settings</h2>
+        <div className="menu-card glass-panel" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '24px' }}>
+          <h2 className="menu-title" style={{ fontSize: '1.8rem', marginBottom: '12px' }}>Game Settings</h2>
           
-          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '12px 18px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-            <span className="settings-label" style={{ marginBottom: 0 }}>Sound Effects</span>
+          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
+            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Sound Effects</span>
             <input 
               type="checkbox" 
               checked={soundEnabled} 
@@ -242,18 +239,72 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             />
           </div>
 
-          <div style={{ background: 'rgba(0, 0, 0, 0.2)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', textAlign: 'left', lineHeight: '1.5', fontSize: '0.8rem' }}>
-            <strong style={{ color: 'var(--color-gold)', display: 'block', marginBottom: '8px', fontSize: '0.85rem' }}>RULES SUMMARY:</strong>
-            - 5 cards dealt to each player.<br />
-            - Selected Joker rank is **Revealed Rank + 1** (e.g. revealed 6 means all 7s are Jokers).<br />
-            - Joker cards are worth **0 points**.<br />
-            - Draw 1 card from Draw Pile (face down) or Dropped Card Pile (face up). Drop 1 card.<br />
-            - Declare signifies that you have the **lowest hand value**.<br />
-            - Declared (correct) = **0 points** for round.<br />
-            - Wrong declare (someone has equal or lower) = **80 points** penalty.
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.3)',
+            padding: '16px 20px',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.08)',
+            textAlign: 'left',
+            lineHeight: '1.6',
+            fontSize: '0.85rem',
+            flex: '1 1 auto',
+            maxHeight: 'min(240px, 45vh)',
+            overflowY: 'auto',
+            marginBottom: '16px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.2) transparent'
+          }}>
+            <strong style={{ color: 'var(--color-gold)', display: 'block', marginBottom: '12px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              📜 Game Rules
+            </strong>
+            
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🎯 Objective</strong>
+              Minimize the points in your hand. The player with the lowest total score at the end of all rounds wins the game.
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🃏 Joker System</strong>
+              - A card is revealed at the start of each round: its rank is the **Joker Rank** (e.g., if a 6 is revealed, all 6s in play are Jokers).<br />
+              - All cards of the Joker Rank, plus the 2 printed Jokers, are worth **0 points**.
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🔢 Card Values</strong>
+              - **Jokers:** 0 points<br />
+              - **Aces:** 1 point<br />
+              - **Numbered Cards (2-10):** Face value (2 to 10 points)<br />
+              - **Jack / Queen / King:** 11 / 12 / 13 points
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🔄 Turn Actions</strong>
+              On your turn, you must perform one of the following:<br />
+              1. **Declare "5 Cards" (Tick):** Can only be done at the start of your turn (before drawing or discarding) if you believe you have the lowest hand value.<br />
+              2. **Discard & Draw:**
+                 - Discard **one card** or **multiple cards of the same rank** (e.g., two 5s).
+                 - Draw **one card** from the face-down Draw Pile or the previously discarded card pile.
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>⚡ The Matching Rule</strong>
+              If the rank of a card you discard matches the rank of the top card of the discard pile *before* your discard, you **do not need to draw**. This reduces your hand size!
+            </div>
+
+            <div style={{ marginBottom: '12px' }}>
+              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>📢 Declaring "5 Cards" (Tick)</strong>
+              - **Correct Declare:** If your hand value is indeed the lowest (or tied for lowest), you get **0 points** for the round.<br />
+              - **Wrong Declare:** If any player has a strictly lower hand value than you, you get an **80-point penalty**, and the player with the lowest hand value gets **0 points**.<br />
+              - **Others:** Players get points equal to their remaining hand values.
+            </div>
+
+            <div>
+              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🏁 Round Ending</strong>
+              A round ends when a player declares, runs out of cards (0 cards in hand), or the Draw Pile is exhausted.
+            </div>
           </div>
 
-          <div className="menu-options" style={{ marginTop: '32px' }}>
+          <div className="menu-options" style={{ marginTop: 'auto' }}>
             <button className="btn-primary" onClick={() => setView('main')}>
               Save & Back
             </button>

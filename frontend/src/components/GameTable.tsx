@@ -490,12 +490,23 @@ export const GameTable: React.FC<GameTableProps> = ({
                 ))}
               </div>
               <button 
-                className="btn-primary" 
-                style={{ marginTop: '20px', width: '100%', padding: '12px 24px', fontSize: '1rem', fontWeight: 800 }} 
+                className={self?.ready ? "btn-secondary" : "btn-primary"} 
+                style={{ 
+                  marginTop: '20px', 
+                  width: '100%', 
+                  padding: '12px 24px', 
+                  fontSize: '1rem', 
+                  fontWeight: 800,
+                  transition: 'var(--transition-smooth)',
+                  ...(self?.ready ? {
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                  } : {})
+                }} 
                 onClick={onReady} 
-                disabled={self?.ready}
               >
-                {self?.ready ? '✓ Ready!' : 'I am Ready'}
+                {self?.ready ? 'Cancel Ready' : 'I am Ready'}
               </button>
             </div>
           )}

@@ -72,7 +72,12 @@ public class GameWebSocketController {
                     case "READY":
                         Player player = game.getPlayerById(playerId);
                         if (player != null) {
-                            player.setReady(true);
+                            // Toggle ready state if the game is in lobby or round is completed
+                            if (game.getStatus() == GameStatus.WAITING_FOR_PLAYERS || game.getStatus() == GameStatus.ROUND_OVER) {
+                                player.setReady(!player.isReady());
+                            } else {
+                                player.setReady(true);
+                            }
                             
                             // Check if all players are ready
                             boolean allReady = game.getPlayers().stream().allMatch(Player::isReady);

@@ -156,13 +156,26 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
             </button>
           )}
           {gameState.isMultiplayer ? (
-            <div>
-              {isSelfReady ? (
-                <p className="text-cyan">Waiting for other players to click Next Round...</p>
-              ) : (
-                <button className="btn-primary" style={{ margin: '0' }} onClick={onNextRound}>
-                  Ready for Next Round
-                </button>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <button 
+                className={isSelfReady ? "btn-secondary" : "btn-primary"} 
+                style={{ 
+                  margin: '0',
+                  transition: 'var(--transition-smooth)',
+                  ...(isSelfReady ? {
+                    background: 'rgba(239, 68, 68, 0.15)',
+                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    color: '#f87171',
+                  } : {})
+                }} 
+                onClick={onNextRound}
+              >
+                {isSelfReady ? 'Cancel Ready' : 'Ready for Next Round'}
+              </button>
+              {isSelfReady && (
+                <p className="text-cyan" style={{ fontSize: '0.8rem', margin: '0' }}>
+                  Waiting for other players...
+                </p>
               )}
             </div>
           ) : (

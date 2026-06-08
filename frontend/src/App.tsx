@@ -299,7 +299,7 @@ export const App: React.FC = () => {
               Syncing Game Session...
             </p>
             <div style={{ marginTop: '24px', color: 'var(--color-text-muted)', fontSize: '0.85rem', lineHeight: '1.5' }}>
-              Establishing connection. If this takes too long, verify that the Spring Boot backend is active.
+              Establishing connection.
             </div>
             <button className="btn-secondary" style={{ marginTop: '30px', marginInline: 'auto', padding: '10px 20px', fontSize: '0.9rem' }} onClick={handleLeave}>
               Cancel Connection

@@ -121,7 +121,7 @@ export const App: React.FC = () => {
     return () => document.removeEventListener('click', handleGlobalClick);
   }, []);
 
-  // Initialize unique playerId
+  // Initialize unique playerId and check for active game session to reconnect
   useEffect(() => {
     let id = localStorage.getItem('tickPlayerId');
     if (!id) {
@@ -129,13 +129,38 @@ export const App: React.FC = () => {
       localStorage.setItem('tickPlayerId', id);
     }
     setPlayerId(id);
-  }, []);
+
+    const activeGameId = localStorage.getItem('activeGameId');
+    if (activeGameId) {
+      // Fetch game status to see if it's still alive
+      fetch(`${apiBase}/api/game/${activeGameId}?playerId=${id}`)
+        .then((res) => {
+          if (res.ok) {
+            return res.json();
+          }
+          throw new Error('Game session not active');
+        })
+        .then((data) => {
+          const isInGame = data.players?.some((p: any) => p.id === id);
+          if (isInGame && data.status !== 'GAME_OVER') {
+            connect(activeGameId, id);
+            setScreen('table');
+          } else {
+            localStorage.removeItem('activeGameId');
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('activeGameId');
+        });
+    }
+  }, [connect, apiBase]);
 
   // Auto-leave if player is kicked/removed from the game due to inactivity
   useEffect(() => {
     if (screen === 'table' && gameState && gameState.players && playerId) {
       const isPlayerStillInGame = gameState.players.some(p => p.id === playerId);
       if (!isPlayerStillInGame) {
+        localStorage.removeItem('activeGameId');
         disconnect();
         setScreen('menu');
         setIsKicked(true);
@@ -172,6 +197,7 @@ export const App: React.FC = () => {
       });
 
       // 5. Connect WebSocket
+      localStorage.setItem('activeGameId', gameId);
       connect(gameId, playerId);
       setScreen('table');
     } catch (e) {
@@ -195,6 +221,7 @@ export const App: React.FC = () => {
       });
 
       // 3. Connect WebSocket
+      localStorage.setItem('activeGameId', gameId);
       connect(gameId, playerId);
       setScreen('table');
     } catch (e) {
@@ -217,6 +244,7 @@ export const App: React.FC = () => {
       }
 
       // 2. Connect WebSocket
+      localStorage.setItem('activeGameId', gameId);
       connect(gameId, playerId);
       setScreen('table');
     } catch (e) {
@@ -226,6 +254,7 @@ export const App: React.FC = () => {
   };
 
   const handleLeave = () => {
+    localStorage.removeItem('activeGameId');
     disconnect();
     setScreen('menu');
   };

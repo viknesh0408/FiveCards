@@ -1,5 +1,8 @@
 const playCardSlide = (ctx: AudioContext) => {
-  const bufferSize = ctx.sampleRate * 0.15; // 0.15 seconds
+  const now = ctx.currentTime;
+  
+  // 1. Soft paper friction (using Pink/White Noise with a low-pass filter)
+  const bufferSize = ctx.sampleRate * 0.22; // 220ms slide
   const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
   const data = buffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
@@ -9,97 +12,148 @@ const playCardSlide = (ctx: AudioContext) => {
   const noise = ctx.createBufferSource();
   noise.buffer = buffer;
   
+  // Bandpass filter to isolate the paper rustling frequency
   const filter = ctx.createBiquadFilter();
   filter.type = 'bandpass';
-  filter.Q.value = 3;
-  filter.frequency.setValueAtTime(1000, ctx.currentTime);
-  filter.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.15);
+  filter.Q.value = 2.0;
+  filter.frequency.setValueAtTime(750, now);
+  filter.frequency.exponentialRampToValueAtTime(280, now + 0.22);
+  
+  // Lowpass filter to keep it warm and organic (no digital hiss)
+  const lpFilter = ctx.createBiquadFilter();
+  lpFilter.type = 'lowpass';
+  lpFilter.frequency.setValueAtTime(1400, now);
   
   const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.35, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+  gain.gain.setValueAtTime(0.0, now);
+  gain.gain.linearRampToValueAtTime(0.16, now + 0.03); // smooth attack
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
   
   noise.connect(filter);
-  filter.connect(gain);
+  filter.connect(lpFilter);
+  lpFilter.connect(gain);
   gain.connect(ctx.destination);
-  noise.start();
+  noise.start(now);
 };
 
 const playCardDiscard = (ctx: AudioContext) => {
-  // A quick high-frequency pop (tap) + card slide friction
-  const osc = ctx.createOscillator();
-  const oscGain = ctx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.setValueAtTime(700, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(180, ctx.currentTime + 0.08);
-  oscGain.gain.setValueAtTime(0.18, ctx.currentTime);
-  oscGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+  const now = ctx.currentTime;
   
-  const bufferSize = ctx.sampleRate * 0.1; 
-  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) {
-    data[i] = Math.random() * 2 - 1;
+  // 1. Low frequency "Thump" (card hitting felt/wood table)
+  const thumpOsc = ctx.createOscillator();
+  const thumpGain = ctx.createGain();
+  thumpOsc.type = 'sine';
+  thumpOsc.frequency.setValueAtTime(105, now); // 105Hz body
+  thumpOsc.frequency.exponentialRampToValueAtTime(55, now + 0.12);
+  
+  thumpGain.gain.setValueAtTime(0.28, now);
+  thumpGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+  
+  thumpOsc.connect(thumpGain);
+  thumpGain.connect(ctx.destination);
+  thumpOsc.start(now);
+  thumpOsc.stop(now + 0.14);
+
+  // 2. High-frequency "Snap" / "Flap" (card body bending/releasing)
+  const snapBufferSize = ctx.sampleRate * 0.07; // 70ms
+  const snapBuffer = ctx.createBuffer(1, snapBufferSize, ctx.sampleRate);
+  const snapData = snapBuffer.getChannelData(0);
+  for (let i = 0; i < snapBufferSize; i++) {
+    snapData[i] = Math.random() * 2 - 1;
   }
   
-  const noise = ctx.createBufferSource();
-  noise.buffer = buffer;
+  const snapNoise = ctx.createBufferSource();
+  snapNoise.buffer = snapBuffer;
   
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.Q.value = 4;
-  filter.frequency.setValueAtTime(1100, ctx.currentTime);
-  filter.frequency.exponentialRampToValueAtTime(250, ctx.currentTime + 0.1);
+  const snapFilter = ctx.createBiquadFilter();
+  snapFilter.type = 'bandpass';
+  snapFilter.Q.value = 4.5;
+  snapFilter.frequency.setValueAtTime(2000, now); // Crisp cardboard snap
+  snapFilter.frequency.exponentialRampToValueAtTime(750, now + 0.07);
   
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(0.22, ctx.currentTime);
-  noiseGain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+  const snapGain = ctx.createGain();
+  snapGain.gain.setValueAtTime(0.11, now);
+  snapGain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
   
-  osc.connect(oscGain);
-  oscGain.connect(ctx.destination);
+  snapNoise.connect(snapFilter);
+  snapFilter.connect(snapGain);
+  snapGain.connect(ctx.destination);
+  snapNoise.start(now);
   
-  noise.connect(filter);
-  filter.connect(noiseGain);
-  noiseGain.connect(ctx.destination);
+  // 3. Card surface friction (the final slide as it settles on felt)
+  const slideBufferSize = ctx.sampleRate * 0.13; // 130ms
+  const slideBuffer = ctx.createBuffer(1, slideBufferSize, ctx.sampleRate);
+  const slideData = slideBuffer.getChannelData(0);
+  for (let i = 0; i < slideBufferSize; i++) {
+    slideData[i] = Math.random() * 2 - 1;
+  }
   
-  osc.start();
-  osc.stop(ctx.currentTime + 0.09);
-  noise.start();
+  const slideNoise = ctx.createBufferSource();
+  slideNoise.buffer = slideBuffer;
+  
+  const slideFilter = ctx.createBiquadFilter();
+  slideFilter.type = 'lowpass';
+  slideFilter.frequency.setValueAtTime(1100, now);
+  
+  const slideGain = ctx.createGain();
+  slideGain.gain.setValueAtTime(0.0, now);
+  slideGain.gain.linearRampToValueAtTime(0.14, now + 0.02); // delay slide peak slightly
+  slideGain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+  
+  slideNoise.connect(slideFilter);
+  slideFilter.connect(slideGain);
+  slideGain.connect(ctx.destination);
+  slideNoise.start(now);
 };
 
 const playShuffle = (ctx: AudioContext) => {
   const now = ctx.currentTime;
-  for (let i = 0; i < 6; i++) {
-    const time = now + i * 0.08;
-    const dur = 0.12;
+  const numCards = 8;
+  
+  for (let i = 0; i < numCards; i++) {
+    const time = now + i * 0.095; // Deal a card every 95ms
+    const pitchFactor = 1.0 + (Math.random() * 0.3 - 0.15); // randomize pitch
+    const volFactor = 0.85 + Math.random() * 0.3;
     
-    const bufferSize = ctx.sampleRate * dur; 
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let j = 0; j < bufferSize; j++) {
-      data[j] = Math.random() * 2 - 1;
+    // Thump
+    const thumpOsc = ctx.createOscillator();
+    const thumpGain = ctx.createGain();
+    thumpOsc.type = 'sine';
+    thumpOsc.frequency.setValueAtTime(100 * pitchFactor, time);
+    thumpOsc.frequency.exponentialRampToValueAtTime(50 * pitchFactor, time + 0.095);
+    
+    thumpGain.gain.setValueAtTime(0.12 * volFactor, time);
+    thumpGain.gain.exponentialRampToValueAtTime(0.001, time + 0.095);
+    
+    thumpOsc.connect(thumpGain);
+    thumpGain.connect(ctx.destination);
+    thumpOsc.start(time);
+    thumpOsc.stop(time + 0.1);
+    
+    // Snap
+    const snapBufferSize = ctx.sampleRate * 0.06;
+    const snapBuffer = ctx.createBuffer(1, snapBufferSize, ctx.sampleRate);
+    const snapData = snapBuffer.getChannelData(0);
+    for (let j = 0; j < snapBufferSize; j++) {
+      snapData[j] = Math.random() * 2 - 1;
     }
+    const snapNoise = ctx.createBufferSource();
+    snapNoise.buffer = snapBuffer;
     
-    const noise = ctx.createBufferSource();
-    noise.buffer = buffer;
+    const snapFilter = ctx.createBiquadFilter();
+    snapFilter.type = 'bandpass';
+    snapFilter.Q.value = 3.5;
+    snapFilter.frequency.setValueAtTime(1800 * pitchFactor, time);
+    snapFilter.frequency.exponentialRampToValueAtTime(700 * pitchFactor, time + 0.06);
     
-    const filter = ctx.createBiquadFilter();
-    filter.type = 'bandpass';
-    filter.Q.value = 3;
-    const startFreq = 800 + Math.random() * 400;
-    const endFreq = 150 + Math.random() * 100;
-    filter.frequency.setValueAtTime(startFreq, time);
-    filter.frequency.exponentialRampToValueAtTime(endFreq, time + dur);
+    const snapGain = ctx.createGain();
+    snapGain.gain.setValueAtTime(0.07 * volFactor, time);
+    snapGain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
     
-    const gain = ctx.createGain();
-    gain.gain.setValueAtTime(0.18, time);
-    gain.gain.exponentialRampToValueAtTime(0.005, time + dur);
-    
-    noise.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    
-    noise.start(time);
+    snapNoise.connect(snapFilter);
+    snapFilter.connect(snapGain);
+    snapGain.connect(ctx.destination);
+    snapNoise.start(time);
   }
 };
 
@@ -177,17 +231,29 @@ const playPenaltySound = (ctx: AudioContext) => {
 };
 
 const playUiClick = (ctx: AudioContext) => {
-  const osc = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(1100, ctx.currentTime);
-  gain.gain.setValueAtTime(0.1, ctx.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+  const now = ctx.currentTime;
+  const bufferSize = ctx.sampleRate * 0.04; // 40ms very short click
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    data[i] = Math.random() * 2 - 1;
+  }
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
   
-  osc.connect(gain);
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'bandpass';
+  filter.Q.value = 5.5;
+  filter.frequency.setValueAtTime(1500, now);
+  
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.08, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+  
+  noise.connect(filter);
+  filter.connect(gain);
   gain.connect(ctx.destination);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.06);
+  noise.start(now);
 };
 
 const playJokerSparkle = (ctx: AudioContext) => {

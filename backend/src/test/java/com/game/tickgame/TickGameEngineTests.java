@@ -471,4 +471,46 @@ public class TickGameEngineTests {
         assertEquals(initialHandSize - 1, p1.getHand().size());
         assertTrue(round.isNeedsToDraw()); // since rank shouldn't match
     }
+
+    @Test
+    public void testOriginalJokerRevealedAsJokerCard() {
+        boolean hitJoker = false;
+        // Run game setups until a printed Joker is selected as the joker card
+        for (int i = 0; i < 500; i++) {
+            Game game = gameEngine.createGame("JOKER_TEST_" + i, 1);
+            gameEngine.addPlayer("JOKER_TEST_" + i, "P1", "Alice", false, null);
+            gameEngine.addPlayer("JOKER_TEST_" + i, "P2", "Bob", false, null);
+            gameEngine.startNewGame("JOKER_TEST_" + i);
+            
+            Round round = game.getCurrentRound();
+            Card jokerCard = round.getJokerCard();
+            if (jokerCard.getSuit() == null && jokerCard.getRank() == null && jokerCard.isJoker()) {
+                // We successfully drew a printed Joker!
+                assertEquals(Rank.ACE, round.getJokerRank());
+                // Verify that Aces are marked as Jokers
+                int acesCount = 0;
+                int acesJokerCount = 0;
+                for (Card c : round.getDrawPile()) {
+                    if (c.getRank() == Rank.ACE) {
+                        acesCount++;
+                        if (c.isJoker()) acesJokerCount++;
+                    }
+                }
+                for (Player p : game.getPlayers()) {
+                    for (Card c : p.getHand()) {
+                        if (c.getRank() == Rank.ACE) {
+                            acesCount++;
+                            if (c.isJoker()) acesJokerCount++;
+                        }
+                    }
+                }
+                // Verify all Aces in play are marked as Jokers
+                assertTrue(acesCount > 0);
+                assertEquals(acesCount, acesJokerCount);
+                hitJoker = true;
+                break;
+            }
+        }
+        assertTrue(hitJoker, "Should have encountered a printed Joker as the revealed card");
+    }
 }

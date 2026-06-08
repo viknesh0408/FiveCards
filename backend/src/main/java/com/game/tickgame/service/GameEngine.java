@@ -108,11 +108,12 @@ public class GameEngine {
 
         // 2. Select Joker card for the round
         Card jokerCard = deck.remove(0); // Reveal one card from the deck
-        while (jokerCard.isJoker()) {
-            deck.add(jokerCard); // Put it back at the bottom
-            jokerCard = deck.remove(0);
+        Rank jokerRank;
+        if (jokerCard.isJoker()) {
+            jokerRank = Rank.ACE;
+        } else {
+            jokerRank = jokerCard.getRank();
         }
-        Rank jokerRank = jokerCard.getRank(); // The revealed card's rank IS the joker rank
 
         // Mark all remaining deck cards of the same rank as Jokers
         for (Card card : deck) {

@@ -1989,13 +1989,10 @@ body {
 }
 
 /* ── Touch-specific: disable hover effects ───────────── */
-@media (hover: none) {
+@media (max-width: 899px), (hover: none) {
   .user-hand-cards .game-card:hover { transform: none; }
   .opponent-mini-hand .card-back:hover { transform: none; }
-}
 
-/* ── Touch/Mobile Discard Pile permanent fan: side-by-side overlap ── */
-@media (hover: none) {
   .discard-cards-stack.has-prev {
     width: calc(var(--card-width) * 1.25) !important;
     height: var(--card-height) !important;

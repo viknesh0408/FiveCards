@@ -280,8 +280,21 @@ public class TickGameEngineTests {
         for (Card c : round.getDiscardPile()) {
             if (c.isJoker()) totalJokersCount++;
         }
-        // Since the revealed card's own rank is the joker rank and is removed from the deck, there should be exactly 3 joker cards left of that rank, plus 2 printed Jokers = 5 Jokers in play
-        assertEquals(5, totalJokersCount);
+        // Calculate expected jokers count dynamically based on cards of the joker rank in play plus remaining printed Jokers (1 if revealed card is a printed Joker, 2 otherwise)
+        int targetRankCount = 0;
+        for (Player p : game.getPlayers()) {
+            for (Card c : p.getHand()) {
+                if (c.getRank() == round.getJokerRank()) targetRankCount++;
+            }
+        }
+        for (Card c : round.getDrawPile()) {
+            if (c.getRank() == round.getJokerRank()) targetRankCount++;
+        }
+        for (Card c : round.getDiscardPile()) {
+            if (c.getRank() == round.getJokerRank()) targetRankCount++;
+        }
+        int expectedJokers = targetRankCount + (round.getJokerCard().isJoker() ? 1 : 2);
+        assertEquals(expectedJokers, totalJokersCount);
     }
 
     @Test

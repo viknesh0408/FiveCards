@@ -44,6 +44,9 @@ public class GameWebSocketController {
     // Map to track active human turn timers
     private final ConcurrentHashMap<String, ScheduledFuture<?>> activeTurnTimers = new ConcurrentHashMap<>();
 
+    // Set to track connected player IDs
+    private final Set<String> connectedPlayers = ConcurrentHashMap.newKeySet();
+
     @MessageMapping("/game/{gameId}/action")
     public void handleGameAction(@DestinationVariable String gameId, GameAction action, SimpMessageHeaderAccessor headerAccessor) {
         if (headerAccessor.getSessionAttributes() != null) {
@@ -60,6 +63,9 @@ public class GameWebSocketController {
         synchronized (game) {
             String type = action.getType();
             String playerId = action.getPlayerId();
+
+            // Track that this player is connected
+            connectedPlayers.add(playerId);
 
             // Reset timeout count on manual activity
             Player activePlayerUser = game.getPlayerById(playerId);
@@ -535,7 +541,26 @@ public class GameWebSocketController {
             String playerId = (String) sessionAttributes.get("playerId");
 
             if (gameId != null && playerId != null) {
-                handlePlayerLeave(gameId, playerId);
+                // Remove from active connected set
+                connectedPlayers.remove(playerId);
+                
+                // Schedule a grace period check to allow rejoining on refresh
+                aiExecutor.schedule(() -> {
+                    Game game = gameEngine.getGame(gameId);
+                    if (game == null) {
+                        game = gamePersistenceService.loadGame(gameId);
+                    }
+                    if (game == null) return;
+                    
+                    synchronized (game) {
+                        if (!connectedPlayers.contains(playerId)) {
+                            System.out.println("[DISCONNECT] Player " + playerId + " did not reconnect. Removing player.");
+                            handlePlayerLeave(gameId, playerId);
+                        } else {
+                            System.out.println("[DISCONNECT] Player " + playerId + " successfully reconnected during grace period.");
+                        }
+                    }
+                }, 8, TimeUnit.SECONDS);
             }
         }
     }

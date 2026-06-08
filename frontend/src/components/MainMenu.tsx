@@ -24,7 +24,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [aiCount, setAiCount] = useState<number>(3);
   const [maxRounds, setMaxRounds] = useState<number>(20);
   const [roomId, setRoomId] = useState<string>('');
-  const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
 
   const handleStartOffline = () => {
     localStorage.setItem('tickPlayerName', playerName);
@@ -305,7 +305,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
 
           <div className="menu-options" style={{ marginTop: 'auto' }}>
-            <button className="btn-primary" onClick={() => setView('main')}>
+            <button className="btn-primary" onClick={() => {
+              localStorage.setItem('soundEnabled', soundEnabled ? 'true' : 'false');
+              setView('main');
+            }}>
               Save & Back
             </button>
           </div>

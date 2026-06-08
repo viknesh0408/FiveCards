@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { MainMenu } from './components/MainMenu';
 import type { OfflineSettings } from './components/MainMenu';
@@ -7,6 +7,7 @@ import { RoundResultModal } from './components/RoundResultModal';
 import { GameOverModal } from './components/GameOverModal';
 import { InactivityKickModal } from './components/InactivityKickModal';
 import type { AiLevel } from './utils/gameHelpers';
+import { soundEffects } from './utils/soundEffects';
 
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'table'>('menu');
@@ -28,6 +29,97 @@ export const App: React.FC = () => {
     apiBase,
   } = useWebSocket();
 
+  const prevGameRef = useRef<any>(null);
+
+  // Sound effects listener based on Game State transitions
+  useEffect(() => {
+    if (!gameState) {
+      prevGameRef.current = null;
+      return;
+    }
+    const prev = prevGameRef.current;
+    prevGameRef.current = gameState;
+
+    if (!prev) return;
+
+    // 1. Shuffle / Next Round start
+    if (gameState.status === 'IN_PROGRESS' && (prev.status === 'WAITING_FOR_PLAYERS' || prev.status === 'ROUND_OVER' || gameState.currentRoundNumber > prev.currentRoundNumber)) {
+      soundEffects.playShuffle();
+      setTimeout(() => {
+        soundEffects.playJoker();
+      }, 1200);
+      return;
+    }
+
+    // 2. Round Over / Declare / Normal completion
+    if (gameState.status === 'ROUND_OVER' && prev.status === 'IN_PROGRESS') {
+      const round = gameState.currentRound;
+      if (round) {
+        if (round.endCondition === 'TICK') {
+          soundEffects.playDeclare();
+        }
+        
+        // After a small delay play win/penalty sound
+        setTimeout(() => {
+          const self = gameState.players.find(p => p.id === playerId);
+          if (self) {
+            if (self.roundScore === 80) {
+              soundEffects.playPenalty();
+            } else if (self.roundScore === 0) {
+              soundEffects.playWin();
+            } else {
+              const roundWinners = gameState.players.filter(p => p.roundScore === 0);
+              const isWinner = roundWinners.some(w => w.id === playerId);
+              if (isWinner) {
+                soundEffects.playWin();
+              } else {
+                soundEffects.playClick();
+              }
+            }
+          }
+        }, 900);
+      }
+      return;
+    }
+
+    // 3. Gameplay actions (during IN_PROGRESS)
+    if (gameState.status === 'IN_PROGRESS' && prev.status === 'IN_PROGRESS') {
+      // Check if discard pile grew
+      const prevDiscardSize = prev.currentRound?.discardPile?.length || 0;
+      const currDiscardSize = gameState.currentRound?.discardPile?.length || 0;
+      if (currDiscardSize > prevDiscardSize) {
+        soundEffects.playDiscard();
+        return;
+      }
+
+      // Check if draw pile shrank or someone's cardCount grew
+      const prevDrawSize = prev.currentRound?.drawPileSize || 0;
+      const currDrawSize = gameState.currentRound?.drawPileSize || 0;
+      if (currDrawSize < prevDrawSize) {
+        soundEffects.playDraw();
+        return;
+      }
+      
+      const prevTotalCards = prev.players.reduce((sum: number, p: any) => sum + p.cardCount, 0);
+      const currTotalCards = gameState.players.reduce((sum: number, p: any) => sum + p.cardCount, 0);
+      if (currTotalCards > prevTotalCards) {
+        soundEffects.playDraw();
+        return;
+      }
+    }
+  }, [gameState, playerId]);
+
+  // Global sound click listener
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === 'BUTTON' || target.closest('button') || target.classList.contains('game-card') || target.closest('.game-card'))) {
+        soundEffects.playClick();
+      }
+    };
+    document.addEventListener('click', handleGlobalClick);
+    return () => document.removeEventListener('click', handleGlobalClick);
+  }, []);
 
   // Initialize unique playerId
   useEffect(() => {

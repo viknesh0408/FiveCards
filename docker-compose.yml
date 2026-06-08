@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: tickgame-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: tickgamedb
+      MYSQL_ROOT_PASSWORD: password
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - game-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-ppassword"]
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: ./backend
+    container_name: tickgame-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: tickgamedb
+      DB_USER: root
+      DB_PASSWORD: password
+      SPRING_PROFILES_ACTIVE: mysql
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - game-network
+
+  frontend:
+    build: ./frontend
+    container_name: tickgame-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - game-network
+
+volumes:
+  mysql-data:
+
+networks:
+  game-network:
+    driver: bridge

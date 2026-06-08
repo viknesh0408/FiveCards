@@ -2760,12 +2760,12 @@ body {
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .user-hand-cards {
-    padding: 12px 6px 4px !important;
+    padding: 16px 6px 6px !important;
   }
   .user-hand-cards .game-card {
-    width: 48px !important;
-    height: 72px !important;
-    padding: 3px !important;
+    width: 64px !important;
+    height: 96px !important;
+    padding: 4px !important;
   }
   .user-hand-cards .card-inner-border {
     top: 2px !important;
@@ -2775,21 +2775,21 @@ body {
     border-radius: 4px !important;
   }
   .user-hand-cards .card-rank {
-    font-size: 0.75rem !important;
+    font-size: 0.9rem !important;
   }
   .user-hand-cards .card-suit-icon {
-    font-size: 0.6rem !important;
+    font-size: 0.75rem !important;
   }
   .user-hand-cards .card-center-suit {
-    font-size: 1.15rem !important;
+    font-size: 1.45rem !important;
   }
   .user-hand-cards .card-corner.top {
-    top: 3px !important;
-    left: 5px !important;
+    top: 4px !important;
+    left: 6px !important;
   }
   .user-hand-cards .card-corner.bottom {
-    bottom: 3px !important;
-    right: 5px !important;
+    bottom: 4px !important;
+    right: 6px !important;
   }
   .user-hand-cards .game-card:hover {
     transform: translateY(-8px) scale(1.03) rotate(1deg) !important;

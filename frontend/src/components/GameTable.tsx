@@ -28,7 +28,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   onReady,
 }) => {
   const { gameId, players, currentRound, status } = gameState;
-  const [selectedCards, setSelectedCards] = useState<CardType[]>([]);
+  const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const [showScoreboard, setShowScoreboard] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
 
@@ -65,23 +65,57 @@ export const GameTable: React.FC<GameTableProps> = ({
     : null;
   const isMyTurn = activePlayer?.id === currentPlayerId;
 
-  // Check state of my hand
-  const [orderedHand, setOrderedHand] = useState<CardType[]>(() => self?.hand || []);
+  // Check state of my hand with unique client-side IDs to track identical duplicates
+  const [orderedHand, setOrderedHand] = useState<any[]>(() => {
+    const initialHand = self?.hand || [];
+    const cardKey = (c: CardType) => `${c.rank ?? 'null'}-${c.suit ?? 'null'}-${c.joker}`;
+    return initialHand.map(c => ({
+      ...c,
+      clientId: `${cardKey(c)}-${Math.random().toString(36).substring(2, 9)}`
+    }));
+  });
   const draggedIndexRef = useRef<number | null>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const touchHasMovedRef = useRef<boolean>(false);
 
-  // Sync hand cards while preserving custom order
+  // Sync hand cards while preserving custom order and exact counts
   useEffect(() => {
     const serverHand = self?.hand || [];
-    const cardKey = (c: CardType) => `${c.rank}-${c.suit}`;
-    const serverCardKeys = new Set(serverHand.map(cardKey));
+    const cardKey = (c: CardType) => `${c.rank ?? 'null'}-${c.suit ?? 'null'}-${c.joker}`;
+    
+    // Count occurrences in server hand
+    const serverCounts: Record<string, number> = {};
+    for (const card of serverHand) {
+      const key = cardKey(card);
+      serverCounts[key] = (serverCounts[key] || 0) + 1;
+    }
     
     setOrderedHand(prev => {
-      let newOrderedHand = prev.filter(c => serverCardKeys.has(cardKey(c)));
-      const orderedCardKeys = new Set(newOrderedHand.map(cardKey));
-      const newCards = serverHand.filter(c => !orderedCardKeys.has(cardKey(c)));
-      return [...newOrderedHand, ...newCards];
+      const newOrderedHand: any[] = [];
+      const tempCounts = { ...serverCounts };
+      
+      // Keep cards from prev if they still exist in server hand
+      for (const card of prev) {
+        const key = cardKey(card);
+        if (tempCounts[key] && tempCounts[key] > 0) {
+          newOrderedHand.push(card);
+          tempCounts[key]--;
+        }
+      }
+      
+      // Append any new cards that are in server hand but not matched from prev
+      for (const card of serverHand) {
+        const key = cardKey(card);
+        if (tempCounts[key] && tempCounts[key] > 0) {
+          newOrderedHand.push({
+            ...card,
+            clientId: `${key}-${Math.random().toString(36).substring(2, 9)}`
+          });
+          tempCounts[key]--;
+        }
+      }
+      
+      return newOrderedHand;
     });
   }, [self?.hand]);
 
@@ -211,7 +245,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   // Reset selected cards when turn changes or after discard
   useEffect(() => {
     if (!isMyTurn) {
-      setSelectedCards([]);
+      setSelectedClientIds([]);
     }
   }, [currentTurnIndex, isMyTurn]);
 
@@ -242,34 +276,43 @@ export const GameTable: React.FC<GameTableProps> = ({
     return () => clearInterval(interval);
   }, [status, currentRound?.turnStartedAt, currentRound?.roundEnded, currentRound?.currentPlayerIndex, currentRound?.hasDiscardedThisTurn, currentRound?.needsToDraw]);
 
-  const isCardSelected = (card: CardType) =>
-    selectedCards.some(sc => sc.rank === card.rank && sc.suit === card.suit);
+  const isCardSelected = (card: any) =>
+    selectedClientIds.includes(card.clientId);
 
-  const handleCardClick = (card: CardType) => {
+  const handleCardClick = (card: any) => {
     if (!isMyTurn || hasDiscardedThisTurn) return;
 
     if (isCardSelected(card)) {
       // Deselect this card
-      setSelectedCards(prev => prev.filter(sc => !(sc.rank === card.rank && sc.suit === card.suit)));
+      setSelectedClientIds(prev => prev.filter(id => id !== card.clientId));
     } else {
+      // Find the first selected card object to compare rank
+      const firstSelectedCard = orderedHand.find(c => selectedClientIds.includes(c.clientId));
+      
       // Only allow selecting cards of the same rank as the first selected
-      if (selectedCards.length === 0 || card.rank === selectedCards[0].rank) {
-        setSelectedCards(prev => [...prev, card]);
+      if (!firstSelectedCard || card.rank === firstSelectedCard.rank) {
+        setSelectedClientIds(prev => [...prev, card.clientId]);
       } else {
         // Clicking a different rank resets selection to just this card
-        setSelectedCards([card]);
+        setSelectedClientIds([card.clientId]);
       }
     }
   };
 
   const handleDiscardClick = () => {
-    if (selectedCards.length === 0) return;
-    if (selectedCards.length === 1) {
-      onDiscard(selectedCards[0]);
+    if (selectedClientIds.length === 0) return;
+    
+    // Map clientIds back to actual Card objects and strip clientId
+    const cardsToDiscard = orderedHand
+      .filter(c => selectedClientIds.includes(c.clientId))
+      .map(({ clientId, ...card }) => card);
+
+    if (cardsToDiscard.length === 1) {
+      onDiscard(cardsToDiscard[0]);
     } else {
-      onDiscardMulti(selectedCards);
+      onDiscardMulti(cardsToDiscard);
     }
-    setSelectedCards([]);
+    setSelectedClientIds([]);
   };
 
 
@@ -464,7 +507,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                     className="btn-draw btn-pick-pile"
                     onClick={() => onDraw(false)}
                   >
-                    Pick from pile
+                    Draw from pile
                   </button>
                 </div>
               )}
@@ -553,7 +596,8 @@ export const GameTable: React.FC<GameTableProps> = ({
             const isMatch = topDiscard && c.rank === topDiscard.rank;
             const selected = isCardSelected(c);
             // Dim cards of a different rank when some cards are already selected
-            const sameRankAsSelection = selectedCards.length === 0 || c.rank === selectedCards[0].rank;
+            const firstSelectedCard = orderedHand.find(card => selectedClientIds.includes(card.clientId));
+            const sameRankAsSelection = !firstSelectedCard || c.rank === firstSelectedCard.rank;
             return (
               <Card
                 key={idx}
@@ -561,7 +605,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                 selected={selected}
                 className={[
                   isMyTurn && !hasDiscardedThisTurn && isMatch ? 'joker-glow' : '',
-                  isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedCards.length > 0 ? 'card-dimmed' : ''
+                  isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedClientIds.length > 0 ? 'card-dimmed' : ''
                 ].join(' ').trim()}
                 onClick={() => handleCardClick(c)}
                 draggable={true}
@@ -580,13 +624,13 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* Action Controls */}
         <div className="hand-controls">
           {/* Normal Discard Button */}
-          {selectedCards.length > 0 && !hasDiscardedThisTurn && (
+          {selectedClientIds.length > 0 && !hasDiscardedThisTurn && (
             <button
-              className={selectedCards.length > 1 ? 'btn-danger' : 'btn-danger'}
+              className={selectedClientIds.length > 1 ? 'btn-danger' : 'btn-danger'}
               onClick={handleDiscardClick}
             >
-              {selectedCards.length > 1
-                ? `Drop All ${selectedCards.length} (${selectedCards[0].rank}s) 🃏`
+              {selectedClientIds.length > 1
+                ? `Drop All ${selectedClientIds.length} (${orderedHand.find(c => selectedClientIds.includes(c.clientId))?.rank}s) 🃏`
                 : 'Drop Card'}
             </button>
           )}

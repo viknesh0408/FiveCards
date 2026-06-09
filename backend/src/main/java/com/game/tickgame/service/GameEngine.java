@@ -305,23 +305,23 @@ public class GameEngine {
         }
 
         // Find and remove each card from hand
-        List<Card> handCopy = currentPlayer.getHand();
+        List<Card> handCopy = new ArrayList<>(currentPlayer.getHand());
         List<Card> resolvedCards = new ArrayList<>();
         for (Card cd : cardsToDiscard) {
-            Card found = null;
-            for (Card handCard : handCopy) {
-                if (handCard.getRank() == cd.getRank() && handCard.getSuit() == cd.getSuit()) {
-                    // Make sure we haven't already claimed this card
-                    if (!resolvedCards.contains(handCard)) {
-                        found = handCard;
-                        break;
-                    }
+            int foundIndex = -1;
+            for (int i = 0; i < handCopy.size(); i++) {
+                Card handCard = handCopy.get(i);
+                if (handCard.getRank() == cd.getRank() && 
+                    handCard.getSuit() == cd.getSuit() && 
+                    handCard.isJoker() == cd.isJoker()) {
+                    foundIndex = i;
+                    break;
                 }
             }
-            if (found == null) {
+            if (foundIndex == -1) {
                 throw new IllegalArgumentException("Card not in hand: " + cd);
             }
-            resolvedCards.add(found);
+            resolvedCards.add(handCopy.remove(foundIndex));
         }
 
         Card previousTopCard = round.getTopDiscardCard();

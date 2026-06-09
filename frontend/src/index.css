@@ -2618,7 +2618,7 @@ body {
 
   .btn-draw {
     flex: 1;
-    padding: 7px 12px;
+    padding: 12px 12px;
     font-size: 0.72rem;
     font-weight: 700;
     border-radius: 8px;
@@ -2741,7 +2741,7 @@ body {
   .opponents-top-container.compact-opponents .opponent-mini-hand .card-back {
     width: 15px !important;
     height: 22px !important;
-    margin-left: -8px !important;
+    margin-left: -6px !important;
     border-radius: 2px !important;
   }
   

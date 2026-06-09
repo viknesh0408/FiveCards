@@ -2707,7 +2707,7 @@ body {
   }
   
   .opponents-top-container.compact-opponents .opponent-slot {
-    gap: 4px;
+    gap: 12px;
   }
   
   .opponents-top-container.compact-opponents .opponent-avatar-card {

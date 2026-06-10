@@ -31,6 +31,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const [showScoreboard, setShowScoreboard] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [showDeclareConfirm, setShowDeclareConfirm] = useState<boolean>(false);
 
   const getInitials = (name: string): string => {
     if (!name) return '';
@@ -639,7 +640,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           {isMyTurn && !hasDiscardedThisTurn && (
             <button
               className="btn-danger pulse-button-red"
-              onClick={onTick}
+              onClick={() => setShowDeclareConfirm(true)}
             >
               Declare 🔔
             </button>
@@ -651,12 +652,43 @@ export const GameTable: React.FC<GameTableProps> = ({
 
       {/* Scoreboard panel — positioned relative to the whole table screen to avoid clipping */}
       <div className={`side-scoreboard-container ${showScoreboard ? 'open' : ''}`}>
-        <Scoreboard 
-          gameState={gameState} 
-          currentPlayerId={currentPlayerId} 
+        <Scoreboard
+          gameState={gameState}
+          currentPlayerId={currentPlayerId}
           onClose={() => setShowScoreboard(false)}
         />
       </div>
+
+      {/* Declare Confirmation Modal */}
+      {showDeclareConfirm && (
+        <div className="modal-overlay" onClick={() => setShowDeclareConfirm(false)}>
+          <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', textAlign: 'center', padding: '24px' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Confirm Declare</h2>
+            <p style={{ marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '1rem' }}>
+              Are you sure you want to declare? If no one has lower points, you'll get 80 penalty!
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowDeclareConfirm(false)}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                No
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setShowDeclareConfirm(false);
+                  onTick();
+                }}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

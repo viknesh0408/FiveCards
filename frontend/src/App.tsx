@@ -9,10 +9,14 @@ import { InactivityKickModal } from './components/InactivityKickModal';
 import type { AiLevel } from './utils/gameHelpers';
 import { soundEffects } from './utils/soundEffects';
 
+import { checkForUpdates } from "./services/updateChecker";
+import UpdateModal from "./components/UpdateModal";
+
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'table'>('menu');
   const [playerId, setPlayerId] = useState<string>('');
   const [isKicked, setIsKicked] = useState<boolean>(false);
+  const [update, setUpdate] = useState<any>(null);
   
   const {
     gameState,
@@ -166,6 +170,31 @@ export const App: React.FC = () => {
         setIsKicked(true);
       }
     }
+
+    checkForUpdates()
+   .then(update => {
+
+      if(update){
+         alert(
+           "New version available!"
+         );
+      }
+   });
+
+   checkForUpdates()
+    .then(data => {
+
+      if (data) {
+
+        setUpdate(data);
+
+      }
+
+    })
+    .catch(err => {
+      console.log(err);
+    });
+
   }, [screen, gameState, playerId, disconnect]);
 
   const handleStartOffline = async (settings: OfflineSettings) => {

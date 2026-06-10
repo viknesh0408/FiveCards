@@ -45,14 +45,14 @@ export interface SanitizedGame {
   isMultiplayer: boolean;
 }
 
-const protocol = window.location.protocol;
-const wsProtocol = protocol === 'https:' ? 'wss:' : 'ws:';
-const defaultApiHost = window.location.port === '5173' 
-  ? `${window.location.hostname}:8080` 
-  : window.location.host;
 
-const API_BASE = import.meta.env.VITE_API_URL || `${protocol}//${defaultApiHost}`;
-const WS_URL = import.meta.env.VITE_WS_URL || `${wsProtocol}//${defaultApiHost}/ws-game`;
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  "https://fivecards.onrender.com";
+
+const WS_URL =
+  import.meta.env.VITE_WS_URL ||
+  "wss://fivecards.onrender.com/ws-game";
 
 export const useWebSocket = () => {
   const [gameState, setGameState] = useState<SanitizedGame | null>(null);

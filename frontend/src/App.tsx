@@ -202,7 +202,7 @@ export const App: React.FC = () => {
       setScreen('table');
     } catch (e) {
       console.error('Failed to start offline game', e);
-      alert('Error initializing offline game. Is the backend running?');
+      alert('Error initializing offline game.');
     }
   };
 

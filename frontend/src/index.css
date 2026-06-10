@@ -1627,9 +1627,9 @@ body {
 
 .hand-controls {
   display: flex;
-  gap: 8px;
+  gap: 36px;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: space-between;
 }
 
 .hand-controls .btn-primary,

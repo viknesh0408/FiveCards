@@ -157,7 +157,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               ← Leave Game
             </button>
           )}
-          {currentRoundNumber === maxRounds ? (
+          {currentRoundNumber >= maxRounds ? (
             <button className="btn-primary" style={{ margin: '0' }} onClick={onShowLeaderboard}>
               View Game Results
             </button>

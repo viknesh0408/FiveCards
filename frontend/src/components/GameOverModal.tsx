@@ -18,7 +18,12 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
   // Sort players by total score ascending (lowest score is 1st place)
   const sortedPlayers = [...players].sort((a, b) => a.totalScore - b.totalScore);
-  const winner = players.find(p => p.id === winnerId) || sortedPlayers[0];
+  const isDraw = winnerId === "DRAW";
+  const winner = !isDraw ? (players.find(p => p.id === winnerId) || sortedPlayers[0]) : null;
+
+  // Get all players with the lowest score (for draw display)
+  const minScore = sortedPlayers[0]?.totalScore || 0;
+  const drawPlayers = sortedPlayers.filter(p => p.totalScore === minScore);
 
   // Map podium slots (1st, 2nd, 3rd)
   const podium1st = sortedPlayers[0];
@@ -66,8 +71,11 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         <h1 className="menu-title text-gold" style={{ fontSize: '2.8rem' }}>🏆 GAME OVER 🏆</h1>
         
         <p className="modal-subtitle" style={{ fontSize: '1.25rem', marginTop: '8px', color: 'rgba(255,255,255,0.9)' }}>
-          Final Winner is <strong className="text-gold" style={{ fontSize: '1.45rem' }}>{winner?.name}</strong> 
-          with <strong className="text-gold" style={{ fontSize: '1.45rem' }}>{winner?.totalScore}</strong> total points!
+          {isDraw ? (
+            <>It's a <strong className="text-gold" style={{ fontSize: '1.45rem' }}>DRAW</strong>! {drawPlayers.map(p => p.name).join(' & ')} tied with <strong className="text-gold" style={{ fontSize: '1.45rem' }}>{minScore}</strong> points!</>
+          ) : (
+            <>Final Winner is <strong className="text-gold" style={{ fontSize: '1.45rem' }}>{winner?.name}</strong> with <strong className="text-gold" style={{ fontSize: '1.45rem' }}>{winner?.totalScore}</strong> total points!</>
+          )}
         </p>
 
         {/* 3D Podium View */}

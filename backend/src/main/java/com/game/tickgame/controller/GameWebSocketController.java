@@ -168,7 +168,7 @@ public class GameWebSocketController {
                         break;
 
                     case "END_GAME":
-                        gameEngine.endGame(game);
+                        gameEngine.endGame(gameId);
                         break;
                 }
 

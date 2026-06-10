@@ -94,8 +94,10 @@ public class GameEngine {
         if (game == null) return;
 
         int nextRoundNumber = game.getCurrentRoundNumber() + 1;
+        System.out.println("[startNextRound] currentRound=" + game.getCurrentRoundNumber() + ", maxRounds=" + game.getMaxRounds() + ", nextRoundNumber=" + nextRoundNumber);
         if (nextRoundNumber > game.getMaxRounds()) {
             // Don't end game here - let the frontend handle the transition
+            System.out.println("[startNextRound] Last round reached, not ending game - waiting for frontend");
             // The round result modal will show, then when user clicks, game ends
             return;
         }
@@ -428,8 +430,10 @@ public class GameEngine {
         // Check if we reached the max rounds limit
         if (game.getCurrentRoundNumber() >= game.getMaxRounds()) {
             // For last round, still show ROUND_OVER first so players can see scores
+            System.out.println("[endRound] Last round reached! currentRound=" + game.getCurrentRoundNumber() + ", maxRounds=" + game.getMaxRounds() + " - Setting ROUND_OVER");
             game.setStatus(GameStatus.ROUND_OVER);
         } else {
+            System.out.println("[endRound] Setting ROUND_OVER for round " + game.getCurrentRoundNumber());
             game.setStatus(GameStatus.ROUND_OVER);
         }
     }
@@ -437,12 +441,13 @@ public class GameEngine {
     public void endGame(String gameId) {
         Game game = activeGames.get(gameId);
         if (game == null) return;
+        System.out.println("[endGame] END_GAME called! Current status: " + game.getStatus() + ", currentRound=" + game.getCurrentRoundNumber());
         endGame(game);
     }
 
     private void endGame(Game game) {
         game.setStatus(GameStatus.GAME_OVER);
-        
+
         // Find player with the minimum total score
         Player winner = null;
         int minTotalScore = Integer.MAX_VALUE;
@@ -453,8 +458,21 @@ public class GameEngine {
             }
         }
 
-        if (winner != null) {
+        // Check for draw - if multiple players have the same lowest score
+        int drawCount = 0;
+        for (Player p : game.getPlayers()) {
+            if (p.getTotalScore() == minTotalScore) {
+                drawCount++;
+            }
+        }
+
+        // If there's a draw (more than one player with same lowest score), set winnerId to "DRAW"
+        if (drawCount > 1) {
+            game.setWinnerId("DRAW");
+            System.out.println("[endGame] DRAW! " + drawCount + " players tied with " + minTotalScore + " points");
+        } else if (winner != null) {
             game.setWinnerId(winner.getId());
+            System.out.println("[endGame] Winner: " + winner.getName() + " with " + minTotalScore + " points");
         }
     }
 

@@ -166,6 +166,10 @@ public class GameWebSocketController {
                             startTurnTimer(gameId, startingPlayer.getId(), "DISCARD");
                         }
                         break;
+
+                    case "END_GAME":
+                        gameEngine.endGame(game);
+                        break;
                 }
 
                 // Broadcast state updates

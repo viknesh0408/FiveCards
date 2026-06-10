@@ -219,6 +219,10 @@ export const useWebSocket = () => {
     sendAction('START');
   }, [sendAction]);
 
+  const endGame = useCallback(() => {
+    sendAction('END_GAME');
+  }, [sendAction]);
+
   return {
     gameState,
     connected,
@@ -232,6 +236,7 @@ export const useWebSocket = () => {
     endTurn,
     markReady,
     startNewGame,
+    endGame,
     apiBase: API_BASE,
   };
 };

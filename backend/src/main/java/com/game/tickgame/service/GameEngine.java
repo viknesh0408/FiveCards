@@ -95,7 +95,8 @@ public class GameEngine {
 
         int nextRoundNumber = game.getCurrentRoundNumber() + 1;
         if (nextRoundNumber > game.getMaxRounds()) {
-            endGame(game);
+            // Don't end game here - let the frontend handle the transition
+            // The round result modal will show, then when user clicks, game ends
             return;
         }
 
@@ -423,12 +424,20 @@ public class GameEngine {
         round.setRoundEnded(true);
         scoreEngine.calculateRoundScores(game, round);
         game.getRounds().add(round);
-        game.setStatus(GameStatus.ROUND_OVER);
 
         // Check if we reached the max rounds limit
         if (game.getCurrentRoundNumber() >= game.getMaxRounds()) {
-            endGame(game);
+            // For last round, still show ROUND_OVER first so players can see scores
+            game.setStatus(GameStatus.ROUND_OVER);
+        } else {
+            game.setStatus(GameStatus.ROUND_OVER);
         }
+    }
+
+    public void endGame(String gameId) {
+        Game game = activeGames.get(gameId);
+        if (game == null) return;
+        endGame(game);
     }
 
     private void endGame(Game game) {

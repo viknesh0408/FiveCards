@@ -3,7 +3,10 @@
     "allow": [
       "Bash(npm run *)",
       "Bash(./gradlew bootRun)",
-      "Bash(cmd *)"
+      "Bash(cmd *)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8080)",
+      "Bash(taskkill *)"
     ]
   },
   "enableAllProjectMcpServers": true,

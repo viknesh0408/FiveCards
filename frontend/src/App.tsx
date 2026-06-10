@@ -30,6 +30,7 @@ export const App: React.FC = () => {
     endTurn,
     markReady,
     startNewGame,
+    endGame,
     apiBase,
   } = useWebSocket();
 
@@ -347,6 +348,7 @@ export const App: React.FC = () => {
               currentPlayerId={playerId}
               onNextRound={markReady}
               onLeave={handleLeave}
+              onShowLeaderboard={endGame}
             />
           )}
 

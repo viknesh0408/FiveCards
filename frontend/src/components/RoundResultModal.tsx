@@ -31,6 +31,7 @@ interface RoundResultModalProps {
   currentPlayerId: string;
   onNextRound: () => void;
   onLeave?: () => void;
+  onShowLeaderboard?: () => void;
 }
 
 export const RoundResultModal: React.FC<RoundResultModalProps> = ({
@@ -38,6 +39,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   currentPlayerId,
   onNextRound,
   onLeave,
+  onShowLeaderboard,
 }) => {
   const { currentRound, players, currentRoundNumber, maxRounds } = gameState;
   if (!currentRound) return null;
@@ -155,11 +157,15 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               ← Leave Game
             </button>
           )}
-          {gameState.isMultiplayer ? (
+          {currentRoundNumber === maxRounds ? (
+            <button className="btn-primary" style={{ margin: '0' }} onClick={onShowLeaderboard}>
+              View Game Results
+            </button>
+          ) : gameState.isMultiplayer ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <button 
-                className={isSelfReady ? "btn-secondary" : "btn-primary"} 
-                style={{ 
+              <button
+                className={isSelfReady ? "btn-secondary" : "btn-primary"}
+                style={{
                   margin: '0',
                   transition: 'var(--transition-smooth)',
                   ...(isSelfReady ? {
@@ -167,7 +173,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                     border: '1px solid rgba(239, 68, 68, 0.4)',
                     color: '#f87171',
                   } : {})
-                }} 
+                }}
                 onClick={onNextRound}
               >
                 {isSelfReady ? 'Cancel Ready' : 'Ready for Next Round'}

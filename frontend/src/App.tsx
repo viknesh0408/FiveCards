@@ -171,29 +171,18 @@ export const App: React.FC = () => {
       }
     }
 
-    checkForUpdates()
-   .then(update => {
-
-      if(update){
-         alert(
-           "New version available!"
-         );
-      }
-   });
-
-   checkForUpdates()
-    .then(data => {
-
-      if (data) {
-
-        setUpdate(data);
-
-      }
-
-    })
-    .catch(err => {
-      console.log(err);
-    });
+    // Only check for updates when player is in a game (not on menu)
+    if (screen === 'table') {
+      checkForUpdates()
+        .then(data => {
+          if (data) {
+            setUpdate(data);
+          }
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    }
 
   }, [screen, gameState, playerId, disconnect]);
 

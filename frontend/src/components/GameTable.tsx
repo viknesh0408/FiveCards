@@ -589,7 +589,33 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         {/* Hand Cards */}
-        <div className="user-hand-cards">
+        <div className="user-hand-cards" style={{ position: 'relative', overflow: 'visible' }}>
+          {/* Hand Value Sum - Top Right Corner */}
+          {self && (
+            <div
+              style={{
+                position: 'absolute',
+                top: '2px',
+                right: '2px',
+                background: 'linear-gradient(135deg, rgba(20,30,50,0.95), rgba(10,15,25,0.95))',
+                border: '2px solid var(--color-cyan)',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.75rem',
+                fontWeight: 800,
+                color: 'var(--color-cyan)',
+                textShadow: '0 0 8px var(--color-cyan-glow)',
+                zIndex: 60,
+                boxShadow: '0 4px 16px rgba(0,200,255,0.3), inset 0 0 10px rgba(0,200,255,0.1)',
+              }}
+            >
+              {self.hand?.reduce((sum, card) => sum + (card.value || 0), 0) || 0}
+            </div>
+          )}
           {orderedHand.map((c, idx) => {
             const topDiscard = currentRound?.discardPile && currentRound.discardPile.length > 0 
               ? currentRound.discardPile[currentRound.discardPile.length - 1] 

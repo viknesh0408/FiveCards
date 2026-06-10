@@ -375,6 +375,14 @@ export const App: React.FC = () => {
 
       {/* Inactivity Warning Modal */}
       <InactivityKickModal isOpen={isKicked} onClose={() => setIsKicked(false)} />
+
+      {update && (
+
+      <UpdateModal
+        version={update.version}
+        apkUrl={update.apkUrl}
+      />
+    )}
     </div>
   );
 };

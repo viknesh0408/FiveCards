@@ -193,7 +193,11 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           <button className="btn-primary" onClick={onPlayAgain} style={{ flex: 1 }}>
             Play Again 🔄
           </button>
-          <button className="btn-secondary" onClick={onMainMenu} style={{ flex: 1 }}>
+          <button className="btn-secondary" onClick={() => {
+            if (window.confirm('Are you sure you want to leave?')) {
+              onMainMenu();
+            }
+          }} style={{ flex: 1 }}>
             Main Menu
           </button>
         </div>

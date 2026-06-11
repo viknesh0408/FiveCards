@@ -395,9 +395,21 @@ public class GameEngine {
             throw new IllegalStateException("Must discard a card before ending turn");
         }
 
-        // If player has 0 cards after discarding, they MUST draw first
+        // If player has 0 cards after discarding AND matched (needsToDraw = false), they get 0 points
         if (currentPlayer.getHand().isEmpty()) {
-            throw new IllegalStateException("You have no cards! You must draw before ending your turn.");
+            if (!round.isNeedsToDraw()) {
+                // Player matched - no draw needed, they get 0 points
+                // End round when only one player remains with cards
+                long activePlayersCount = getPlayersWithCardsCount(game);
+                if (activePlayersCount < 2) {
+                    round.setEndCondition("OUT_OF_CARDS");
+                    endRound(game, round);
+                    return;
+                }
+            } else {
+                // Player didn't match - must draw first
+                throw new IllegalStateException("You have no cards! You must draw before ending your turn.");
+            }
         }
 
         if (round.isNeedsToDraw()) {

@@ -153,7 +153,11 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', marginTop: '24px', flexWrap: 'wrap' }}>
           {onLeave && (
-            <button className="btn-secondary" style={{ margin: '0' }} onClick={onLeave}>
+            <button className="btn-secondary" style={{ margin: '0' }} onClick={() => {
+              if (window.confirm('Are you sure you want to leave the game?')) {
+                onLeave();
+              }
+            }}>
               ← Leave Game
             </button>
           )}

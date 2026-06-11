@@ -260,14 +260,11 @@ public class GameEngine {
             round.setTurnStartedAt(System.currentTimeMillis());
         }
 
-        // Check if player reaches 0 cards (wins/ends the round)
+        // Check if player reaches 0 cards - but don't end round yet, player must draw first
         if (currentPlayer.getHand().isEmpty()) {
-            round.setNeedsToDraw(false); // Out of cards, no drawing needed!
-            long activePlayersCount = getPlayersWithCardsCount(game);
-            if (activePlayersCount < 2) {
-                round.setEndCondition("OUT_OF_CARDS");
-                endRound(game, round);
-            }
+            // Player will draw from deck on next turn, don't end round yet
+            // The endTurn will handle the round ending after drawing
+            System.out.println("[discardCard] Player " + currentPlayer.getName() + " dropped all cards, will draw on next turn");
         }
     }
 
@@ -345,14 +342,10 @@ public class GameEngine {
             round.setTurnStartedAt(System.currentTimeMillis());
         }
 
-        // Check if player runs out of cards
+        // Check if player runs out of cards - but don't end round yet, player must draw first
         if (currentPlayer.getHand().isEmpty()) {
-            round.setNeedsToDraw(false); // Out of cards, no drawing needed!
-            long activePlayersCount = getPlayersWithCardsCount(game);
-            if (activePlayersCount < 2) {
-                round.setEndCondition("OUT_OF_CARDS");
-                endRound(game, round);
-            }
+            // Player will draw from deck on next turn, don't end round yet
+            System.out.println("[discardMultipleCards] Player " + currentPlayer.getName() + " dropped all cards, will draw on next turn");
         }
     }
 
@@ -400,6 +393,11 @@ public class GameEngine {
 
         if (!round.isHasDiscardedThisTurn()) {
             throw new IllegalStateException("Must discard a card before ending turn");
+        }
+
+        // If player has 0 cards after discarding, they MUST draw first
+        if (currentPlayer.getHand().isEmpty()) {
+            throw new IllegalStateException("You have no cards! You must draw before ending your turn.");
         }
 
         if (round.isNeedsToDraw()) {

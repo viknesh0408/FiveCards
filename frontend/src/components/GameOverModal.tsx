@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
 
 interface GameOverModalProps {
@@ -14,6 +14,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   onPlayAgain,
   onMainMenu,
 }) => {
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
+
   const { players, winnerId } = gameState;
 
   // Sort players by total score ascending (lowest score is 1st place)
@@ -193,15 +195,42 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           <button className="btn-primary" onClick={onPlayAgain} style={{ flex: 1 }}>
             Play Again 🔄
           </button>
-          <button className="btn-secondary" onClick={() => {
-            if (window.confirm('Are you sure you want to leave?')) {
-              onMainMenu();
-            }
-          }} style={{ flex: 1 }}>
+          <button className="btn-secondary" onClick={() => setShowLeaveConfirm(true)} style={{ flex: 1 }}>
             Main Menu
           </button>
         </div>
       </div>
+
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirm && (
+        <div className="modal-overlay" onClick={() => setShowLeaveConfirm(false)}>
+          <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', textAlign: 'center', padding: '24px' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Leave Game?</h2>
+            <p style={{ marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '1rem' }}>
+              Are you sure you want to leave the game?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowLeaveConfirm(false)}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setShowLeaveConfirm(false);
+                  onMainMenu();
+                }}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -32,6 +32,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [showScoreboard, setShowScoreboard] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showDeclareConfirm, setShowDeclareConfirm] = useState<boolean>(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
 
   const getInitials = (name: string): string => {
     if (!name) return '';
@@ -328,7 +329,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       {/* HUD Header */}
       <div className="game-hud-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button className="btn-secondary" style={{ padding: '6px 12px' }} onClick={onLeave}>
+          <button className="btn-secondary" style={{ padding: '6px 12px' }} onClick={() => setShowLeaveConfirm(true)}>
             ← Leave
           </button>
           <div className="hud-stat" style={{ cursor: 'pointer' }} onClick={copyRoomCode}>
@@ -710,6 +711,37 @@ export const GameTable: React.FC<GameTableProps> = ({
                 style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
               >
                 Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirm && (
+        <div className="modal-overlay" onClick={() => setShowLeaveConfirm(false)}>
+          <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', textAlign: 'center', padding: '24px' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Leave Game?</h2>
+            <p style={{ marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '1rem' }}>
+              Are you sure you want to leave the game? Your current progress will be lost.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowLeaveConfirm(false)}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setShowLeaveConfirm(false);
+                  onLeave();
+                }}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Leave
               </button>
             </div>
           </div>

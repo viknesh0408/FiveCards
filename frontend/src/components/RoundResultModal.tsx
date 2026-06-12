@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { Card } from './Card';
@@ -42,6 +42,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   onShowLeaderboard,
 }) => {
   const { currentRound, players, currentRoundNumber, maxRounds } = gameState;
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
   if (!currentRound) return null;
 
   // Find who called tick
@@ -153,11 +154,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 
         <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', marginTop: '24px', flexWrap: 'wrap' }}>
           {onLeave && (
-            <button className="btn-secondary" style={{ margin: '0' }} onClick={() => {
-              if (window.confirm('Are you sure you want to leave the game?')) {
-                onLeave();
-              }
-            }}>
+            <button className="btn-secondary" style={{ margin: '0' }} onClick={() => setShowLeaveConfirm(true)}>
               ← Leave Game
             </button>
           )}
@@ -195,6 +192,37 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Leave Confirmation Modal */}
+      {showLeaveConfirm && (
+        <div className="modal-overlay" onClick={() => setShowLeaveConfirm(false)}>
+          <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', textAlign: 'center', padding: '24px' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Leave Game?</h2>
+            <p style={{ marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '1rem' }}>
+              Are you sure you want to leave the game? Your current progress will be lost.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowLeaveConfirm(false)}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setShowLeaveConfirm(false);
+                  if (onLeave) onLeave();
+                }}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

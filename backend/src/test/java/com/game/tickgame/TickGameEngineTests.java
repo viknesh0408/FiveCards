@@ -526,4 +526,39 @@ public class TickGameEngineTests {
         }
         assertTrue(hitJoker, "Should have encountered a printed Joker as the revealed card");
     }
+
+    @Test
+    public void testOutOfCardsScoringOnePlayerZeroCards() {
+        Game game = new Game();
+        game.setGameId("TEST_OUT_OF_CARDS");
+
+        // Player A has 0 cards
+        Player pA = new Player("A", "Alice", false, null, 
+                new ArrayList<>(), 0, 0, true, false);
+        
+        // Player B has cards left (25 pts)
+        Player pB = new Player("B", "Bob", false, null, 
+                new ArrayList<>(List.of(
+                        new Card(Suit.CLUBS, Rank.FIVE, false),
+                        new Card(Suit.SPADES, Rank.SIX, false),
+                        new Card(Suit.SPADES, Rank.EIGHT, false),
+                        new Card(Suit.HEARTS, Rank.FOUR, false),
+                        new Card(Suit.DIAMONDS, Rank.TWO, false)
+                )), 0, 0, true, false);
+
+        game.setPlayers(List.of(pA, pB));
+
+        Round round = new Round();
+        round.setRoundNumber(1);
+        round.setTickPlayerId(null);
+        round.setEndCondition("OUT_OF_CARDS");
+        round.setRoundEnded(true);
+
+        scoreEngine.calculateRoundScores(game, round);
+
+        // Alice has 0 cards -> gets 0 round score
+        assertEquals(0, pA.getRoundScore());
+        // Bob has 25 pts -> should get 25 round score (NOT 0!)
+        assertEquals(25, pB.getRoundScore());
+    }
 }

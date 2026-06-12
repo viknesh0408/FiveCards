@@ -90,8 +90,9 @@ public class ScoreEngine {
         } else {
             // Out of Cards: player with lowest hand value gets 0, others get their hand value
             int minHandValue = Integer.MAX_VALUE;
-            for (Player p : activePlayers) {
-                minHandValue = Math.min(minHandValue, p.getHandValue());
+            for (Player p : players) {
+                int handVal = (p.getHand() == null || p.getHand().isEmpty()) ? 0 : p.getHandValue();
+                minHandValue = Math.min(minHandValue, handVal);
             }
 
             for (Player p : activePlayers) {

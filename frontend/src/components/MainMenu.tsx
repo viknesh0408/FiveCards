@@ -5,6 +5,7 @@ interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
   onJoinOnline: (roomId: string, name: string) => void;
   onCreateOnline: (name: string, maxRounds: number) => void;
+  onShowTutorial?: () => void;
 }
 
 export interface OfflineSettings {
@@ -18,6 +19,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onStartOffline,
   onJoinOnline,
   onCreateOnline,
+  onShowTutorial,
 }) => {
   const [view, setView] = useState<'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings'>('main');
   const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('tickPlayerName') || 'Player');
@@ -25,6 +27,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [maxRounds, setMaxRounds] = useState<number>(20);
   const [roomId, setRoomId] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
+  const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
 
   const handleStartOffline = () => {
     localStorage.setItem('tickPlayerName', playerName);
@@ -239,6 +242,27 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             />
           </div>
 
+          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
+            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Vibration</span>
+            <input 
+              type="checkbox" 
+              checked={vibrationEnabled} 
+              onChange={(e) => setVibrationEnabled(e.target.checked)}
+              style={{ width: '22px', height: '22px', cursor: 'pointer' }}
+            />
+          </div>
+
+          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
+            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Game Tutorial</span>
+            <button 
+              className="btn-secondary" 
+              style={{ padding: '6px 12px', fontSize: '0.8rem', margin: 0 }}
+              onClick={onShowTutorial}
+            >
+              Show Guide 📖
+            </button>
+          </div>
+
           <div style={{
             background: 'rgba(0, 0, 0, 0.3)',
             padding: '16px 20px',
@@ -307,6 +331,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           <div className="menu-options" style={{ marginTop: 'auto' }}>
             <button className="btn-primary" onClick={() => {
               localStorage.setItem('soundEnabled', soundEnabled ? 'true' : 'false');
+              localStorage.setItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
               setView('main');
             }}>
               Save & Back

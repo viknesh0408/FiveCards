@@ -2799,5 +2799,71 @@ body {
   }
 }
 
+/* Onboarding Tutorial Modal Styles */
+.tutorial-card {
+  width: 92% !important;
+  max-width: 520px !important;
+  padding: 36px 30px !important;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: 0 0 50px rgba(34, 211, 238, 0.18), inset 0 0 20px rgba(255, 255, 255, 0.02);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.tutorial-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.tutorial-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  gap: 12px;
+}
+
+.tutorial-footer-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+@media (max-width: 480px) {
+  .tutorial-card {
+    padding: 24px 16px !important;
+    gap: 16px !important;
+  }
+  
+  .tutorial-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .tutorial-footer {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .tutorial-footer-buttons {
+    width: 100%;
+    order: 1;
+  }
+  
+  .tutorial-footer-buttons button {
+    flex: 1;
+  }
+  
+  .tutorial-dots {
+    order: 2;
+  }
+  
+  .tutorial-skip-btn {
+    width: 100%;
+    order: 3;
+  }
+}
+
 
 

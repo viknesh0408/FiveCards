@@ -11,12 +11,16 @@ import { soundEffects } from './utils/soundEffects';
 
 import { checkForUpdates } from "./services/updateChecker";
 import UpdateModal from "./components/UpdateModal";
+import { TutorialModal } from "./components/TutorialModal";
 
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'table'>('menu');
   const [playerId, setPlayerId] = useState<string>('');
   const [isKicked, setIsKicked] = useState<boolean>(false);
   const [update, setUpdate] = useState<any>(null);
+  const [showTutorial, setShowTutorial] = useState<boolean>(() => {
+    return localStorage.getItem('hasSeenTutorial') === null;
+  });
   
   const {
     gameState,
@@ -113,6 +117,20 @@ export const App: React.FC = () => {
       }
     }
   }, [gameState, playerId]);
+
+  // Micro-vibrate when it becomes the player's turn (runs on mobile WebView)
+  useEffect(() => {
+    const activePlayerId = gameState?.currentRound && gameState.players && !gameState.currentRound.roundEnded
+      ? gameState.players[gameState.currentRound.currentPlayerIndex]?.id
+      : null;
+
+    if (gameState && gameState.status === 'IN_PROGRESS' && activePlayerId === playerId) {
+      const vibrationEnabled = localStorage.getItem('vibrationEnabled') !== 'false';
+      if (vibrationEnabled && navigator.vibrate) {
+        navigator.vibrate(80); // 80ms micro-vibration
+      }
+    }
+  }, [gameState?.currentRound?.currentPlayerIndex, gameState?.status, playerId]);
 
   // Global sound click listener
   useEffect(() => {
@@ -311,6 +329,7 @@ export const App: React.FC = () => {
           onStartOffline={handleStartOffline}
           onJoinOnline={handleJoinOnline}
           onCreateOnline={handleCreateOnline}
+          onShowTutorial={() => setShowTutorial(true)}
         />
       )}
 
@@ -372,12 +391,20 @@ export const App: React.FC = () => {
       <InactivityKickModal isOpen={isKicked} onClose={() => setIsKicked(false)} />
 
       {update && (
+        <UpdateModal
+          version={update.version}
+          apkUrl={update.apkUrl}
+        />
+      )}
 
-      <UpdateModal
-        version={update.version}
-        apkUrl={update.apkUrl}
+      {/* Onboarding Tutorial Modal */}
+      <TutorialModal
+        isOpen={showTutorial}
+        onClose={() => {
+          localStorage.setItem('hasSeenTutorial', 'true');
+          setShowTutorial(false);
+        }}
       />
-    )}
     </div>
   );
 };

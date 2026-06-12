@@ -1,6 +1,7 @@
 export async function checkForUpdates() {
-  // Skip update check when running locally
-  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+  // Skip update check when running locally in browser (but NOT on Capacitor native apps where hostname is also localhost)
+  const isCapacitor = !!(window as any).Capacitor;
+  if (!isCapacitor && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     return null;
   }
 

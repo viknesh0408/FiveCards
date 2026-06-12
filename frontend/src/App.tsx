@@ -12,11 +12,14 @@ import { soundEffects } from './utils/soundEffects';
 import { checkForUpdates } from "./services/updateChecker";
 import UpdateModal from "./components/UpdateModal";
 import { TutorialModal } from "./components/TutorialModal";
+import { initPersistentStorage, savePersistentItem } from "./utils/persistentStorage";
+import { setupLocalNotifications } from "./utils/localNotifications";
 
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'table'>('menu');
   const [playerId, setPlayerId] = useState<string>('');
   const [isKicked, setIsKicked] = useState<boolean>(false);
+  const [storageInitialized, setStorageInitialized] = useState<boolean>(false);
   const [update, setUpdate] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState<boolean>(() => {
     return localStorage.getItem('hasSeenTutorial') === null;
@@ -37,6 +40,16 @@ export const App: React.FC = () => {
     endGame,
     apiBase,
   } = useWebSocket();
+
+  // Initialize Battery Saver class on launch
+  useEffect(() => {
+    const isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
+    if (isBatterySaver) {
+      document.body.classList.add('battery-saver');
+    } else {
+      document.body.classList.remove('battery-saver');
+    }
+  }, []);
 
   const prevGameRef = useRef<any>(null);
 
@@ -146,36 +159,45 @@ export const App: React.FC = () => {
 
   // Initialize unique playerId and check for active game session to reconnect
   useEffect(() => {
-    let id = localStorage.getItem('tickPlayerId');
-    if (!id) {
-      id = 'USR_' + Math.random().toString(36).substring(2, 8).toUpperCase();
-      localStorage.setItem('tickPlayerId', id);
-    }
-    setPlayerId(id);
+    const startup = async () => {
+      // Restore any settings if localStorage was cleared
+      await initPersistentStorage();
+      setStorageInitialized(true);
 
-    const activeGameId = localStorage.getItem('activeGameId');
-    if (activeGameId) {
-      // Fetch game status to see if it's still alive
-      fetch(`${apiBase}/api/game/${activeGameId}?playerId=${id}`)
-        .then((res) => {
+      // Configure native local reminders on slots
+      await setupLocalNotifications();
+
+      let id = localStorage.getItem('tickPlayerId');
+      if (!id) {
+        id = 'USR_' + Math.random().toString(36).substring(2, 8).toUpperCase();
+        await savePersistentItem('tickPlayerId', id);
+      }
+      setPlayerId(id);
+
+      const activeGameId = localStorage.getItem('activeGameId');
+      if (activeGameId) {
+        try {
+          const res = await fetch(`${apiBase}/api/game/${activeGameId}?playerId=${id}`);
           if (res.ok) {
-            return res.json();
-          }
-          throw new Error('Game session not active');
-        })
-        .then((data) => {
-          const isInGame = data.players?.some((p: any) => p.id === id);
-          if (isInGame && data.status !== 'GAME_OVER') {
-            connect(activeGameId, id);
-            setScreen('table');
+            const data = await res.json();
+            const isInGame = data.players?.some((p: any) => p.id === id);
+            if (isInGame && data.status !== 'GAME_OVER') {
+              connect(activeGameId, id);
+              setScreen('table');
+            } else {
+              localStorage.removeItem('activeGameId');
+            }
           } else {
             localStorage.removeItem('activeGameId');
           }
-        })
-        .catch(() => {
+        } catch (err) {
+          console.error('Failed to restore active game session:', err);
           localStorage.removeItem('activeGameId');
-        });
-    }
+        }
+      }
+    };
+
+    startup();
   }, [connect, apiBase]);
 
   // Auto-leave if player is kicked/removed from the game due to inactivity
@@ -191,12 +213,10 @@ export const App: React.FC = () => {
     }
   }, [screen, gameState, playerId, disconnect]);
 
-  // Check for updates on startup (runs once on mount, works in Capacitor mobile app & PWA)
+  // Check for updates on startup (runs once on mount, works only in native mobile app)
   useEffect(() => {
-    const isMobileOrPwa = !!(window as any).Capacitor ||
-                          window.matchMedia('(display-mode: standalone)').matches ||
-                          (window.navigator as any).standalone === true;
-    if (isMobileOrPwa) {
+    const isNativeMobileApp = !!(window as any).Capacitor;
+    if (isNativeMobileApp) {
       checkForUpdates()
         .then(data => {
           if (data) {
@@ -300,6 +320,14 @@ export const App: React.FC = () => {
     setScreen('menu');
   };
 
+  if (!storageInitialized) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#040814', color: '#22d3ee', fontFamily: 'sans-serif' }}>
+        <div style={{ fontSize: '1.2rem', fontWeight: 'bold', letterSpacing: '1px' }}>LOADING...</div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
       {/* Toast Error Banner */}
@@ -401,7 +429,7 @@ export const App: React.FC = () => {
       <TutorialModal
         isOpen={showTutorial}
         onClose={() => {
-          localStorage.setItem('hasSeenTutorial', 'true');
+          savePersistentItem('hasSeenTutorial', 'true');
           setShowTutorial(false);
         }}
       />

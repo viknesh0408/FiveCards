@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
+import { savePersistentItem } from '../utils/persistentStorage';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -28,9 +29,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [roomId, setRoomId] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
+  const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
 
   const handleStartOffline = () => {
-    localStorage.setItem('tickPlayerName', playerName);
+    savePersistentItem('tickPlayerName', playerName);
     onStartOffline({
       playerName,
       aiCount,
@@ -41,13 +43,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
   const handleJoinOnline = () => {
     if (!roomId.trim() || !playerName.trim()) return;
-    localStorage.setItem('tickPlayerName', playerName);
+    savePersistentItem('tickPlayerName', playerName);
     onJoinOnline(roomId.trim().toUpperCase(), playerName);
   };
 
   const handleCreateOnline = () => {
     if (!playerName.trim()) return;
-    localStorage.setItem('tickPlayerName', playerName);
+    savePersistentItem('tickPlayerName', playerName);
     onCreateOnline(playerName, maxRounds);
   };
 
@@ -253,6 +255,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
 
           <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
+            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Battery Saver</span>
+            <input 
+              type="checkbox" 
+              checked={batterySaverEnabled} 
+              onChange={(e) => setBatterySaverEnabled(e.target.checked)}
+              style={{ width: '22px', height: '22px', cursor: 'pointer' }}
+            />
+          </div>
+
+          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
             <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Game Tutorial</span>
             <button 
               className="btn-secondary" 
@@ -329,9 +341,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
 
           <div className="menu-options" style={{ marginTop: 'auto' }}>
-            <button className="btn-primary" onClick={() => {
-              localStorage.setItem('soundEnabled', soundEnabled ? 'true' : 'false');
-              localStorage.setItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
+            <button className="btn-primary" onClick={async () => {
+              await savePersistentItem('soundEnabled', soundEnabled ? 'true' : 'false');
+              await savePersistentItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
+              await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
+              if (batterySaverEnabled) {
+                document.body.classList.add('battery-saver');
+              } else {
+                document.body.classList.remove('battery-saver');
+              }
               setView('main');
             }}>
               Save & Back

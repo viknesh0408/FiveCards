@@ -268,8 +268,8 @@ export const GameTable: React.FC<GameTableProps> = ({
     const turnStartedAt = currentRound.turnStartedAt;
 
     const updateTimer = () => {
-      const elapsed = Math.floor((Date.now() - turnStartedAt) / 1000);
-      const remaining = Math.max(0, 60 - elapsed);
+      const elapsed = Math.max(0, Math.floor((Date.now() - turnStartedAt) / 1000));
+      const remaining = Math.min(60, Math.max(0, 60 - elapsed));
       setTimeLeft(remaining);
     };
 
@@ -328,41 +328,70 @@ export const GameTable: React.FC<GameTableProps> = ({
     <div className="game-table-container">
       {/* HUD Header */}
       <div className="game-hud-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button className="btn-secondary" style={{ padding: '6px 12px' }} onClick={() => setShowLeaveConfirm(true)}>
-            ← Leave
+        {/* Left Section: Leave & Room Code */}
+        <div className="hud-section left">
+          <button 
+            className="hud-btn-leave" 
+            onClick={() => setShowLeaveConfirm(true)}
+            title="Leave Game"
+          >
+            <span className="hud-leave-pulse" />
+            <svg className="hud-svg-icon exit-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span className="btn-text">Leave</span>
           </button>
-          <div className="hud-stat" style={{ cursor: 'pointer' }} onClick={copyRoomCode}>
-            Room: <span style={{ textDecoration: 'underline' }}>{gameId}</span>
+          
+          <div className="hud-pill room-pill" onClick={copyRoomCode} title="Click to copy Room Code">
+            <svg className="hud-svg-icon key-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3" />
+            </svg>
+            <span className="pill-label">Room:</span>
+            <span className="pill-value">{gameId}</span>
           </div>
         </div>
         
-        <div className="hud-info">
+        {/* Center Section: Round Info & Turn Status */}
+        <div className="hud-section center">
           {currentRound && (
-            <div className="hud-stat">
-              Round: <span>{currentRound.roundNumber} of {gameState.maxRounds}</span>
+            <div className="hud-pill round-pill">
+              <svg className="hud-svg-icon deck-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect className="fan-card fan-left" x="3" y="5" width="10" height="14" rx="1.5" />
+                <rect className="fan-card fan-right" x="11" y="5" width="10" height="14" rx="1.5" />
+                <rect className="fan-card fan-center" x="7" y="4" width="10" height="14" rx="1.5" />
+              </svg>
+              <span className="pill-label">Round:</span>
+              <span className="pill-value">{currentRound.roundNumber} / {gameState.maxRounds}</span>
             </div>
           )}
+          
           {activePlayer && (
-            <div className="hud-stat">
-              Turn: <span className="text-cyan">{isMyTurn ? 'Your Turn' : activePlayer.name}</span>
+            <div className={`hud-pill turn-pill ${isMyTurn ? 'my-turn' : 'opponent-turn'}`}>
+              <span className="turn-indicator-dot" />
+              <svg className={`hud-svg-icon clock-icon ${isMyTurn && timeLeft !== null && timeLeft <= 15 ? 'warning-speed' : ''}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
+              <span className="pill-value">
+                {isMyTurn ? 'Your Turn' : `${activePlayer.name}`}
+              </span>
             </div>
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-
+        {/* Right Section: Scoreboard Trigger */}
+        <div className="hud-section right">
           <button 
-            className="btn-secondary" 
-            style={{ 
-              padding: '6px 12px', 
-              background: showScoreboard ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-              borderColor: showScoreboard ? 'var(--color-cyan)' : 'transparent',
-              boxShadow: showScoreboard ? '0 0 10px var(--color-cyan-glow)' : 'none'
-            }} 
+            className={`hud-btn-scores ${showScoreboard ? 'active' : ''}`}
             onClick={() => setShowScoreboard(!showScoreboard)}
+            title="Toggle Leaderboard"
           >
-            🏆 {showScoreboard ? 'Hide Scores' : 'Show Scores'}
+            <svg className="hud-svg-icon trophy-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 2H5c-1.1 0-2 .9-2 2v3c0 2.24 1.54 4.12 3.6 4.77C7.3 13.56 9.44 15 12 15s4.7-1.44 5.4-3.23c2.06-.65 3.6-2.53 3.6-4.77V4c0-1.1-.9-2-2-2zm-12.4 8c-1.1-.15-1.99-.95-2.2-2H5V4h1.6v6zm12.4-2c-.21 1.05-1.1 1.85-2.2 2V4H20v2h-1zM12 17c-2.21 0-4-1.79-4-4h8c0 2.21-1.79 4-4 4zm4.5 2h-9v2h9v-2z" />
+            </svg>
+            <span className="btn-text">{showScoreboard ? 'Hide Scores' : 'Show Scores'}</span>
           </button>
         </div>
       </div>

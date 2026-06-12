@@ -96,8 +96,29 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                 className={`player-result-row ${rowClass}`}
               >
                 <div className="result-player-info">
-                  <span className="result-name">
-                    {p.name} {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
+                  <span className="result-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {p.name}
+                    {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
+                    {gameState.isMultiplayer && (
+                      <span 
+                        className={`result-badge ${p.ready ? 'ready' : 'waiting'}`}
+                        style={{
+                          background: p.ready ? 'rgba(34, 197, 94, 0.15)' : 'rgba(148, 163, 184, 0.12)',
+                          color: p.ready ? 'var(--color-green)' : 'var(--color-text-muted)',
+                          border: p.ready ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(148, 163, 184, 0.2)',
+                          padding: '1px 6px',
+                          borderRadius: '4px',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                        }}
+                      >
+                        {p.ready ? 'Ready ✓' : 'Waiting... ⌛'}
+                      </span>
+                    )}
                   </span>
                   
                   {isTickDeclaringPlayer && (

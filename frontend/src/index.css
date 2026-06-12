@@ -33,6 +33,8 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
 }
 
 body {
@@ -101,6 +103,8 @@ body {
   top: -150px;
   left: -150px;
   animation: float-glow 10s infinite alternate;
+  will-change: transform;
+  transform: translate3d(0,0,0);
 }
 
 .menu-container::after {
@@ -114,6 +118,8 @@ body {
   bottom: -200px;
   right: -200px;
   animation: float-glow 12s infinite alternate-reverse;
+  will-change: transform;
+  transform: translate3d(0,0,0);
 }
 
 @keyframes float-glow {
@@ -571,6 +577,17 @@ body {
   padding: 1px 5px;
   border-radius: 4px;
   letter-spacing: 0.5px;
+}
+
+/* Result page cards: only display the star to save space */
+.results-grid .game-card.joker::before {
+  content: '★' !important;
+  font-size: 0.55rem !important;
+  padding: 1px 3px !important;
+  top: 3px !important;
+  right: 3px !important;
+  border-radius: 3px !important;
+  letter-spacing: 0px !important;
 }
 
 .card-corner {
@@ -2863,6 +2880,455 @@ body {
     width: 100%;
     order: 3;
   }
+}
+
+/* Redesigned Responsive HUD Header Layout */
+.game-hud-header {
+  width: 100%;
+  height: 58px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  box-sizing: border-box;
+  padding: 8px 16px;
+  background: rgba(6, 12, 26, 0.55);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 -1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.hud-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.hud-section.center {
+  gap: 8px;
+  justify-content: center;
+}
+
+/* Base button styles in HUD */
+.hud-btn-leave {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--color-text);
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  box-sizing: border-box;
+  transition: var(--transition-smooth);
+  font-family: var(--font-family);
+  position: relative;
+  overflow: hidden;
+}
+
+.hud-btn-scores {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.05) 0%, rgba(251, 191, 36, 0.01) 100%);
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  color: var(--color-gold);
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 38px;
+  box-sizing: border-box;
+  transition: var(--transition-smooth);
+  font-family: var(--font-family);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.hud-btn-leave:active, .hud-btn-scores:active {
+  transform: scale(0.95);
+}
+
+/* Cool Leave Button Red Pulsing Indicator */
+.hud-leave-pulse {
+  width: 6px;
+  height: 6px;
+  background-color: var(--color-red);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--color-red);
+  animation: pulse-red-dot 1.8s infinite;
+  display: inline-block;
+}
+
+@keyframes pulse-red-dot {
+  0% { transform: scale(0.85); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.8); }
+  70% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(248, 113, 113, 0); }
+  100% { transform: scale(0.85); box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+}
+
+.hud-btn-leave .exit-icon {
+  color: var(--color-red);
+  transition: transform 0.3s ease;
+}
+
+.hud-btn-leave:hover {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.4);
+  color: var(--color-red);
+  box-shadow: 0 0 15px rgba(248, 113, 113, 0.18), inset 0 0 8px rgba(248, 113, 113, 0.03);
+}
+
+.hud-btn-leave:hover .exit-icon {
+  transform: translateX(-3px);
+}
+
+.hud-btn-scores .trophy-icon {
+  color: var(--color-gold);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.hud-btn-scores:hover {
+  background: rgba(251, 191, 36, 0.08);
+  border-color: rgba(251, 191, 36, 0.5);
+  color: var(--color-gold);
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.25), inset 0 0 8px rgba(251, 191, 36, 0.04);
+}
+
+.hud-btn-scores:hover .trophy-icon {
+  animation: trophy-bounce 0.8s cubic-bezier(0.25, 0.8, 0.25, 1) infinite alternate;
+}
+
+@keyframes trophy-bounce {
+  0% { transform: translateY(0) scale(1) rotate(-5deg); }
+  100% { transform: translateY(-3px) scale(1.18) rotate(8deg); }
+}
+
+.hud-btn-scores.active {
+  background: rgba(251, 191, 36, 0.15);
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  box-shadow: 0 0 22px rgba(251, 191, 36, 0.45), inset 0 0 10px rgba(251, 191, 36, 0.1);
+  animation: scoreboard-pulse 2s infinite alternate;
+}
+
+@keyframes scoreboard-pulse {
+  0% { box-shadow: 0 0 12px rgba(251, 191, 36, 0.2), inset 0 0 10px rgba(251, 191, 36, 0.1); }
+  100% { box-shadow: 0 0 25px rgba(251, 191, 36, 0.5), inset 0 0 10px rgba(251, 191, 36, 0.15); }
+}
+
+.hud-btn-scores.active .trophy-icon {
+  color: var(--color-gold);
+  filter: drop-shadow(0 0 6px var(--color-gold-glow));
+}
+
+/* Pills for stats */
+.hud-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  height: 38px;
+  box-sizing: border-box;
+  color: var(--color-text);
+  transition: var(--transition-smooth);
+}
+
+.hud-svg-icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.room-pill {
+  cursor: pointer;
+}
+
+.room-pill .key-icon {
+  color: var(--color-gold);
+  opacity: 0.85;
+}
+
+.room-pill:hover {
+  background: rgba(251, 191, 36, 0.06);
+  border-color: rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 12px rgba(251, 191, 36, 0.1);
+}
+
+.room-pill .pill-value {
+  color: var(--color-gold);
+  text-decoration: underline;
+  text-underline-offset: 2.5px;
+}
+
+/* Cool Round Card Fan Badge */
+.round-pill {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.08) 0%, rgba(251, 191, 36, 0.02) 100%);
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.1), inset 0 0 8px rgba(251, 191, 36, 0.03);
+}
+
+.round-pill .deck-icon {
+  color: var(--color-gold);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  filter: drop-shadow(0 0 4px var(--color-gold-glow));
+}
+
+.round-pill .deck-icon .fan-card {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-origin: 12px 18px; /* Rotation base at bottom center of the fan */
+}
+
+/* Set up the initial fan card angles */
+.round-pill .deck-icon .fan-left {
+  transform: rotate(-15deg) translate(-1px, 1px);
+}
+
+.round-pill .deck-icon .fan-right {
+  transform: rotate(15deg) translate(1px, 1px);
+}
+
+.round-pill .deck-icon .fan-center {
+  transform: none;
+}
+
+.round-pill:hover {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.14) 0%, rgba(251, 191, 36, 0.05) 100%);
+  border-color: rgba(251, 191, 36, 0.65);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.25), inset 0 0 8px rgba(251, 191, 36, 0.05);
+}
+
+.round-pill:hover .deck-icon {
+  transform: scale(1.12);
+}
+
+/* Fan out dynamically on hover! */
+.round-pill:hover .deck-icon .fan-left {
+  transform: rotate(-30deg) translate(-3px, 2px);
+}
+
+.round-pill:hover .deck-icon .fan-right {
+  transform: rotate(30deg) translate(3px, 2px);
+}
+
+.round-pill:hover .deck-icon .fan-center {
+  transform: translateY(-2px);
+}
+
+.round-pill .pill-value {
+  color: var(--color-gold);
+  font-weight: 700;
+}
+
+/* Turn status pill */
+.turn-pill {
+  transition: var(--transition-smooth);
+}
+
+.turn-pill .clock-icon {
+  color: var(--color-text-muted);
+}
+
+.turn-pill.my-turn {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.08) 0%, rgba(34, 211, 238, 0.02) 100%);
+  border-color: rgba(34, 211, 238, 0.32);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.12);
+}
+
+.turn-pill.my-turn .clock-icon {
+  color: var(--color-cyan);
+  animation: rotate-clock 12s linear infinite;
+  filter: drop-shadow(0 0 4px var(--color-cyan-glow));
+}
+
+.turn-pill.my-turn .clock-icon.warning-speed {
+  color: var(--color-red) !important;
+  animation: rotate-clock 3s linear infinite, flash-warning 0.8s infinite alternate !important;
+  filter: drop-shadow(0 0 6px var(--color-red-glow)) !important;
+}
+
+@keyframes flash-warning {
+  0% { opacity: 0.55; }
+  100% { opacity: 1; }
+}
+
+@keyframes rotate-clock {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.turn-pill.my-turn .pill-value {
+  color: var(--color-cyan);
+  text-shadow: 0 0 8px var(--color-cyan-glow);
+  font-weight: 700;
+}
+
+.turn-pill.opponent-turn .pill-value {
+  color: var(--color-text-muted);
+}
+
+.turn-indicator-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-text-muted);
+}
+
+.my-turn .turn-indicator-dot {
+  background: var(--color-cyan);
+  box-shadow: 0 0 6px var(--color-cyan);
+  animation: pulse-glow-dot 1.5s infinite;
+}
+
+@keyframes pulse-glow-dot {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Responsive layout overrides for mobile */
+@media (max-width: 768px) {
+  .game-hud-header {
+    height: 48px;
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  
+  .hud-section {
+    gap: 6px;
+  }
+  
+  .hud-btn-leave {
+    padding: 6px 10px;
+    border-radius: 10px;
+    height: 34px;
+    gap: 4px;
+  }
+  
+  .hud-btn-leave .btn-text {
+    display: none; /* Hide 'Leave' text, show only exit SVG + pulsing dot */
+  }
+  
+  .hud-btn-scores {
+    padding: 6px 10px;
+    border-radius: 10px;
+    height: 34px;
+    gap: 4px;
+  }
+  
+  .hud-btn-scores .btn-text {
+    display: none; /* Hide 'Show Scores' text, show only trophy SVG */
+  }
+
+  .hud-pill {
+    padding: 6px 8px;
+    font-size: 0.76rem;
+    border-radius: 10px;
+    height: 34px;
+    gap: 5px;
+  }
+  
+  .room-pill .pill-label,
+  .round-pill .pill-label {
+    display: none; /* Hide 'Room:' and 'Round:' text to save space */
+  }
+  
+  .turn-pill .turn-indicator-dot {
+    display: none; /* Hide extra dot on mobile to reduce clutter */
+  }
+
+  /* Compact Joker tag on mobile to prevent overlap with card corners in the game area */
+  .game-card.joker::before {
+    content: '★ JOKER' !important;
+    font-size: 0.42rem !important;
+    padding: 1px 2px !important;
+    top: 3px !important;
+    right: 3px !important;
+    border-radius: 3px !important;
+    letter-spacing: 0px !important;
+  }
+
+  /* Make sure result page cards still display only the star on mobile */
+  .results-grid .game-card.joker::before {
+    content: '★' !important;
+    font-size: 0.5rem !important;
+    padding: 1px 2.5px !important;
+  }
+}
+
+@media (max-width: 420px) {
+  /* Ultra-small viewports */
+  .hud-section.center {
+    gap: 4px;
+  }
+  
+  .hud-pill {
+    padding: 4px 6px;
+    font-size: 0.72rem;
+  }
+  
+  .room-pill .key-icon,
+  .turn-pill.opponent-turn .clock-icon {
+    display: none; /* Hide key icon and opponent's clock icon on very small devices */
+  }
+  
+  .turn-pill.my-turn .clock-icon {
+    display: inline-block !important; /* Always show clock icon when it's your turn */
+  }
+}
+
+/* Custom Snappy Click Effects (Tactile Press - Subtle) */
+.btn-primary:active:not(:disabled),
+.btn-secondary:active:not(:disabled),
+.btn-danger:active:not(:disabled),
+.hud-btn-leave:active,
+.hud-btn-scores:active,
+.hud-pill:active,
+.btn-draw:active:not(:disabled) {
+  transform: scale(0.985) !important;
+  opacity: 0.95;
+  transition: transform 0.08s ease, opacity 0.08s ease !important;
+}
+
+.game-card:active,
+.card-pile.interactive:active {
+  transform: scale(0.975) !important;
+  opacity: 0.94;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4) !important;
+  transition: transform 0.08s ease, opacity 0.08s ease, box-shadow 0.08s ease !important;
+}
+
+/* Mobile Battery Optimization (Disable heavy blurred floating backgrounds on mobile viewports by default) */
+@media (max-width: 768px) {
+  .menu-container::before,
+  .menu-container::after {
+    animation: none !important;
+  }
+}
+
+/* Battery Saver Mode Overrides (Explicitly disables all continuous loop animations to save power) */
+body.battery-saver .menu-container::before,
+body.battery-saver .menu-container::after,
+body.battery-saver .floating-preview-card,
+body.battery-saver .turn-ring,
+body.battery-saver .clock-icon,
+body.battery-saver .hud-leave-pulse,
+body.battery-saver .turn-indicator-dot,
+body.battery-saver .pulse-button,
+body.battery-saver .pulse-button-red,
+body.battery-saver .pulse-button-gold,
+body.battery-saver .pulse-glow-dot {
+  animation: none !important;
 }
 
 

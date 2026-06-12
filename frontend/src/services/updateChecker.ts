@@ -5,7 +5,11 @@ export async function checkForUpdates() {
     return null;
   }
 
-  const response = await fetch("https://fivecards.onrender.com/api/version");
+  const API_BASE =
+    import.meta.env.VITE_API_URL ||
+    "https://fivecards.onrender.com";
+
+  const response = await fetch(`${API_BASE}/api/version`);
 
   const latest = await response.json();
 

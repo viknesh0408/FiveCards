@@ -172,8 +172,10 @@ export const App: React.FC = () => {
       }
     }
 
-    // Only check for updates when player is in a game (not on menu)
-    if (screen === 'table') {
+    // Only check for updates when running as standalone app (not in browser)
+    const isStandaloneApp = window.matchMedia('(display-mode: standalone)').matches ||
+                            (window.navigator as any).standalone === true;
+    if (screen === 'table' && isStandaloneApp) {
       checkForUpdates()
         .then(data => {
           if (data) {

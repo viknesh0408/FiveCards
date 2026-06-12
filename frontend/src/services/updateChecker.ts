@@ -6,7 +6,7 @@ export async function checkForUpdates() {
 
   const latest = await response.json();
 
-  const currentVersion = "1.0.5";
+  const currentVersion = "1.0.7";
 
   if (latest.version !== currentVersion) {
       return latest;

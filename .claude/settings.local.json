@@ -6,7 +6,8 @@
       "Bash(cmd *)",
       "Bash(netstat -ano)",
       "Bash(findstr :8080)",
-      "Bash(taskkill *)"
+      "Bash(taskkill *)",
+      "WebFetch(domain:fivecards.onrender.com)"
     ]
   },
   "enableAllProjectMcpServers": true,

@@ -1,15 +1,14 @@
 export async function checkForUpdates() {
+  // Skip update check when running locally
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return null;
+  }
 
-  // Use local API in development, remote in production
-  const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:8080'
-    : 'https://fivecards.onrender.com';
-
-  const response = await fetch(`${apiBase}/api/version`);
+  const response = await fetch("https://fivecards.onrender.com/api/version");
 
   const latest = await response.json();
 
-  const currentVersion = "1.0.7";
+  const currentVersion = "1.0.8";
 
   if (latest.version !== currentVersion) {
       return latest;

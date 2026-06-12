@@ -1,8 +1,11 @@
 export async function checkForUpdates() {
 
-  const response = await fetch(
-    "https://fivecards.onrender.com/api/version"
-  );
+  // Use local API in development, remote in production
+  const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8080'
+    : 'https://fivecards.onrender.com';
+
+  const response = await fetch(`${apiBase}/api/version`);
 
   const latest = await response.json();
 

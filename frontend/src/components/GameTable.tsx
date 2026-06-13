@@ -18,7 +18,7 @@ interface GameTableProps {
   onSendReaction: (emoji: string) => void;
   voiceMuted: boolean;
   activeSpeakers: string[];
-  onToggleVoiceMute: () => void;
+  onToggleVoiceMute: (channelName?: string, playerId?: string) => void;
 }
 
 export const GameTable: React.FC<GameTableProps> = ({
@@ -431,7 +431,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           {/* Voice Chat Toggle Button */}
           <button
             className={`hud-btn-voice glass-panel ${voiceMuted ? 'muted' : 'unmuted'} ${!voiceMuted && activeSpeakers.includes(currentPlayerId) ? 'speaking' : ''}`}
-            onClick={onToggleVoiceMute}
+            onClick={() => onToggleVoiceMute(gameId, currentPlayerId)}
             title={voiceMuted ? "Unmute Microphone" : "Mute Microphone"}
             style={{
               width: '36px',

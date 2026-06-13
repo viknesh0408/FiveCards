@@ -107,8 +107,16 @@ export const useAgoraVoice = () => {
     }
   }, [leaveVoice]);
 
-  const toggleMute = useCallback(async () => {
-    if (!localAudioTrackRef.current || !joined) return;
+  const toggleMute = useCallback(async (channelName?: string, playerId?: string) => {
+    if (!joined) {
+      if (channelName && playerId) {
+        console.log('Agora Voice Chat: Attempting manual join/reconnect...');
+        await joinVoice(channelName, playerId);
+      }
+      return;
+    }
+
+    if (!localAudioTrackRef.current) return;
 
     try {
       const targetMuteState = !muted;
@@ -118,7 +126,7 @@ export const useAgoraVoice = () => {
     } catch (err) {
       console.error('Error toggling microphone track:', err);
     }
-  }, [muted, joined]);
+  }, [muted, joined, joinVoice]);
 
   // Cleanup on unmount
   useEffect(() => {

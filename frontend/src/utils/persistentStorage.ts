@@ -41,7 +41,9 @@ export async function initPersistentStorage(): Promise<void> {
   // Ensure tickPlayerId exists (backwards compatible UUID generation)
   let playerId = localStorage.getItem('tickPlayerId');
   if (!playerId) {
-    playerId = crypto.randomUUID();
+    playerId = typeof crypto !== 'undefined' && crypto.randomUUID 
+      ? crypto.randomUUID() 
+      : 'USR_' + Math.random().toString(36).substring(2, 15).toUpperCase();
     localStorage.setItem('tickPlayerId', playerId);
     try {
       await Preferences.set({ key: 'tickPlayerId', value: playerId });

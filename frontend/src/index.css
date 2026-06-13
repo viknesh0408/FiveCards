@@ -825,6 +825,59 @@ body {
   flex-shrink: 0;
 }
 
+.hand-instructions-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 36px;
+  justify-content: center;
+}
+
+.hand-instructions-text {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-gold);
+}
+
+.hand-instructions-timer {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-cyan);
+  text-shadow: 0 0 8px var(--color-cyan-glow);
+  background: rgba(0,0,0,0.4);
+  padding: 4px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-cyan);
+  transition: var(--transition-smooth);
+}
+
+.hand-instructions-timer.warning {
+  color: var(--color-red) !important;
+  text-shadow: 0 0 8px var(--color-red-glow) !important;
+  border-color: var(--color-red) !important;
+}
+
+.hand-value-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: linear-gradient(135deg, rgba(20,30,50,0.95), rgba(10,15,25,0.95));
+  border: 2px solid var(--color-cyan);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: var(--color-cyan);
+  text-shadow: 0 0 8px var(--color-cyan-glow);
+  z-index: 60;
+  box-shadow: 0 4px 16px rgba(0,200,255,0.3), inset 0 0 10px rgba(0,200,255,0.1);
+}
+
 .hand-controls {
   display: flex;
   flex-wrap: wrap;
@@ -3267,7 +3320,17 @@ body {
 }
 
 @media (max-width: 420px) {
-  /* Ultra-small viewports */
+  /* Ultra-small viewports (e.g. 412x915) */
+  .game-hud-header {
+    padding: 4px 6px !important;
+    height: 44px !important;
+    flex-wrap: nowrap !important; /* Prevent navbar elements from wrapping */
+  }
+  
+  .hud-section {
+    gap: 4px !important;
+  }
+  
   .hud-section.center {
     gap: 4px;
   }
@@ -3277,13 +3340,223 @@ body {
     font-size: 0.72rem;
   }
   
-  .room-pill .key-icon,
+  .room-pill {
+    display: flex !important; /* Keep room pill visible on mobile */
+    padding: 4px 6px !important;
+  }
+
+  .room-pill .key-icon {
+    display: none !important; /* Hide key icon to save space */
+  }
+  
+  .round-pill {
+    padding: 4px 6px !important;
+  }
+  
+  .round-pill .deck-icon {
+    display: none !important; /* Hide deck icon in round pill */
+  }
+  
   .turn-pill.opponent-turn .clock-icon {
-    display: none; /* Hide key icon and opponent's clock icon on very small devices */
+    display: none; /* Hide opponent's clock icon */
   }
   
   .turn-pill.my-turn .clock-icon {
     display: inline-block !important; /* Always show clock icon when it's your turn */
+  }
+  
+  .hud-btn-voice,
+  .emoji-trigger-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  
+  .hud-btn-leave,
+  .hud-btn-scores {
+    width: 32px !important;
+    height: 32px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  
+  .hud-btn-leave svg,
+  .hud-btn-scores svg,
+  .hud-btn-voice svg,
+  .emoji-trigger-btn svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+  
+  .emoji-picker-options {
+    top: 40px !important; /* Align options dropdown under smaller header */
+    padding: 6px 10px !important;
+    gap: 8px !important;
+  }
+  
+  .emoji-option-btn {
+    font-size: 1.5rem !important;
+  }
+}
+
+@media (max-width: 380px) {
+  /* Mobile portrait specific (e.g. 360x740) */
+
+  /* Custom card and layout styling for 360px portrait devices */
+  :root {
+    --card-width: 52px !important;
+    --card-height: 78px !important;
+  }
+
+  .opponents-top-container {
+    padding: 2px 4px !important;
+    gap: 4px !important;
+  }
+
+  .opponent-slot {
+    gap: 4px !important;
+  }
+
+  .opponent-avatar-card {
+    padding: 2px 4px !important;
+    border-radius: 6px !important;
+    gap: 3px !important;
+  }
+
+  .avatar-circle {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 0.6rem !important;
+  }
+
+  .turn-ring {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .avatar-name {
+    font-size: 0.62rem !important;
+  }
+
+  .avatar-score {
+    font-size: 0.5rem !important;
+  }
+
+  .opponent-mini-hand .card-back {
+    width: 13px !important;
+    height: 20px !important;
+    margin-left: -5px !important;
+  }
+
+  .center-stacks {
+    gap: 8px !important;
+    padding: 8px 10px !important;
+  }
+
+  .joker-display {
+    padding-right: 8px !important;
+    gap: 4px !important;
+  }
+
+  .joker-label,
+  .pile-label {
+    font-size: 0.55rem !important;
+  }
+
+  .card-pile-count {
+    font-size: 0.65rem !important;
+    padding: 2px 6px !important;
+  }
+
+  .drawable-preview-badge {
+    font-size: 0.48rem !important;
+    padding: 1px 4px !important;
+    bottom: -15px !important;
+  }
+
+  .user-hand-area {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 3px !important;
+  }
+
+  .user-hand-cards {
+    padding: 10px 4px 4px !important;
+    gap: 4px !important;
+  }
+
+  .user-hand-cards .game-card {
+    width: 46px !important;
+    height: 68px !important;
+    padding: 2px !important;
+  }
+
+  .user-hand-cards .card-inner-border {
+    top: 1.5px !important;
+    left: 1.5px !important;
+    right: 1.5px !important;
+    bottom: 1.5px !important;
+    border-radius: 3px !important;
+  }
+
+  .user-hand-cards .card-rank {
+    font-size: 0.7rem !important;
+  }
+
+  .user-hand-cards .card-suit-icon {
+    font-size: 0.55rem !important;
+  }
+
+  .user-hand-cards .card-center-suit {
+    font-size: 1.1rem !important;
+  }
+
+  .user-hand-cards .card-corner.top {
+    top: 1.5px !important;
+    left: 3px !important;
+  }
+
+  .user-hand-cards .card-corner.bottom {
+    bottom: 1.5px !important;
+    right: 3px !important;
+  }
+
+  .user-hand-cards .game-card:hover {
+    transform: translateY(-4px) scale(1.02) rotate(1deg) !important;
+  }
+
+  .user-hand-cards .game-card.selected {
+    transform: translateY(-6px) scale(1.03) !important;
+  }
+
+  .hand-instructions-text {
+    font-size: 0.68rem !important;
+    text-align: center;
+  }
+
+  .hand-instructions-timer {
+    font-size: 0.85rem !important;
+    padding: 3px 8px !important;
+    border-radius: 6px !important;
+  }
+
+  .hand-value-badge {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.52rem !important;
+    border-width: 1.5px !important;
+  }
+
+  .hand-controls {
+    gap: 16px !important;
+  }
+
+  .hand-controls .btn-primary,
+  .hand-controls .btn-secondary,
+  .hand-controls .btn-danger {
+    padding: 6px 12px !important;
+    font-size: 0.75rem !important;
+    border-radius: 6px !important;
   }
 }
 
@@ -3329,6 +3602,213 @@ body.battery-saver .pulse-button-red,
 body.battery-saver .pulse-button-gold,
 body.battery-saver .pulse-glow-dot {
   animation: none !important;
+}
+
+/* Emoji Reaction Styling */
+.emoji-reaction-picker-container {
+  position: relative;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.emoji-trigger-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(13, 21, 39, 0.85);
+  color: var(--color-cyan);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s, border-color 0.2s;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.emoji-trigger-btn:hover {
+  transform: scale(1.08);
+  background: rgba(20, 32, 60, 0.9);
+  border-color: rgba(34, 211, 238, 0.4);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.25);
+}
+
+.emoji-trigger-btn.active {
+  background: rgba(34, 211, 238, 0.15);
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+  color: white;
+}
+
+.emoji-trigger-btn:active {
+  transform: scale(0.95);
+}
+
+.emoji-picker-options {
+  display: flex;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(13, 21, 39, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 0 15px rgba(255, 255, 255, 0.05);
+  position: absolute;
+  top: 48px;
+  right: 0;
+  animation: picker-slide-in 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.emoji-option-btn {
+  background: transparent;
+  border: none;
+  font-size: 1.8rem;
+  cursor: pointer;
+  padding: 2px;
+  transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-option-btn:hover {
+  transform: scale(1.35) translateY(-2px);
+}
+
+.emoji-option-btn:active {
+  transform: scale(0.95);
+}
+
+.reaction-bubble-opponent {
+  position: absolute;
+  top: -16px;
+  right: -16px;
+  background: rgba(13, 21, 39, 0.95);
+  border: 2px solid var(--color-cyan);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 0 15px rgba(34, 211, 238, 0.4), inset 0 0 8px rgba(34, 211, 238, 0.1);
+  z-index: 120;
+  transform-origin: bottom center;
+  pointer-events: none;
+  animation: reaction-bounce-fade 3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.reaction-bubble-self {
+  position: absolute;
+  bottom: 180px;
+  left: 20px;
+  background: rgba(13, 21, 39, 0.95);
+  border: 2px solid var(--color-cyan);
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.9rem;
+  box-shadow: 0 0 20px rgba(34, 211, 238, 0.5), inset 0 0 10px rgba(34, 211, 238, 0.15);
+  z-index: 120;
+  transform-origin: bottom center;
+  pointer-events: none;
+  animation: reaction-bounce-fade 3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes picker-slide-in {
+  from {
+    transform: translateY(12px) scale(0.85);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes reaction-bounce-fade {
+  0% {
+    transform: scale(0) translateY(15px);
+    opacity: 0;
+  }
+  8% {
+    transform: scale(1.2) translateY(0);
+    opacity: 1;
+  }
+  12% {
+    transform: scale(1) translateY(-3px);
+  }
+  85% {
+    transform: scale(1) translateY(-15px);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.65) translateY(-30px);
+    opacity: 0;
+  }
+}
+
+/* Battery Saver optimizations for reactions */
+body.battery-saver .reaction-bubble-opponent,
+body.battery-saver .reaction-bubble-self {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: scale(1) !important;
+}
+body.battery-saver .emoji-picker-options {
+  animation: none !important;
+}
+
+/* Voice Chat Styling */
+.hud-btn-voice {
+  transition: transform 0.2s, background-color 0.2s, box-shadow 0.2s, border-color 0.2s !important;
+}
+
+.hud-btn-voice:hover {
+  transform: scale(1.08);
+}
+
+.hud-btn-voice:active {
+  transform: scale(0.95);
+}
+
+/* Speaking glow animation for active speakers */
+.opponent-avatar-card.speaking {
+  border-color: var(--color-green) !important;
+  animation: speaking-pulse-glow 1.6s infinite ease-in-out !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.hud-btn-voice.speaking {
+  animation: speaking-pulse-glow 1.6s infinite ease-in-out !important;
+}
+
+@keyframes speaking-pulse-glow {
+  0% {
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.2), inset 0 0 5px rgba(16, 185, 129, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(16, 185, 129, 0.65), inset 0 0 10px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 4px rgba(16, 185, 129, 0.2), inset 0 0 5px rgba(16, 185, 129, 0.1);
+  }
+}
+
+/* Battery Saver overrides for voice indicators */
+body.battery-saver .opponent-avatar-card.speaking,
+body.battery-saver .hud-btn-voice.speaking {
+  animation: none !important;
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
 }
 
 

@@ -33,13 +33,13 @@ export async function setupLocalNotifications(): Promise<void> {
 
     // 2. Cancel previously scheduled notifications to reset clean slots
     await LocalNotifications.cancel({ 
-      notifications: [{ id: 1 }, { id: 2 }, { id: 3 }] 
+      notifications: [{ id: 1 }, { id: 2 }, { id: 3 }, { id: 4 }, { id: 5 }] 
     });
 
-    // 3. Shuffle messages and select 3 distinct random ones
+    // 3. Shuffle messages and select 5 distinct random ones
     const shuffled = [...REMINDER_MESSAGES].sort(() => 0.5 - Math.random());
 
-    // 4. Schedule three daily reminders
+    // 4. Schedule five daily reminders
     await LocalNotifications.schedule({
       notifications: [
         {
@@ -47,7 +47,7 @@ export async function setupLocalNotifications(): Promise<void> {
           title: 'Five Cards',
           body: shuffled[0],
           schedule: {
-            on: { hour: 12, minute: 30 }, // Lunch hour slot
+            on: { hour: 9, minute: 30 }, // Morning slot
             repeats: true
           }
         },
@@ -56,7 +56,7 @@ export async function setupLocalNotifications(): Promise<void> {
           title: 'Five Cards',
           body: shuffled[1],
           schedule: {
-            on: { hour: 17, minute: 45 }, // Evening slot
+            on: { hour: 12, minute: 30 }, // Lunch hour slot
             repeats: true
           }
         },
@@ -65,7 +65,25 @@ export async function setupLocalNotifications(): Promise<void> {
           title: 'Five Cards',
           body: shuffled[2],
           schedule: {
-            on: { hour: 20, minute: 30 }, // Prime gaming night slot
+            on: { hour: 15, minute: 15 }, // Afternoon slot
+            repeats: true
+          }
+        },
+        {
+          id: 4,
+          title: 'Five Cards',
+          body: shuffled[3],
+          schedule: {
+            on: { hour: 18, minute: 0 }, // Evening slot
+            repeats: true
+          }
+        },
+        {
+          id: 5,
+          title: 'Five Cards',
+          body: shuffled[4],
+          schedule: {
+            on: { hour: 21, minute: 0 }, // bed/night slot
             repeats: true
           }
         }

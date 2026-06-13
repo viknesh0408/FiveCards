@@ -16,6 +16,7 @@
     "@capacitor/local-notifications": "^8.2.0",
     "@capacitor/preferences": "^8.0.1",
     "@stomp/stompjs": "^7.3.0",
+    "agora-rtc-sdk-ng": "^4.23.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },

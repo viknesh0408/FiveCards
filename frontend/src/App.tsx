@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
+import { useAgoraVoice } from './hooks/useAgoraVoice';
 import { MainMenu } from './components/MainMenu';
 import type { OfflineSettings } from './components/MainMenu';
 import { GameTable } from './components/GameTable';
@@ -38,8 +39,27 @@ export const App: React.FC = () => {
     markReady,
     startNewGame,
     endGame,
+    latestReaction,
+    sendReaction,
     apiBase,
   } = useWebSocket();
+
+  const {
+    muted: voiceMuted,
+    activeSpeakers,
+    joinVoice,
+    leaveVoice,
+    toggleMute: toggleVoiceMute,
+  } = useAgoraVoice();
+
+  // Auto-connect to Agora Voice Chat when entering game table
+  useEffect(() => {
+    if (screen === 'table' && gameState?.gameId && playerId) {
+      joinVoice(gameState.gameId, playerId);
+    } else {
+      leaveVoice();
+    }
+  }, [screen, gameState?.gameId, playerId, joinVoice, leaveVoice]);
 
   // Initialize Battery Saver class on launch
   useEffect(() => {
@@ -390,6 +410,11 @@ export const App: React.FC = () => {
             onEndTurn={endTurn}
             onLeave={handleLeave}
             onReady={markReady}
+            latestReaction={latestReaction}
+            onSendReaction={sendReaction}
+            voiceMuted={voiceMuted}
+            activeSpeakers={activeSpeakers}
+            onToggleVoiceMute={toggleVoiceMute}
           />
 
           {/* Round Results Screen Overlay */}

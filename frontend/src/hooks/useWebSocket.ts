@@ -46,18 +46,44 @@ export interface SanitizedGame {
 }
 
 
-const API_BASE =
-  import.meta.env.VITE_API_URL ||
-  "https://fivecards.onrender.com";
+const getUrls = () => {
+  // If VITE_API_URL and VITE_WS_URL are explicitly configured in env, use them
+  if (import.meta.env.VITE_API_URL && import.meta.env.VITE_WS_URL) {
+    return {
+      apiBase: import.meta.env.VITE_API_URL,
+      wsUrl: import.meta.env.VITE_WS_URL
+    };
+  }
 
-const WS_URL =
-  import.meta.env.VITE_WS_URL ||
-  "wss://fivecards.onrender.com/ws-game";
+  // Check if we are running locally (localhost, 127.0.0.1, or local subnet IPs)
+  const hostname = window.location.hostname;
+  const isLocal = hostname === 'localhost' || 
+                  hostname === '127.0.0.1' || 
+                  hostname.startsWith('192.168.') || 
+                  hostname.startsWith('10.') || 
+                  hostname.startsWith('172.');
+
+  if (isLocal) {
+    return {
+      apiBase: `http://${hostname}:8080`,
+      wsUrl: `ws://${hostname}:8080/ws-game`
+    };
+  }
+
+  // Fallback to production Render URLs
+  return {
+    apiBase: "https://fivecards.onrender.com",
+    wsUrl: "wss://fivecards.onrender.com/ws-game"
+  };
+};
+
+const { apiBase: API_BASE, wsUrl: WS_URL } = getUrls();
 
 export const useWebSocket = () => {
   const [gameState, setGameState] = useState<SanitizedGame | null>(null);
   const [connected, setConnected] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [latestReaction, setLatestReaction] = useState<{ playerId: string; emoji: string; id: string } | null>(null);
 
   const stompClientRef = useRef<Client | null>(null);
   const gameIdRef = useRef<string | null>(null);
@@ -70,6 +96,7 @@ export const useWebSocket = () => {
     }
     setConnected(false);
     setGameState(null);
+    setLatestReaction(null);
   }, []);
 
   const connect = useCallback((gameId: string, playerId: string) => {
@@ -141,6 +168,16 @@ export const useWebSocket = () => {
               return { ...updatedGame, players: updatedPlayers };
             });
           }
+        });
+
+        // 2.5 Subscribe to reactions topic
+        client.subscribe(`/topic/game/${gameId}/reactions`, (message) => {
+          const payload = JSON.parse(message.body);
+          setLatestReaction({
+            playerId: payload.playerId,
+            emoji: payload.emoji,
+            id: Math.random().toString(36).substring(2, 9),
+          });
         });
 
         // 3. Trigger a REJOIN action to sync client state in case of page reload/reconnection
@@ -223,6 +260,20 @@ export const useWebSocket = () => {
     sendAction('END_GAME');
   }, [sendAction]);
 
+  const sendReaction = useCallback((emoji: string) => {
+    if (!stompClientRef.current || !connected) {
+      console.warn('STOMP client not connected');
+      return;
+    }
+    stompClientRef.current.publish({
+      destination: `/app/game/${gameIdRef.current}/reaction`,
+      body: JSON.stringify({
+        playerId: playerIdRef.current,
+        emoji,
+      }),
+    });
+  }, [connected]);
+
   return {
     gameState,
     connected,
@@ -237,6 +288,8 @@ export const useWebSocket = () => {
     markReady,
     startNewGame,
     endGame,
+    latestReaction,
+    sendReaction,
     apiBase: API_BASE,
   };
 };

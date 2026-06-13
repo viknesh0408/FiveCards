@@ -186,6 +186,11 @@ public class GameWebSocketController {
         }
     }
 
+    @MessageMapping("/game/{gameId}/reaction")
+    public void handleReaction(@DestinationVariable String gameId, Map<String, String> payload) {
+        messagingTemplate.convertAndSend("/topic/game/" + gameId + "/reactions", payload);
+    }
+
     private void broadcastGameState(Game game) {
         // Save state to database for persistence
         gamePersistenceService.saveGame(game);
@@ -251,6 +256,17 @@ public class GameWebSocketController {
                     if (declareTick) {
                         gameEngine.declareTick(gameId, aiPlayerId);
                         broadcastGameState(game);
+
+                        // Bot reacts to their own declare
+                        try {
+                            Map<String, String> reaction = Map.of(
+                                "playerId", aiPlayerId,
+                                "emoji", Math.random() > 0.5 ? "👏" : "😲"
+                            );
+                            messagingTemplate.convertAndSend("/topic/game/" + gameId + "/reactions", reaction);
+                        } catch (Exception re) {
+                            re.printStackTrace();
+                        }
 
                         // AI turn complete
                         activeAiGames.remove(gameId);

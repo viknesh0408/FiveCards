@@ -14,6 +14,11 @@ interface GameTableProps {
   onEndTurn: () => void;
   onLeave: () => void;
   onReady: () => void;
+  latestReaction: { playerId: string; emoji: string; id: string } | null;
+  onSendReaction: (emoji: string) => void;
+  voiceMuted: boolean;
+  activeSpeakers: string[];
+  onToggleVoiceMute: () => void;
 }
 
 export const GameTable: React.FC<GameTableProps> = ({
@@ -26,6 +31,11 @@ export const GameTable: React.FC<GameTableProps> = ({
   onEndTurn,
   onLeave,
   onReady,
+  latestReaction,
+  onSendReaction,
+  voiceMuted,
+  activeSpeakers,
+  onToggleVoiceMute,
 }) => {
   const { gameId, players, currentRound, status } = gameState;
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
@@ -33,6 +43,40 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showDeclareConfirm, setShowDeclareConfirm] = useState<boolean>(false);
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
+  const [activeReactions, setActiveReactions] = useState<Record<string, { emoji: string; timestamp: number }>>({});
+  const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
+
+  // Listen for latest reaction
+  useEffect(() => {
+    if (latestReaction) {
+      setActiveReactions(prev => ({
+        ...prev,
+        [latestReaction.playerId]: {
+          emoji: latestReaction.emoji,
+          timestamp: Date.now()
+        }
+      }));
+    }
+  }, [latestReaction]);
+
+  // Clean up expired reactions (older than 3 seconds)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setActiveReactions(prev => {
+        const updated = { ...prev };
+        let changed = false;
+        for (const [pId, data] of Object.entries(updated)) {
+          if (now - data.timestamp > 3000) {
+            delete updated[pId];
+            changed = true;
+          }
+        }
+        return changed ? updated : prev;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   const getInitials = (name: string): string => {
     if (!name) return '';
@@ -381,8 +425,80 @@ export const GameTable: React.FC<GameTableProps> = ({
           )}
         </div>
 
-        {/* Right Section: Scoreboard Trigger */}
-        <div className="hud-section right">
+        {/* Right Section: Scoreboard Trigger & Emoji Picker & Voice Toggle */}
+        <div className="hud-section right" style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+          
+          {/* Voice Chat Toggle Button */}
+          <button
+            className={`hud-btn-voice glass-panel ${voiceMuted ? 'muted' : 'unmuted'} ${!voiceMuted && activeSpeakers.includes(currentPlayerId) ? 'speaking' : ''}`}
+            onClick={onToggleVoiceMute}
+            title={voiceMuted ? "Unmute Microphone" : "Mute Microphone"}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'var(--transition-bounce)',
+              border: voiceMuted ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
+              background: voiceMuted ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.15)',
+              color: voiceMuted ? 'var(--color-red)' : 'var(--color-green)',
+            }}
+          >
+            {voiceMuted ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="1" y1="1" x2="23" y2="23" />
+                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+            )}
+          </button>
+
+          {/* Floating Emoji Reaction Button & Picker */}
+          <div className="emoji-reaction-picker-container">
+            <button 
+              className={`emoji-trigger-btn glass-panel ${showEmojiPicker ? 'active' : ''}`}
+              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              title="React with Emoji"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                <line x1="9" y1="9" x2="9.01" y2="9" />
+                <line x1="15" y1="9" x2="15.01" y2="9" />
+              </svg>
+            </button>
+            
+            {showEmojiPicker && (
+              <div className="emoji-picker-options glass-panel">
+                {['😂', '😡', '😲', '👏'].map(emoji => (
+                  <button
+                    key={emoji}
+                    className="emoji-option-btn"
+                    onClick={() => {
+                      onSendReaction(emoji);
+                      setShowEmojiPicker(false);
+                    }}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
           <button 
             className={`hud-btn-scores ${showScoreboard ? 'active' : ''}`}
             onClick={() => setShowScoreboard(!showScoreboard)}
@@ -409,9 +525,10 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="opponents-column left">
             {opponents.slice(0, Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
+              const isSpeaking = activeSpeakers.includes(opp.id);
               return (
                 <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
+                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${isSpeaking ? 'speaking' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
                       <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-cyan)' : 'rgba(255,255,255,0.2)' }}>
@@ -427,6 +544,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                       <span className="avatar-name">{opp.name} {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}</span>
                       <span className="avatar-score">Total: {opp.totalScore} pts</span>
                     </div>
+                    {activeReactions[opp.id] && (
+                      <div className="reaction-bubble-opponent">
+                        {activeReactions[opp.id].emoji}
+                      </div>
+                    )}
                   </div>
                   <div className="opponent-mini-hand">
                     {Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (<div key={cIdx} className="card-back" />))}
@@ -440,9 +562,10 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="opponents-column right">
             {opponents.slice(Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
+              const isSpeaking = activeSpeakers.includes(opp.id);
               return (
                 <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
+                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${isSpeaking ? 'speaking' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
                       <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-cyan)' : 'rgba(255,255,255,0.2)' }}>
@@ -458,6 +581,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                       <span className="avatar-name">{opp.name} {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}</span>
                       <span className="avatar-score">Total: {opp.totalScore} pts</span>
                     </div>
+                    {activeReactions[opp.id] && (
+                      <div className="reaction-bubble-opponent">
+                        {activeReactions[opp.id].emoji}
+                      </div>
+                    )}
                   </div>
                   <div className="opponent-mini-hand">
                     {Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (<div key={cIdx} className="card-back" />))}
@@ -591,28 +719,22 @@ export const GameTable: React.FC<GameTableProps> = ({
 
 
       {/* User Hand & Actions Area — always pinned at the bottom */}
-      <div className="user-hand-area">
+      <div className="user-hand-area" style={{ position: 'relative' }}>
+        {activeReactions[currentPlayerId] && (
+          <div className="reaction-bubble-self">
+            {activeReactions[currentPlayerId].emoji}
+          </div>
+        )}
         {/* Helper instructions & Turn Timer */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px', minHeight: '36px', justifyContent: 'center' }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-gold)' }}>
+        <div className="hand-instructions-wrapper">
+          <div className="hand-instructions-text">
             {status === 'WAITING_FOR_PLAYERS' && 'Waiting to start... Click ready.'}
             {isMyTurn && !hasDiscardedThisTurn && 'Your Turn: Select a card to Drop or Declare.'}
             {isMyTurn && hasDiscardedThisTurn && needsToDraw && 'Your Turn: Draw a card from the Draw Pile (bundle).'}
             {!isMyTurn && status === 'IN_PROGRESS' && `Waiting for ${activePlayer?.name}'s turn...`}
           </div>
           {isMyTurn && timeLeft !== null && status === 'IN_PROGRESS' && (
-            <div 
-              style={{ 
-                fontSize: '1rem', 
-                fontWeight: 800, 
-                color: timeLeft <= 15 ? 'var(--color-red)' : 'var(--color-cyan)',
-                textShadow: timeLeft <= 15 ? '0 0 8px var(--color-red-glow)' : '0 0 8px var(--color-cyan-glow)',
-                background: 'rgba(0,0,0,0.4)',
-                padding: '4px 12px',
-                borderRadius: '8px',
-                border: `1px solid ${timeLeft <= 15 ? 'var(--color-red)' : 'var(--color-cyan)'}`
-              }}
-            >
+            <div className={`hand-instructions-timer ${timeLeft <= 15 ? 'warning' : ''}`}>
               ⏱️ {timeLeft}s
             </div>
           )}
@@ -622,27 +744,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         <div className="user-hand-cards" style={{ position: 'relative', overflow: 'visible' }}>
           {/* Hand Value Sum - Top Right Corner */}
           {self && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '2px',
-                right: '2px',
-                background: 'linear-gradient(135deg, rgba(20,30,50,0.95), rgba(10,15,25,0.95))',
-                border: '2px solid var(--color-cyan)',
-                borderRadius: '50%',
-                width: '28px',
-                height: '28px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.6rem',
-                fontWeight: 800,
-                color: 'var(--color-cyan)',
-                textShadow: '0 0 8px var(--color-cyan-glow)',
-                zIndex: 60,
-                boxShadow: '0 4px 16px rgba(0,200,255,0.3), inset 0 0 10px rgba(0,200,255,0.1)',
-              }}
-            >
+            <div className="hand-value-badge">
               {self.hand?.reduce((sum, card) => sum + (card.value || 0), 0) || 0}
             </div>
           )}
@@ -776,6 +878,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           </div>
         </div>
       )}
+
     </div>
   );
 };

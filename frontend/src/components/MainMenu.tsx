@@ -30,6 +30,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
   const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
+  const [customBackendUrl, setCustomBackendUrl] = useState<string>(() => localStorage.getItem('customBackendUrl') || '');
 
   const handleStartOffline = () => {
     savePersistentItem('tickPlayerName', playerName);
@@ -275,6 +276,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </button>
           </div>
 
+          <div className="settings-group" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
+            <span className="settings-label" style={{ marginBottom: '8px', fontSize: '0.95rem', alignSelf: 'flex-start' }}>Backend Server URL</span>
+            <input 
+              type="text" 
+              className="settings-input" 
+              value={customBackendUrl} 
+              onChange={(e) => setCustomBackendUrl(e.target.value)}
+              placeholder="Default (Production / Auto-detect)"
+              style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem' }}
+            />
+            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '6px', textAlign: 'left', width: '100%' }}>
+              Leave empty for default. Use <strong>http://10.0.2.2:8080</strong> for emulator or <strong>http://&lt;PC_IP&gt;:8080</strong> for real devices.
+            </span>
+          </div>
+
           <div style={{
             background: 'rgba(0, 0, 0, 0.3)',
             padding: '16px 20px',
@@ -345,12 +361,18 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               await savePersistentItem('soundEnabled', soundEnabled ? 'true' : 'false');
               await savePersistentItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
               await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
+              await savePersistentItem('customBackendUrl', customBackendUrl.trim());
               if (batterySaverEnabled) {
                 document.body.classList.add('battery-saver');
               } else {
                 document.body.classList.remove('battery-saver');
               }
-              setView('main');
+              // Force application reload to apply the new URL since getUrls runs once at module scope
+              if (localStorage.getItem('customBackendUrl') !== customBackendUrl.trim()) {
+                window.location.reload();
+              } else {
+                setView('main');
+              }
             }}>
               Save & Back
             </button>

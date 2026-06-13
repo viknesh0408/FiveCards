@@ -47,6 +47,28 @@ export interface SanitizedGame {
 
 
 const getUrls = () => {
+  // First check if there is a user-configured custom backend URL in localStorage
+  const savedUrl = typeof window !== 'undefined' ? localStorage.getItem('customBackendUrl') : null;
+  if (savedUrl && savedUrl.trim()) {
+    let cleanUrl = savedUrl.trim();
+    if (cleanUrl.endsWith('/')) {
+      cleanUrl = cleanUrl.slice(0, -1);
+    }
+    let wsUrl = '';
+    if (cleanUrl.startsWith('https://')) {
+      wsUrl = cleanUrl.replace('https://', 'wss://') + '/ws-game';
+    } else if (cleanUrl.startsWith('http://')) {
+      wsUrl = cleanUrl.replace('http://', 'ws://') + '/ws-game';
+    } else {
+      wsUrl = `ws://${cleanUrl}/ws-game`;
+      cleanUrl = `http://${cleanUrl}`;
+    }
+    return {
+      apiBase: cleanUrl,
+      wsUrl: wsUrl
+    };
+  }
+
   // If VITE_API_URL and VITE_WS_URL are explicitly configured in env, use them
   if (import.meta.env.VITE_API_URL && import.meta.env.VITE_WS_URL) {
     return {
@@ -55,8 +77,19 @@ const getUrls = () => {
     };
   }
 
-  // Check if we are running locally (localhost, 127.0.0.1, or local subnet IPs)
   const hostname = window.location.hostname;
+  const isNative = !!(window as any).Capacitor;
+
+  // On native Capacitor, localhost is the device itself, not the backend host PC.
+  // Unless customBackendUrl is set above, default to the production Render server.
+  if (isNative) {
+    return {
+      apiBase: "https://fivecards.onrender.com",
+      wsUrl: "wss://fivecards.onrender.com/ws-game"
+    };
+  }
+
+  // Check if we are running locally (localhost, 127.0.0.1, or local subnet IPs)
   const isLocal = hostname === 'localhost' || 
                   hostname === '127.0.0.1' || 
                   hostname.startsWith('192.168.') || 

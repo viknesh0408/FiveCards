@@ -253,12 +253,9 @@ export const App: React.FC = () => {
       });
 
       // 3. Add AI players
-      const botNamesPool = ['Amit', 'Priya', 'Vikram', 'Riya', 'Rahul', 'Anjali', 'Karan', 'Sneha', 'Arjun', 'Neha', 'Rohan', 'Divya', 'Sanjay', 'Pooja'];
-      const shuffledNames = [...botNamesPool].sort(() => 0.5 - Math.random());
-      
       for (let i = 0; i < settings.aiCount; i++) {
         const level: AiLevel = 'MEDIUM';
-        const botName = shuffledNames[i % shuffledNames.length];
+        const botName = `Bot ${i + 1}`;
         
         // Generate dynamic bot levels & MMR based on difficulty
         const botMmr = Math.floor(100 + Math.random() * 1100); // 100 to 1200 MMR

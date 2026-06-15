@@ -38,6 +38,12 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   useEffect(() => {
     if (!gameState || !currentPlayerId) return;
 
+    // Do not show or process ranking progression for offline (bot play) games
+    if (!gameState.isMultiplayer) {
+      setResults(null);
+      return;
+    }
+
     const myPlayer = players.find(p => p.id === currentPlayerId);
     if (!myPlayer) return;
 

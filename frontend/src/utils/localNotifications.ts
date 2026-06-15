@@ -46,6 +46,8 @@ export async function setupLocalNotifications(): Promise<void> {
           id: 1,
           title: 'Five Cards',
           body: shuffled[0],
+          smallIcon: 'ic_notification',
+          iconColor: '#EAB308',
           schedule: {
             on: { hour: 9, minute: 30 }, // Morning slot
             repeats: true
@@ -55,6 +57,8 @@ export async function setupLocalNotifications(): Promise<void> {
           id: 2,
           title: 'Five Cards',
           body: shuffled[1],
+          smallIcon: 'ic_notification',
+          iconColor: '#EAB308',
           schedule: {
             on: { hour: 12, minute: 30 }, // Lunch hour slot
             repeats: true
@@ -64,6 +68,8 @@ export async function setupLocalNotifications(): Promise<void> {
           id: 3,
           title: 'Five Cards',
           body: shuffled[2],
+          smallIcon: 'ic_notification',
+          iconColor: '#EAB308',
           schedule: {
             on: { hour: 15, minute: 15 }, // Afternoon slot
             repeats: true
@@ -73,6 +79,8 @@ export async function setupLocalNotifications(): Promise<void> {
           id: 4,
           title: 'Five Cards',
           body: shuffled[3],
+          smallIcon: 'ic_notification',
+          iconColor: '#EAB308',
           schedule: {
             on: { hour: 18, minute: 0 }, // Evening slot
             repeats: true
@@ -82,6 +90,8 @@ export async function setupLocalNotifications(): Promise<void> {
           id: 5,
           title: 'Five Cards',
           body: shuffled[4],
+          smallIcon: 'ic_notification',
+          iconColor: '#EAB308',
           schedule: {
             on: { hour: 21, minute: 0 }, // bed/night slot
             repeats: true

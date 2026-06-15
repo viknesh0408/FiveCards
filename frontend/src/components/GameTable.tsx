@@ -3,6 +3,7 @@ import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { Card } from './Card';
 import { Scoreboard } from './Scoreboard';
+import { parsePlayerName, getRankTier } from '../utils/rankSystem';
 
 interface GameTableProps {
   gameState: SanitizedGame;
@@ -16,9 +17,6 @@ interface GameTableProps {
   onReady: () => void;
   latestReaction: { playerId: string; emoji: string; id: string } | null;
   onSendReaction: (emoji: string) => void;
-  voiceMuted: boolean;
-  activeSpeakers: string[];
-  onToggleVoiceMute: (channelName?: string, playerId?: string) => void;
 }
 
 export const GameTable: React.FC<GameTableProps> = ({
@@ -33,9 +31,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   onReady,
   latestReaction,
   onSendReaction,
-  voiceMuted,
-  activeSpeakers,
-  onToggleVoiceMute,
 }) => {
   const { gameId, players, currentRound, status } = gameState;
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
@@ -425,47 +420,9 @@ export const GameTable: React.FC<GameTableProps> = ({
           )}
         </div>
 
-        {/* Right Section: Scoreboard Trigger & Emoji Picker & Voice Toggle */}
+        {/* Right Section: Scoreboard Trigger & Emoji Picker */}
         <div className="hud-section right" style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
           
-          {/* Voice Chat Toggle Button */}
-          <button
-            className={`hud-btn-voice glass-panel ${voiceMuted ? 'muted' : 'unmuted'} ${!voiceMuted && activeSpeakers.includes(currentPlayerId) ? 'speaking' : ''}`}
-            onClick={() => onToggleVoiceMute(gameId, currentPlayerId)}
-            title={voiceMuted ? "Unmute Microphone" : "Mute Microphone"}
-            style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '50%',
-              padding: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              transition: 'var(--transition-bounce)',
-              border: voiceMuted ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.4)',
-              background: voiceMuted ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.15)',
-              color: voiceMuted ? 'var(--color-red)' : 'var(--color-green)',
-            }}
-          >
-            {voiceMuted ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="1" y1="1" x2="23" y2="23" />
-                <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                <line x1="12" y1="19" x2="12" y2="23" />
-                <line x1="8" y1="23" x2="16" y2="23" />
-              </svg>
-            )}
-          </button>
-
           {/* Floating Emoji Reaction Button & Picker */}
           <div className="emoji-reaction-picker-container">
             <button 
@@ -525,14 +482,15 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="opponents-column left">
             {opponents.slice(0, Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
-              const isSpeaking = activeSpeakers.includes(opp.id);
+              const { name: parsedName, level, mmr } = parsePlayerName(opp.name);
+              const rank = getRankTier(mmr);
               return (
                 <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${isSpeaking ? 'speaking' : ''}`}>
+                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-cyan)' : 'rgba(255,255,255,0.2)' }}>
-                        {getInitials(opp.name)}
+                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : rank.color }}>
+                        {getInitials(parsedName)}
                       </div>
                       {isOpponentTurn && (
                         <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
@@ -541,8 +499,12 @@ export const GameTable: React.FC<GameTableProps> = ({
                       )}
                     </div>
                     <div className="avatar-info">
-                      <span className="avatar-name">{opp.name} {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}</span>
-                      <span className="avatar-score">Total: {opp.totalScore} pts</span>
+                      <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>
+                        <span>{parsedName}</span>
+                        {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
+                      </span>
+                      <span className="avatar-score">LVL {level} • {opp.totalScore} pts</span>
                     </div>
                     {activeReactions[opp.id] && (
                       <div className="reaction-bubble-opponent">
@@ -562,14 +524,15 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="opponents-column right">
             {opponents.slice(Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
-              const isSpeaking = activeSpeakers.includes(opp.id);
+              const { name: parsedName, level, mmr } = parsePlayerName(opp.name);
+              const rank = getRankTier(mmr);
               return (
                 <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${isSpeaking ? 'speaking' : ''}`}>
+                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-cyan)' : 'rgba(255,255,255,0.2)' }}>
-                        {getInitials(opp.name)}
+                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : rank.color }}>
+                        {getInitials(parsedName)}
                       </div>
                       {isOpponentTurn && (
                         <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
@@ -578,8 +541,12 @@ export const GameTable: React.FC<GameTableProps> = ({
                       )}
                     </div>
                     <div className="avatar-info">
-                      <span className="avatar-name">{opp.name} {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}</span>
-                      <span className="avatar-score">Total: {opp.totalScore} pts</span>
+                      <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>
+                        <span>{parsedName}</span>
+                        {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
+                      </span>
+                      <span className="avatar-score">LVL {level} • {opp.totalScore} pts</span>
                     </div>
                     {activeReactions[opp.id] && (
                       <div className="reaction-bubble-opponent">
@@ -731,7 +698,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             {status === 'WAITING_FOR_PLAYERS' && 'Waiting to start... Click ready.'}
             {isMyTurn && !hasDiscardedThisTurn && 'Your Turn: Select a card to Drop or Declare.'}
             {isMyTurn && hasDiscardedThisTurn && needsToDraw && 'Your Turn: Draw a card from the Draw Pile (bundle).'}
-            {!isMyTurn && status === 'IN_PROGRESS' && `Waiting for ${activePlayer?.name}'s turn...`}
+            {!isMyTurn && status === 'IN_PROGRESS' && `Waiting for ${activePlayer ? parsePlayerName(activePlayer.name).name : ''}'s turn...`}
           </div>
           {isMyTurn && timeLeft !== null && status === 'IN_PROGRESS' && (
             <div className={`hand-instructions-timer ${timeLeft <= 15 ? 'warning' : ''}`}>

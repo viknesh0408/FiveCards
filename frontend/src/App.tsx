@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useAgoraVoice } from './hooks/useAgoraVoice';
 import { MainMenu } from './components/MainMenu';
 import type { OfflineSettings } from './components/MainMenu';
 import { GameTable } from './components/GameTable';
@@ -15,6 +14,7 @@ import UpdateModal from "./components/UpdateModal";
 import { TutorialModal } from "./components/TutorialModal";
 import { initPersistentStorage, savePersistentItem } from "./utils/persistentStorage";
 import { setupLocalNotifications } from "./utils/localNotifications";
+import { getLocalProfile, saveLocalProfile } from './utils/rankSystem';
 
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'table'>('menu');
@@ -43,23 +43,6 @@ export const App: React.FC = () => {
     sendReaction,
     apiBase,
   } = useWebSocket();
-
-  const {
-    muted: voiceMuted,
-    activeSpeakers,
-    joinVoice,
-    leaveVoice,
-    toggleMute: toggleVoiceMute,
-  } = useAgoraVoice();
-
-  // Auto-connect to Agora Voice Chat when entering game table
-  useEffect(() => {
-    if (screen === 'table' && gameState?.gameId && playerId) {
-      joinVoice(gameState.gameId, playerId);
-    } else {
-      leaveVoice();
-    }
-  }, [screen, gameState?.gameId, playerId, joinVoice, leaveVoice]);
 
   // Initialize Battery Saver class on launch
   useEffect(() => {
@@ -194,6 +177,22 @@ export const App: React.FC = () => {
       }
       setPlayerId(id);
 
+      // Fetch profile from DB to sync local storage
+      try {
+        const profileRes = await fetch(`${apiBase}/api/profile/${id}?name=${encodeURIComponent(localStorage.getItem('tickPlayerName') || 'Player')}`);
+        if (profileRes.ok) {
+          const dbProfile = await profileRes.json();
+          saveLocalProfile({
+            name: dbProfile.name,
+            level: dbProfile.level,
+            xp: dbProfile.xp,
+            mmr: dbProfile.mmr
+          });
+        }
+      } catch (err) {
+        console.error('Failed to sync profile from DB:', err);
+      }
+
       const activeGameId = localStorage.getItem('activeGameId');
       if (activeGameId) {
         try {
@@ -258,16 +257,40 @@ export const App: React.FC = () => {
       const createData = await createRes.json();
       const gameId = createData.gameId;
 
+      // Sync name to DB
+      const profile = getLocalProfile();
+      profile.name = settings.playerName;
+      try {
+        await fetch(`${apiBase}/api/profile/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: playerId, name: settings.playerName, level: profile.level, xp: profile.xp, mmr: profile.mmr })
+        });
+      } catch (err) {
+        console.error('Failed to sync name to DB:', err);
+      }
+      saveLocalProfile(profile);
+
       // 2. Join the human player
-      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(settings.playerName)}`, {
+      const userFullName = `${settings.playerName}||${profile.level}||${profile.mmr}`;
+      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(userFullName)}`, {
         method: 'POST',
       });
 
       // 3. Add AI players
+      const botNamesPool = ['Amit', 'Priya', 'Vikram', 'Riya', 'Rahul', 'Anjali', 'Karan', 'Sneha', 'Arjun', 'Neha', 'Rohan', 'Divya', 'Sanjay', 'Pooja'];
+      const shuffledNames = [...botNamesPool].sort(() => 0.5 - Math.random());
+      
       for (let i = 0; i < settings.aiCount; i++) {
         const level: AiLevel = 'MEDIUM';
-        const aiName = `Bot ${i + 1}`;
-        await fetch(`${apiBase}/api/game/${gameId}/add-ai?name=${encodeURIComponent(aiName)}&aiLevel=${level}`, {
+        const botName = shuffledNames[i % shuffledNames.length];
+        
+        // Generate dynamic bot levels & MMR based on difficulty
+        const botMmr = Math.floor(100 + Math.random() * 1100); // 100 to 1200 MMR
+        const botLevel = Math.floor(botMmr / 40) + 1;
+        const botFullName = `${botName}||${botLevel}||${botMmr}`;
+
+        await fetch(`${apiBase}/api/game/${gameId}/add-ai?name=${encodeURIComponent(botFullName)}&aiLevel=${level}`, {
           method: 'POST',
         });
       }
@@ -296,8 +319,23 @@ export const App: React.FC = () => {
       const createData = await createRes.json();
       const gameId = createData.gameId;
 
+      // Sync name to DB
+      const profile = getLocalProfile();
+      profile.name = name;
+      try {
+        await fetch(`${apiBase}/api/profile/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: playerId, name, level: profile.level, xp: profile.xp, mmr: profile.mmr })
+        });
+      } catch (err) {
+        console.error('Failed to sync name to DB:', err);
+      }
+      saveLocalProfile(profile);
+
       // 2. Join player
-      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}`, {
+      const userFullName = `${name}||${profile.level}||${profile.mmr}`;
+      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(userFullName)}`, {
         method: 'POST',
       });
 
@@ -313,8 +351,23 @@ export const App: React.FC = () => {
 
   const handleJoinOnline = async (gameId: string, name: string) => {
     try {
+      // Sync name to DB
+      const profile = getLocalProfile();
+      profile.name = name;
+      try {
+        await fetch(`${apiBase}/api/profile/sync`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: playerId, name, level: profile.level, xp: profile.xp, mmr: profile.mmr })
+        });
+      } catch (err) {
+        console.error('Failed to sync name to DB:', err);
+      }
+      saveLocalProfile(profile);
+
       // 1. Join player
-      const joinRes = await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}`, {
+      const userFullName = `${name}||${profile.level}||${profile.mmr}`;
+      const joinRes = await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(userFullName)}`, {
         method: 'POST',
       });
 
@@ -412,9 +465,6 @@ export const App: React.FC = () => {
             onReady={markReady}
             latestReaction={latestReaction}
             onSendReaction={sendReaction}
-            voiceMuted={voiceMuted}
-            activeSpeakers={activeSpeakers}
-            onToggleVoiceMute={toggleVoiceMute}
           />
 
           {/* Round Results Screen Overlay */}

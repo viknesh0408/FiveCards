@@ -110,7 +110,7 @@ const getUrls = () => {
   };
 };
 
-const { apiBase: API_BASE, wsUrl: WS_URL } = getUrls();
+export const { apiBase: API_BASE, wsUrl: WS_URL } = getUrls();
 
 export const useWebSocket = () => {
   const [gameState, setGameState] = useState<SanitizedGame | null>(null);

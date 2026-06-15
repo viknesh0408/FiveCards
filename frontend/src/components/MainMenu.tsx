@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
+import { getLocalProfile, getRankTier, getXpForNextLevel } from '../utils/rankSystem';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -30,7 +31,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
   const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
-  const [customBackendUrl, setCustomBackendUrl] = useState<string>(() => localStorage.getItem('customBackendUrl') || '');
 
   const handleStartOffline = () => {
     savePersistentItem('tickPlayerName', playerName);
@@ -58,6 +58,34 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     <div className="menu-container">
       {view === 'main' && (
         <div className="menu-card glass-panel">
+          {/* Profile HUD Header */}
+          {(() => {
+            const profile = getLocalProfile();
+            const rank = getRankTier(profile.mmr);
+            const xpNeeded = getXpForNextLevel(profile.level);
+            const xpPercent = Math.min((profile.xp / xpNeeded) * 100, 100);
+            return (
+              <div className="profile-hud-badge">
+                <span className="profile-rank-badge" style={{ textShadow: `0 0 10px ${rank.color}` }}>
+                  {rank.badge}
+                </span>
+                <div className="profile-hud-info">
+                  <div className="profile-hud-name">{profile.name}</div>
+                  <div className="profile-hud-tier" style={{ color: rank.color }}>
+                    {rank.name} <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 500 }}>({profile.mmr} MMR)</span>
+                  </div>
+                  <div className="profile-hud-level-container">
+                    <span className="profile-hud-level">LVL {profile.level}</span>
+                    <div className="profile-hud-level-bar">
+                      <div className="level-bar-fill" style={{ width: `${xpPercent}%` }} />
+                    </div>
+                    <span className="profile-hud-xp-ratio">{profile.xp}/{xpNeeded} XP</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="menu-logo-area">
             <h1 className="menu-title">5 Cards</h1>
             <p className="menu-subtitle">Traditional Indian Card Game</p>
@@ -276,20 +304,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </button>
           </div>
 
-          <div className="settings-group" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.2)', padding: '12px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
-            <span className="settings-label" style={{ marginBottom: '8px', fontSize: '0.95rem', alignSelf: 'flex-start' }}>Backend Server URL</span>
-            <input 
-              type="text" 
-              className="settings-input" 
-              value={customBackendUrl} 
-              onChange={(e) => setCustomBackendUrl(e.target.value)}
-              placeholder="Default (Production / Auto-detect)"
-              style={{ width: '100%', boxSizing: 'border-box', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', padding: '8px 12px', borderRadius: '8px', fontSize: '0.85rem' }}
-            />
-            <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginTop: '6px', textAlign: 'left', width: '100%' }}>
-              Leave empty for default. Use <strong>http://10.0.2.2:8080</strong> for emulator or <strong>http://&lt;PC_IP&gt;:8080</strong> for real devices.
-            </span>
-          </div>
 
           <div style={{
             background: 'rgba(0, 0, 0, 0.3)',
@@ -361,18 +375,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               await savePersistentItem('soundEnabled', soundEnabled ? 'true' : 'false');
               await savePersistentItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
               await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
-              await savePersistentItem('customBackendUrl', customBackendUrl.trim());
               if (batterySaverEnabled) {
                 document.body.classList.add('battery-saver');
               } else {
                 document.body.classList.remove('battery-saver');
               }
-              // Force application reload to apply the new URL since getUrls runs once at module scope
-              if (localStorage.getItem('customBackendUrl') !== customBackendUrl.trim()) {
-                window.location.reload();
-              } else {
-                setView('main');
-              }
+              setView('main');
             }}>
               Save & Back
             </button>

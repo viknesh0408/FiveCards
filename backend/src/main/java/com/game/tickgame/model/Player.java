@@ -22,6 +22,18 @@ public class Player {
     private boolean declaredTick;
     private int timeoutCount;
 
+    // Progression fields (transient stats for Game Over modal)
+    private Integer xpGained;
+    private Integer mmrGained;
+    private Integer oldLevel;
+    private Integer newLevel;
+    private Integer oldXp;
+    private Integer newXp;
+    private Integer oldMmr;
+    private Integer newMmr;
+    private Boolean levelUp;
+    private Boolean rankUp;
+
     public Player(String id, String name, boolean isAi, AiLevel aiLevel, List<Card> hand, int roundScore, int totalScore, boolean isReady, boolean declaredTick) {
         this.id = id;
         this.name = name;

@@ -694,19 +694,43 @@ body {
 .opponent-avatar-card {
   display: flex;
   align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(52, 211, 153, 0.15);
   position: relative;
   transition: var(--transition-bounce);
-  background: rgba(13, 21, 39, 0.7);
+  background: linear-gradient(135deg, rgba(8, 24, 16, 0.75) 0%, rgba(3, 10, 7, 0.92) 100%);
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.05);
   overflow: visible !important;
 }
 
-/* Active Turn Radial indicator glow */
+.opponent-avatar-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: rgba(52, 211, 153, 0.3);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5), inset 0 0 12px rgba(255, 255, 255, 0.08);
+}
+
+/* Active Turn indicator glow with breathing animation */
 .opponent-avatar-card.active-turn {
-  border-color: var(--color-cyan);
-  box-shadow: 0 0 20px var(--color-cyan-glow);
-  background: rgba(34, 211, 238, 0.12);
+  border-color: rgba(34, 211, 238, 0.65) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(3, 10, 7, 0.95) 100%) !important;
   z-index: 10;
+  animation: active-turn-pulse 2.5s infinite ease-in-out;
+}
+
+@keyframes active-turn-pulse {
+  0% {
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.35), inset 0 0 8px rgba(34, 211, 238, 0.1);
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    box-shadow: 0 0 24px rgba(34, 211, 238, 0.65), inset 0 0 14px rgba(34, 211, 238, 0.2);
+    transform: translateY(-2px) scale(1.03);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(34, 211, 238, 0.35), inset 0 0 8px rgba(34, 211, 238, 0.1);
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* Spinning Turn Ring wrapper around Avatar */
@@ -719,13 +743,15 @@ body {
 
 .turn-ring {
   position: absolute;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   border: 2px solid transparent;
   border-top-color: var(--color-cyan);
-  animation: rotate-spin 1.5s linear infinite;
+  border-bottom-color: rgba(34, 211, 238, 0.25);
+  animation: rotate-spin 2s linear infinite;
   display: none;
+  filter: drop-shadow(0 0 5px var(--color-cyan));
 }
 
 .opponent-avatar-card.active-turn .turn-ring {
@@ -740,9 +766,9 @@ body {
 /* replaced by React opponent-timer-badge */
 
 .opponent-avatar-card.declared-tick {
-  border-color: var(--color-red);
-  box-shadow: 0 0 20px var(--color-red-glow);
-  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.6);
+  box-shadow: 0 0 20px var(--color-red-glow), inset 0 0 8px rgba(248, 113, 113, 0.15);
+  background: linear-gradient(135deg, rgba(248, 113, 113, 0.1) 0%, rgba(3, 10, 7, 0.95) 100%);
   z-index: 10;
 }
 
@@ -752,29 +778,32 @@ body {
   bottom: -18px;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--color-red);
+  background: linear-gradient(90deg, #ef4444, #b91c1c);
   color: white;
   font-size: 0.6rem;
   font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
   white-space: nowrap;
-  letter-spacing: 0.5px;
-  box-shadow: 0 0 10px var(--color-red-glow);
+  letter-spacing: 0.8px;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .avatar-circle {
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #1e293b;
+  background: linear-gradient(135deg, #0a3d25 0%, #020f0a 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(52, 211, 153, 0.35);
   font-size: 0.9rem;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .avatar-info {
@@ -786,11 +815,13 @@ body {
   font-size: 0.85rem;
   font-weight: 700;
   color: white;
+  letter-spacing: 0.3px;
 }
 
 .avatar-score {
   font-size: 0.7rem;
   color: var(--color-text-muted);
+  font-weight: 500;
 }
 
 /* Opponent Hand visualization */
@@ -802,17 +833,33 @@ body {
 .opponent-mini-hand .card-back {
   width: 34px;
   height: 50px;
-  border-radius: 4px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+  border-radius: 5px;
+  background: linear-gradient(135deg, #091a13 0%, #020705 100%);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55), inset 0 0 6px rgba(52, 211, 153, 0.15);
   margin-left: -16px;
   transition: var(--transition-bounce);
-  border: 1px solid rgba(255,255,255,0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.opponent-mini-hand .card-back::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  bottom: 2px;
+  border: 1px dashed rgba(52, 211, 153, 0.15);
+  border-radius: 3px;
+  pointer-events: none;
 }
 
 .opponent-mini-hand .card-back:hover {
-  transform: translateY(-8px) rotate(-3deg);
-  z-index: 10;
-  box-shadow: 0 8px 16px rgba(0,0,0,0.6);
+  transform: translateY(-12px) rotate(-4deg) scale(1.15);
+  z-index: 20;
+  border-color: var(--color-cyan);
+  box-shadow: 0 8px 20px rgba(52, 211, 153, 0.4), inset 0 0 8px rgba(52, 211, 153, 0.45);
 }
 
 /* User Hand Area (Bottom Align) */
@@ -1550,7 +1597,7 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  padding: 38px 24px 8px 24px; /* Move player UI down and in to clear border line */
+  padding: 44px 24px 10px 24px; /* Move player UI down and in to clear border line */
   flex-shrink: 0;
   background: rgba(4, 8, 20, 0.45);
   border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -1587,20 +1634,21 @@ body {
 }
 
 .opponent-avatar-card {
-  padding: 3px 5px !important;
-  gap: 2px !important;
-  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  gap: 8px !important;
+  border-radius: 12px !important;
   flex-direction: row !important;
   align-items: center !important;
   text-align: left !important;
   width: auto !important;
   flex-shrink: 0 !important;
+  min-width: 100px;
 }
 
 .avatar-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start !important;
 }
 
 .opponent-mini-hand {
@@ -1627,24 +1675,24 @@ body {
 }
 
 .avatar-circle {
-  width: 24px;
-  height: 24px;
-  font-size: 0.65rem;
+  width: 28px;
+  height: 28px;
+  font-size: 0.75rem;
 }
 
 .turn-ring {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
 }
 
-.avatar-name  { font-size: 0.68rem; }
-.avatar-score { font-size: 0.55rem; }
+.avatar-name  { font-size: 0.78rem; font-weight: 700; }
+.avatar-score { font-size: 0.65rem; }
 
 .opponent-mini-hand .card-back {
-  width: 22px;
-  height: 34px;
+  width: 24px;
+  height: 36px;
   margin-left: -10px;
-  border-radius: 3px;
+  border-radius: 3.5px;
 }
 
 .opponent-mini-hand .card-back:first-child {
@@ -2776,7 +2824,7 @@ body {
 /* Compact styling when 5+ players (4+ opponents) on mobile/tablets */
 @media (max-width: 899px) {
   .opponents-top-container.compact-opponents {
-    padding: 4px 6px;
+    padding: 18px 6px 8px 6px;
     gap: 6px;
   }
   
@@ -2789,38 +2837,38 @@ body {
   }
   
   .opponents-top-container.compact-opponents .opponent-avatar-card {
-    padding: 4px 6px !important;
-    gap: 4px !important;
-    width: 82px !important;
-    border-radius: 8px !important;
+    padding: 5px 8px !important;
+    gap: 6px !important;
+    width: 104px !important;
+    border-radius: 10px !important;
   }
   
   .opponents-top-container.compact-opponents .avatar-circle {
-    width: 24px !important;
-    height: 24px !important;
-    font-size: 0.7rem !important;
-    border-width: 1px !important;
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 0.75rem !important;
+    border-width: 1.5px !important;
   }
   
   .opponents-top-container.compact-opponents .turn-ring {
-    width: 30px !important;
-    height: 30px !important;
+    width: 32px !important;
+    height: 32px !important;
     border-width: 1.5px !important;
   }
   
   .opponents-top-container.compact-opponents .avatar-name {
-    font-size: 0.7rem !important;
+    font-size: 0.75rem !important;
   }
   
   .opponents-top-container.compact-opponents .avatar-score {
-    font-size: 0.58rem !important;
+    font-size: 0.62rem !important;
   }
   
   .opponents-top-container.compact-opponents .opponent-mini-hand .card-back {
-    width: 15px !important;
-    height: 22px !important;
-    margin-left: -6px !important;
-    border-radius: 2px !important;
+    width: 18px !important;
+    height: 27px !important;
+    margin-left: -8px !important;
+    border-radius: 3px !important;
   }
   
   .opponents-top-container.compact-opponents .avatar-timer-overlay {
@@ -3827,5 +3875,125 @@ body.battery-saver .hud-btn-voice.speaking {
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.5) !important;
 }
 
+/* Hide dashed details on tiny card backs to prevent visual clutter */
+@media (max-width: 479px) {
+  .opponent-mini-hand .card-back::after {
+    display: none !important;
+  }
+}
 
+/* ── Rank & Level Profile HUD ── */
+.profile-hud-badge {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(13, 21, 39, 0.75);
+  border: 1px solid rgba(34, 211, 238, 0.2);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
 
+.profile-rank-badge {
+  font-size: 2.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
+}
+
+.profile-hud-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  text-align: left;
+}
+
+.profile-hud-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 2px;
+  letter-spacing: 0.5px;
+}
+
+.profile-hud-tier {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.profile-hud-level-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.profile-hud-level {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--color-cyan);
+  white-space: nowrap;
+}
+
+.profile-hud-level-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.level-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-cyan), var(--color-cyan-glow));
+  box-shadow: 0 0 8px var(--color-cyan-glow);
+  border-radius: 4px;
+  transition: width 0.5s ease-out;
+}
+
+.profile-hud-xp-ratio {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Game Over progression panel custom keyframes ── */
+.rank-up-pulse {
+  animation: rank-up-glow-pulse 1.5s infinite alternate;
+}
+
+.level-up-pulse {
+  animation: level-up-glow-pulse 1.5s infinite alternate;
+}
+
+@keyframes rank-up-glow-pulse {
+  0% {
+    box-shadow: 0 0 4px var(--color-gold-glow);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 12px var(--color-gold-glow), 0 0 20px rgba(234, 179, 8, 0.4);
+    transform: scale(1.04);
+  }
+}
+
+@keyframes level-up-glow-pulse {
+  0% {
+    box-shadow: 0 0 4px rgba(34, 197, 94, 0.3);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 12px rgba(34, 197, 94, 0.6), 0 0 20px rgba(34, 197, 94, 0.4);
+    transform: scale(1.04);
+  }
+}

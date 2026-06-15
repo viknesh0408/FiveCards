@@ -451,6 +451,8 @@ body {
   border: 1px solid rgba(251, 191, 36, 0.15);
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5), inset 0 0 20px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(10px);
+  padding: 20px 24px;
+  gap: 24px;
 }
 
 .center-stacks.glass-panel {
@@ -938,7 +940,7 @@ body {
   border: 1px solid rgba(255,255,255,0.04);
   backdrop-filter: blur(8px);
   /* top padding = lift distance so selected cards aren't clipped */
-  padding-top: 16px;
+  padding-top: 28px;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -2883,7 +2885,7 @@ body {
     padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px)) !important;
   }
   .user-hand-cards {
-    padding: 16px 6px 6px !important;
+    padding: 24px 6px 6px !important;
   }
   .user-hand-cards .game-card {
     width: 64px !important;

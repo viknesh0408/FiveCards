@@ -2,8 +2,10 @@ package com.game.tickgame;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
+@EnableAsync
 public class TickGameApplication {
     public static void main(String[] Wills) {
         SpringApplication.run(TickGameApplication.class, Wills);

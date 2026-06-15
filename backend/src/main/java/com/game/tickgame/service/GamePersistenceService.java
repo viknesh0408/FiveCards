@@ -10,6 +10,7 @@ import com.game.tickgame.repository.RoundRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.scheduling.annotation.Async;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -32,11 +33,10 @@ public class GamePersistenceService {
     @Autowired
     private GameEngine gameEngine;
 
-    @Transactional
     public void saveGame(Game game) {
         if (game == null) return;
 
-        // 1. Save GameEntity
+        // 1. Map to entities synchronously in the main thread (thread-safe data copy)
         GameEntity gameEntity = new GameEntity(
                 game.getGameId(),
                 game.getStatus().name(),
@@ -45,11 +45,10 @@ public class GamePersistenceService {
                 game.getWinnerId(),
                 game.isMultiplayer()
         );
-        gameRepository.save(gameEntity);
 
-        // 2. Save Players
+        List<PlayerEntity> playerEntities = new ArrayList<>();
         if (game.getPlayers() != null) {
-            List<PlayerEntity> playerEntities = game.getPlayers().stream().map(p -> {
+            playerEntities = game.getPlayers().stream().map(p -> {
                 PlayerEntity pe = new PlayerEntity(
                         p.getId(),
                         game.getGameId(),
@@ -60,34 +59,57 @@ public class GamePersistenceService {
                         p.getRoundScore(),
                         p.isReady(),
                         p.isDeclaredTick(),
-                        p.getHand()
+                        p.getHand() != null ? new ArrayList<>(p.getHand()) : new ArrayList<>()
                 );
                 pe.setTimeoutCount(p.getTimeoutCount());
                 return pe;
             }).collect(Collectors.toList());
-            playerRepository.saveAll(playerEntities);
         }
 
-        // 3. Save current round and round history
+        List<RoundEntity> roundEntities = new ArrayList<>();
         if (game.getRounds() != null) {
             for (Round r : game.getRounds()) {
-                saveRoundEntity(game.getGameId(), r);
+                roundEntities.add(createRoundEntity(game.getGameId(), r));
             }
         }
+
+        RoundEntity currentRoundEntity = null;
         if (game.getCurrentRound() != null) {
-            saveRoundEntity(game.getGameId(), game.getCurrentRound());
+            currentRoundEntity = createRoundEntity(game.getGameId(), game.getCurrentRound());
+        }
+
+        // 2. Delegate the actual I/O writes asynchronously to save thread
+        saveEntitiesAsync(gameEntity, playerEntities, roundEntities, currentRoundEntity);
+    }
+
+    @Async
+    @Transactional
+    public void saveEntitiesAsync(GameEntity gameEntity, List<PlayerEntity> playerEntities, List<RoundEntity> roundEntities, RoundEntity currentRoundEntity) {
+        try {
+            gameRepository.save(gameEntity);
+            if (playerEntities != null && !playerEntities.isEmpty()) {
+                playerRepository.saveAll(playerEntities);
+            }
+            if (roundEntities != null && !roundEntities.isEmpty()) {
+                roundRepository.saveAll(roundEntities);
+            }
+            if (currentRoundEntity != null) {
+                roundRepository.save(currentRoundEntity);
+            }
+        } catch (Exception e) {
+            System.err.println("[GamePersistenceService] Async database save failed: " + e.getMessage());
         }
     }
 
-    private void saveRoundEntity(String gameId, Round r) {
-        RoundEntity roundEntity = new RoundEntity(
+    private RoundEntity createRoundEntity(String gameId, Round r) {
+        return new RoundEntity(
                 gameId + "_" + r.getRoundNumber(),
                 gameId,
                 r.getRoundNumber(),
                 r.getJokerCard(),
                 r.getJokerRank() != null ? r.getJokerRank().name() : null,
-                r.getDrawPile(),
-                r.getDiscardPile(),
+                r.getDrawPile() != null ? new ArrayList<>(r.getDrawPile()) : new ArrayList<>(),
+                r.getDiscardPile() != null ? new ArrayList<>(r.getDiscardPile()) : new ArrayList<>(),
                 r.getCurrentPlayerIndex(),
                 r.isRoundEnded(),
                 r.getTickPlayerId(),
@@ -96,9 +118,8 @@ public class GamePersistenceService {
                 r.isNeedsToDraw(),
                 r.getCardsDiscardedThisTurn(),
                 r.isFirstTurnCompleted(),
-                r.getPlayerScores()
+                r.getPlayerScores() != null ? new HashMap<>(r.getPlayerScores()) : new HashMap<>()
         );
-        roundRepository.save(roundEntity);
     }
 
     @Transactional

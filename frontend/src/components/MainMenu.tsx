@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
 import { getLocalProfile, getRankTier, getXpForNextLevel } from '../utils/rankSystem';
+import { RankProfileCard } from './RankProfileCard';
+
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -58,33 +60,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     <div className="menu-container">
       {view === 'main' && (
         <div className="menu-card glass-panel">
-          {/* Profile HUD Header */}
-          {(() => {
-            const profile = getLocalProfile();
-            const rank = getRankTier(profile.mmr);
-            const xpNeeded = getXpForNextLevel(profile.level);
-            const xpPercent = Math.min((profile.xp / xpNeeded) * 100, 100);
-            return (
-              <div className="profile-hud-badge">
-                <span className="profile-rank-badge" style={{ textShadow: `0 0 10px ${rank.color}` }}>
-                  {rank.badge}
-                </span>
-                <div className="profile-hud-info">
-                  <div className="profile-hud-name">{profile.name}</div>
-                  <div className="profile-hud-tier" style={{ color: rank.color }}>
-                    {rank.name} <span style={{ color: 'var(--color-text-muted)', fontSize: '0.7rem', fontWeight: 500 }}>({profile.mmr} MMR)</span>
-                  </div>
-                  <div className="profile-hud-level-container">
-                    <span className="profile-hud-level">LVL {profile.level}</span>
-                    <div className="profile-hud-level-bar">
-                      <div className="level-bar-fill" style={{ width: `${xpPercent}%` }} />
-                    </div>
-                    <span className="profile-hud-xp-ratio">{profile.xp}/{xpNeeded} XP</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
+          {/* Rank Profile Card */}
+          <RankProfileCard />
 
           <div className="menu-logo-area">
             <h1 className="menu-title">5 Cards</h1>

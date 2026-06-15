@@ -177,22 +177,6 @@ export const App: React.FC = () => {
       }
       setPlayerId(id);
 
-      // Fetch profile from DB to sync local storage
-      try {
-        const profileRes = await fetch(`${apiBase}/api/profile/${id}?name=${encodeURIComponent(localStorage.getItem('tickPlayerName') || 'Player')}`);
-        if (profileRes.ok) {
-          const dbProfile = await profileRes.json();
-          saveLocalProfile({
-            name: dbProfile.name,
-            level: dbProfile.level,
-            xp: dbProfile.xp,
-            mmr: dbProfile.mmr
-          });
-        }
-      } catch (err) {
-        console.error('Failed to sync profile from DB:', err);
-      }
-
       const activeGameId = localStorage.getItem('activeGameId');
       if (activeGameId) {
         try {
@@ -257,18 +241,9 @@ export const App: React.FC = () => {
       const createData = await createRes.json();
       const gameId = createData.gameId;
 
-      // Sync name to DB
+      // Save name locally
       const profile = getLocalProfile();
       profile.name = settings.playerName;
-      try {
-        await fetch(`${apiBase}/api/profile/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: playerId, name: settings.playerName, level: profile.level, xp: profile.xp, mmr: profile.mmr })
-        });
-      } catch (err) {
-        console.error('Failed to sync name to DB:', err);
-      }
       saveLocalProfile(profile);
 
       // 2. Join the human player
@@ -319,18 +294,9 @@ export const App: React.FC = () => {
       const createData = await createRes.json();
       const gameId = createData.gameId;
 
-      // Sync name to DB
+      // Save name locally
       const profile = getLocalProfile();
       profile.name = name;
-      try {
-        await fetch(`${apiBase}/api/profile/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: playerId, name, level: profile.level, xp: profile.xp, mmr: profile.mmr })
-        });
-      } catch (err) {
-        console.error('Failed to sync name to DB:', err);
-      }
       saveLocalProfile(profile);
 
       // 2. Join player
@@ -351,18 +317,9 @@ export const App: React.FC = () => {
 
   const handleJoinOnline = async (gameId: string, name: string) => {
     try {
-      // Sync name to DB
+      // Save name locally
       const profile = getLocalProfile();
       profile.name = name;
-      try {
-        await fetch(`${apiBase}/api/profile/sync`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: playerId, name, level: profile.level, xp: profile.xp, mmr: profile.mmr })
-        });
-      } catch (err) {
-        console.error('Failed to sync name to DB:', err);
-      }
       saveLocalProfile(profile);
 
       // 1. Join player

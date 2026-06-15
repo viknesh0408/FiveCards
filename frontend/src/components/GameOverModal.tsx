@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
-import { parsePlayerName, getRankTier } from '../utils/rankSystem';
+import { parsePlayerName, getRankTier, processGameEnd } from '../utils/rankSystem';
 import type { ProcessedResults } from '../utils/rankSystem';
 
 interface GameOverModalProps {
@@ -38,30 +38,36 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   useEffect(() => {
     if (!gameState || !currentPlayerId) return;
 
-    const myPlayer = players.find(p => p.id === currentPlayerId) as any;
+    const myPlayer = players.find(p => p.id === currentPlayerId);
     if (!myPlayer) return;
 
-    const serverResults: ProcessedResults = {
-      xpGained: myPlayer.xpGained ?? 0,
-      mmrGained: myPlayer.mmrGained ?? 0,
-      oldLevel: myPlayer.oldLevel ?? 1,
-      newLevel: myPlayer.newLevel ?? 1,
-      oldXp: myPlayer.oldXp ?? 0,
-      newXp: myPlayer.newXp ?? 0,
-      oldMmr: myPlayer.oldMmr ?? 0,
-      newMmr: myPlayer.newMmr ?? 0,
-      oldRank: getRankTier(myPlayer.oldMmr ?? 0),
-      newRank: getRankTier(myPlayer.newMmr ?? 0),
-      levelUp: myPlayer.levelUp ?? false,
-      rankUp: myPlayer.rankUp ?? false
-    };
+    const processedGameId = localStorage.getItem('processedGameId');
+    let gameResults: ProcessedResults;
 
-    setResults(serverResults);
+    if (processedGameId === gameState.gameId) {
+      try {
+        const saved = localStorage.getItem('lastGameResults');
+        if (saved) {
+          gameResults = JSON.parse(saved);
+          gameResults.oldRank = getRankTier(gameResults.oldMmr);
+          gameResults.newRank = getRankTier(gameResults.newMmr);
+          setResults(gameResults);
+          return;
+        }
+      } catch (e) {
+        console.error('Failed to parse lastGameResults', e);
+      }
+    }
 
-    // Sync client local storage with database-calculated profile results
-    localStorage.setItem('playerLevel', serverResults.newLevel.toString());
-    localStorage.setItem('playerXp', serverResults.newXp.toString());
-    localStorage.setItem('playerMmr', serverResults.newMmr.toString());
+    const myIndex = sortedPlayers.findIndex(p => p.id === currentPlayerId);
+    const myPlacement = myIndex !== -1 ? myIndex + 1 : 1;
+    const totalPlayersCount = players.length;
+
+    gameResults = processGameEnd(myPlacement, totalPlayersCount);
+    setResults(gameResults);
+
+    localStorage.setItem('processedGameId', gameState.gameId);
+    localStorage.setItem('lastGameResults', JSON.stringify(gameResults));
   }, [gameState?.gameId, currentPlayerId, players]);
 
   // Decode names

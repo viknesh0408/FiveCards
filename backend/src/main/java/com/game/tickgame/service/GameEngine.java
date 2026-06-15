@@ -1,8 +1,6 @@
 package com.game.tickgame.service;
 
 import com.game.tickgame.model.*;
-import com.game.tickgame.entity.UserProfileEntity;
-import com.game.tickgame.repository.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,9 +18,6 @@ public class GameEngine {
 
     @Autowired
     private ScoreEngine scoreEngine;
-
-    @Autowired
-    private UserProfileRepository userProfileRepository;
 
     // In-memory store of active game sessions
     private final ConcurrentHashMap<String, Game> activeGames = new ConcurrentHashMap<>();
@@ -460,16 +455,6 @@ public class GameEngine {
         endGame(game);
     }
 
-    private int getMinMmrForRank(int mmr) {
-        int[] thresholds = {0, 100, 200, 300, 400, 500, 600, 750, 900, 1000, 1150, 1300, 1500, 1650, 1800, 2000};
-        for (int i = thresholds.length - 1; i >= 0; i--) {
-            if (mmr >= thresholds[i]) {
-                return thresholds[i];
-            }
-        }
-        return 0;
-    }
-
     private void endGame(Game game) {
         game.setStatus(GameStatus.GAME_OVER);
 
@@ -498,80 +483,6 @@ public class GameEngine {
         } else if (winner != null) {
             game.setWinnerId(winner.getId());
             System.out.println("[endGame] Winner: " + winner.getName() + " with " + minTotalScore + " points");
-        }
-
-        // Calculate rankings and update user profiles in Neon DB
-        List<Player> sortedPlayers = new ArrayList<>(game.getPlayers());
-        sortedPlayers.sort((a, b) -> Integer.compare(a.getTotalScore(), b.getTotalScore()));
-
-        int totalPlayers = game.getPlayers().size();
-        for (int i = 0; i < sortedPlayers.size(); i++) {
-            Player p = sortedPlayers.get(i);
-            if (p.isAi()) {
-                continue;
-            }
-
-            int placement = i + 1;
-
-            // Fetch or create user profile
-            UserProfileEntity profile = userProfileRepository.findById(p.getId()).orElse(null);
-            if (profile == null) {
-                String rawName = p.getName();
-                String cleanName = rawName != null ? rawName.split("\\|\\|")[0] : "Player";
-                profile = new UserProfileEntity(p.getId(), cleanName, 1, 0, 100);
-            }
-
-            int oldLevel = profile.getLevel();
-            int oldXp = profile.getXp();
-            int oldMmr = profile.getMmr();
-
-            // Calculate XP
-            int xpGained = 50; // base play XP
-            if (placement == 1) xpGained += 100;
-            else if (placement == 2) xpGained += 50;
-            else if (placement == 3) xpGained += 20;
-
-            // Calculate MMR
-            int mmrGained = 0;
-            if (totalPlayers >= 2) {
-                if (placement == 1) {
-                    mmrGained = 25;
-                } else if (placement == 2) {
-                    mmrGained = totalPlayers >= 3 ? 10 : -5;
-                } else if (placement == totalPlayers) {
-                    mmrGained = -20;
-                } else {
-                    mmrGained = -5;
-                }
-            }
-
-            // Apply XP and Levels
-            int newLevel = oldLevel;
-            int newXp = oldXp + xpGained;
-            while (newXp >= newLevel * 100) {
-                newXp -= newLevel * 100;
-                newLevel += 1;
-            }
-
-            int newMmr = Math.max(0, oldMmr + mmrGained);
-
-            // Save to DB
-            profile.setLevel(newLevel);
-            profile.setXp(newXp);
-            profile.setMmr(newMmr);
-            userProfileRepository.save(profile);
-
-            // Set transient progression fields
-            p.setXpGained(xpGained);
-            p.setMmrGained(mmrGained);
-            p.setOldLevel(oldLevel);
-            p.setNewLevel(newLevel);
-            p.setOldXp(oldXp);
-            p.setNewXp(newXp);
-            p.setOldMmr(oldMmr);
-            p.setNewMmr(newMmr);
-            p.setLevelUp(newLevel > oldLevel);
-            p.setRankUp(getMinMmrForRank(newMmr) > getMinMmrForRank(oldMmr));
         }
     }
 

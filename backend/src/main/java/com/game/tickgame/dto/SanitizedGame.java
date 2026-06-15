@@ -32,18 +32,6 @@ public class SanitizedGame {
         private int totalScore;
         private boolean isReady;
         private boolean declaredTick;
-
-        // Progression fields
-        private Integer xpGained;
-        private Integer mmrGained;
-        private Integer oldLevel;
-        private Integer newLevel;
-        private Integer oldXp;
-        private Integer newXp;
-        private Integer oldMmr;
-        private Integer newMmr;
-        private Boolean levelUp;
-        private Boolean rankUp;
     }
 
     @Data
@@ -91,18 +79,6 @@ public class SanitizedGame {
             sp.setReady(p.isReady());
             sp.setDeclaredTick(p.isDeclaredTick());
             sp.setCardCount(p.getHand() != null ? p.getHand().size() : 0);
-
-            // Map progression fields
-            sp.setXpGained(p.getXpGained());
-            sp.setMmrGained(p.getMmrGained());
-            sp.setOldLevel(p.getOldLevel());
-            sp.setNewLevel(p.getNewLevel());
-            sp.setOldXp(p.getOldXp());
-            sp.setNewXp(p.getNewXp());
-            sp.setOldMmr(p.getOldMmr());
-            sp.setNewMmr(p.getNewMmr());
-            sp.setLevelUp(p.getLevelUp());
-            sp.setRankUp(p.getRankUp());
 
             // Hide cards unless it's this player, or the round is finished and we show all hands
             if (revealAll || p.getId().equals(playerId)) {

@@ -1596,7 +1596,7 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  padding: 44px 12px 10px 12px; /* Reduced horizontal padding to give more room */
+  padding: 44px 24px 10px 24px; /* Move player UI down and in to clear border line */
   flex-shrink: 0;
   background: rgba(4, 8, 20, 0.45);
   border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -1605,7 +1605,6 @@ body {
   height: auto;
   pointer-events: auto;
   gap: 8px;
-  overflow: visible; /* Allow mini-hand cards to breathe without clipping */
 }
 
 .opponents-column {
@@ -1613,22 +1612,19 @@ body {
   flex-direction: column;
   gap: 6px;
   flex: 1;
-  overflow: visible;
 }
 
 /* Each opponent card compact on phone */
 .opponent-slot {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   width: 100%;
-  overflow: visible;
 }
 
-/* Both columns: avatar on the inside, mini-hand on the outside */
 .opponents-column.left .opponent-slot {
-  flex-direction: row;
-  justify-content: flex-end;
+  flex-direction: row-reverse;
+  justify-content: flex-start;
 }
 
 .opponents-column.right .opponent-slot {

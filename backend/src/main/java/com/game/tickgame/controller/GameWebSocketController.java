@@ -14,11 +14,13 @@ import org.springframework.stereotype.Controller;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import org.springframework.context.event.EventListener;
-import java.util.Map;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
+
 
 @Controller
 public class GameWebSocketController {
@@ -274,9 +276,13 @@ public class GameWebSocketController {
                         return;
                     }
 
-                    // Otherwise, play normally: Step 1: Discard card
-                    Card discardChoice = aiEngine.chooseCardToDiscard(aiPlayer, round);
-                    gameEngine.discardCard(gameId, aiPlayerId, discardChoice);
+                    // Otherwise, play normally: Step 1: Discard card(s)
+                    List<Card> discardChoices = aiEngine.chooseCardsToDiscard(aiPlayer, round);
+                    if (discardChoices.size() > 1) {
+                        gameEngine.discardMultipleCards(gameId, aiPlayerId, discardChoices);
+                    } else if (!discardChoices.isEmpty()) {
+                        gameEngine.discardCard(gameId, aiPlayerId, discardChoices.get(0));
+                    }
                     broadcastGameState(game);
 
                     // If round ended immediately due to discard (0 cards left), terminate early

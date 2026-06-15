@@ -15,6 +15,7 @@ import { TutorialModal } from "./components/TutorialModal";
 import { initPersistentStorage, savePersistentItem } from "./utils/persistentStorage";
 import { setupLocalNotifications } from "./utils/localNotifications";
 import { getLocalProfile, saveLocalProfile } from './utils/rankSystem';
+import { Haptics } from '@capacitor/haptics';
 
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'table'>('menu');
@@ -142,8 +143,13 @@ export const App: React.FC = () => {
 
     if (gameState && gameState.status === 'IN_PROGRESS' && activePlayerId === playerId) {
       const vibrationEnabled = localStorage.getItem('vibrationEnabled') !== 'false';
-      if (vibrationEnabled && navigator.vibrate) {
-        navigator.vibrate(80); // 80ms micro-vibration
+      if (vibrationEnabled) {
+        Haptics.vibrate({ duration: 80 }).catch((err) => {
+          console.warn('Native haptics failed, trying browser vibrate:', err);
+          if (navigator.vibrate) {
+            navigator.vibrate(80);
+          }
+        });
       }
     }
   }, [gameState?.currentRound?.currentPlayerIndex, gameState?.status, playerId]);

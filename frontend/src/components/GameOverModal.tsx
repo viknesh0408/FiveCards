@@ -265,11 +265,11 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                     {idx + 1}
                   </span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>
+                    {!p.isAi && <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>}
                     <span>{parsedName}</span>
                     {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
                     {p.isAi && <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)' }}>[BOT]</span>}
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '4px' }}>LVL {level}</span>
+                    {!p.isAi && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '4px' }}>LVL {level}</span>}
                   </span>
                 </div>
                 <strong className="text-gold" style={{ fontSize: '1.15rem' }}>{p.totalScore} pts</strong>

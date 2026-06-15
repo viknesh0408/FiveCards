@@ -49,11 +49,11 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
                 </span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: isSelf ? '#ffffff' : 'rgba(255,255,255,0.8)', display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
                   {isLeader && <span style={{ marginRight: '2px', filter: 'drop-shadow(0 0 4px var(--color-gold-glow))' }}>👑</span>}
-                  <span style={{ fontSize: '0.75rem' }} title={rank.name}>{rank.badge}</span>
+                  {!p.isAi && <span style={{ fontSize: '0.75rem' }} title={rank.name}>{rank.badge}</span>}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{parsedName}</span>
                   {isSelf && <span style={{ fontSize: '0.75rem', color: 'var(--color-cyan)', flexShrink: 0 }}>(You)</span>}
                   {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', flexShrink: 0 }}>[BOT]</span>}
-                  <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', flexShrink: 0, marginLeft: '2px' }}>Lvl {level}</span>
+                  {!p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', flexShrink: 0, marginLeft: '2px' }}>Lvl {level}</span>}
                 </span>
                 {isCurrentTurn && <span className="text-cyan animate-pulse" style={{ fontSize: '0.75rem', flexShrink: 0 }}>●</span>}
                 {p.declaredTick && <span className="text-red" style={{ fontSize: '0.7rem', fontWeight: 800, flexShrink: 0 }}>[TICK]</span>}

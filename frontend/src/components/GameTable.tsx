@@ -500,11 +500,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                     </div>
                     <div className="avatar-info">
                       <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>
+                        {!opp.isAi && <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>}
                         <span>{parsedName}</span>
                         {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
                       </span>
-                      <span className="avatar-score">LVL {level} • {opp.totalScore} pts</span>
+                      <span className="avatar-score">{opp.isAi ? '' : `LVL ${level} • `}{opp.totalScore} pts</span>
                     </div>
                     {activeReactions[opp.id] && (
                       <div className="reaction-bubble-opponent">
@@ -542,11 +542,11 @@ export const GameTable: React.FC<GameTableProps> = ({
                     </div>
                     <div className="avatar-info">
                       <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>
+                        {!opp.isAi && <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>}
                         <span>{parsedName}</span>
                         {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
                       </span>
-                      <span className="avatar-score">LVL {level} • {opp.totalScore} pts</span>
+                      <span className="avatar-score">{opp.isAi ? '' : `LVL ${level} • `}{opp.totalScore} pts</span>
                     </div>
                     {activeReactions[opp.id] && (
                       <div className="reaction-bubble-opponent">

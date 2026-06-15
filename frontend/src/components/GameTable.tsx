@@ -414,7 +414,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               <span className="pill-value">
-                {isMyTurn ? 'Your Turn' : `${activePlayer.name}`}
+                {isMyTurn ? 'Your Turn' : `${parsePlayerName(activePlayer.name).name}'s Turn`}
               </span>
             </div>
           )}

@@ -1632,6 +1632,20 @@ body {
   justify-content: flex-start;
 }
 
+/* ── Single opponent: center the strip and fix border overlap ── */
+.opponents-top-container:not(.compact-opponents) {
+  justify-content: center;
+}
+
+.opponents-top-container:not(.compact-opponents) .opponents-column.left {
+  flex: 0 0 auto; /* Don't stretch — wrap around content */
+}
+
+.opponents-top-container:not(.compact-opponents) .opponents-column.left .opponent-slot {
+  flex-direction: row; /* Mini-hand to the RIGHT of avatar — no left-border overflow */
+  justify-content: center;
+}
+
 .opponent-avatar-card {
   padding: 6px 10px !important;
   gap: 8px !important;

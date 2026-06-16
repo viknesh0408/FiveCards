@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
-// import { getLocalProfile, getRankTier, getXpForNextLevel } from '../utils/rankSystem';
-import { RankProfileCard } from './RankProfileCard';
-
+import { getLocalProfile, getRankTier, getXpForNextLevel } from '../utils/rankSystem';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -19,29 +17,55 @@ export interface OfflineSettings {
   maxRounds: number;
 }
 
+type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings';
+
+// Toggle Switch Component
+const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; id: string }> = ({ checked, onChange, id }) => (
+  <label htmlFor={id} className="mm-toggle">
+    <input id={id} type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
+    <span className="mm-toggle-track">
+      <span className="mm-toggle-thumb" />
+    </span>
+  </label>
+);
+
+// Card-style select option
+const PickerRow: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+  <div className="mm-picker-row">
+    <span className="mm-picker-label">{label}</span>
+    <div className="mm-picker-options">{children}</div>
+  </div>
+);
+
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartOffline,
   onJoinOnline,
   onCreateOnline,
   onShowTutorial,
 }) => {
-  const [view, setView] = useState<'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings'>('main');
-  const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('tickPlayerName') || 'Player');
+  const [view, setView] = useState<View>('main');
+  const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('tickPlayerName') || '');
   const [aiCount, setAiCount] = useState<number>(3);
-  const [maxRounds, setMaxRounds] = useState<number>(20);
+  const [maxRounds, setMaxRounds] = useState<number>(10);
   const [roomId, setRoomId] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
   const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
+  const [animIn, setAnimIn] = useState(true);
+
+  const profile = getLocalProfile();
+  const rank = getRankTier(profile.mmr);
+  const xpNeeded = getXpForNextLevel(profile.level);
+  const xpPct = Math.min((profile.xp / xpNeeded) * 100, 100);
+
+  const navigate = (v: View) => {
+    setAnimIn(false);
+    setTimeout(() => { setView(v); setAnimIn(true); }, 180);
+  };
 
   const handleStartOffline = () => {
     savePersistentItem('tickPlayerName', playerName);
-    onStartOffline({
-      playerName,
-      aiCount,
-      aiLevel: 'MEDIUM',
-      maxRounds,
-    });
+    onStartOffline({ playerName: playerName || 'Player', aiCount, aiLevel: 'MEDIUM', maxRounds });
   };
 
   const handleJoinOnline = () => {
@@ -56,321 +80,386 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     onCreateOnline(playerName, maxRounds);
   };
 
+  const handleSaveSettings = async () => {
+    await savePersistentItem('soundEnabled', soundEnabled ? 'true' : 'false');
+    await savePersistentItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
+    await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
+    if (batterySaverEnabled) document.body.classList.add('battery-saver');
+    else document.body.classList.remove('battery-saver');
+    navigate('main');
+  };
+
   return (
-    <div className="menu-container">
-      {view === 'main' && (
-        <div className="menu-desktop-layout">
-          {/* LEFT: Rank Profile Card */}
-          <div className="menu-desktop-left glass-panel">
-            <RankProfileCard />
-          </div>
+    <div className="mm-root">
+      {/* Animated background orbs */}
+      <div className="mm-orb mm-orb-1" />
+      <div className="mm-orb mm-orb-2" />
+      <div className="mm-orb mm-orb-3" />
 
-          {/* RIGHT: Logo + Buttons */}
-          <div className="menu-desktop-right glass-panel">
-            <div className="menu-logo-area">
-              <h1 className="menu-title">5 Cards</h1>
-              <p className="menu-subtitle">Traditional Indian Card Game</p>
-            </div>
+      <div className={`mm-scene ${animIn ? 'mm-fade-in' : 'mm-fade-out'}`}>
 
-            <div className="floating-cards-preview">
-              <div className="floating-preview-card card-1" />
-              <div className="floating-preview-card card-2">5</div>
-              <div className="floating-preview-card card-3" />
-            </div>
-            
-            <div className="menu-options">
-              <button className="btn-primary" onClick={() => setView('offline')}>
-                Play Offline (vs AI)
+        {/* ── MAIN VIEW ─────────────────────────────────────── */}
+        {view === 'main' && (
+          <div className="mm-main-layout">
+
+            {/* Left panel: Profile card */}
+            <aside className="mm-profile-panel glass-panel">
+              {/* Avatar / crest */}
+              <div className="mm-avatar-ring" style={{ borderColor: rank.color, boxShadow: `0 0 24px ${rank.color}55` }}>
+                <span className="mm-avatar-crest">{rank.crest}</span>
+                {profile.winStreak >= 2 && <span className="mm-avatar-streak">🔥</span>}
+              </div>
+
+              {/* Player info */}
+              <div className="mm-profile-name">{profile.name || 'Player'}</div>
+              <div className="mm-profile-tier" style={{ color: rank.color }}>
+                {rank.name}
+              </div>
+              <div className="mm-profile-mmr">{profile.mmr} MMR • LVL {profile.level}</div>
+
+              {/* XP bar */}
+              <div className="mm-xp-wrap">
+                <div className="mm-xp-track">
+                  <div className="mm-xp-fill" style={{ width: `${xpPct}%` }} />
+                </div>
+                <span className="mm-xp-label">{profile.xp} / {xpNeeded} XP</span>
+              </div>
+
+              {/* Recent form */}
+              {profile.recentForm.length > 0 && (
+                <div className="mm-recent-form">
+                  {profile.recentForm.map((r, i) => (
+                    <span key={i} className={`mm-form-dot ${r === 'W' ? 'win' : 'loss'}`} />
+                  ))}
+                </div>
+              )}
+
+              {/* Stats row */}
+              <div className="mm-stats-row">
+                <div className="mm-stat-chip">
+                  <span className="mm-stat-val">{profile.gamesPlayed}</span>
+                  <span className="mm-stat-key">Games</span>
+                </div>
+                <div className="mm-stat-chip">
+                  <span className="mm-stat-val" style={{ color: '#34d399' }}>
+                    {profile.gamesPlayed > 0 ? Math.round((profile.wins / profile.gamesPlayed) * 100) : 0}%
+                  </span>
+                  <span className="mm-stat-key">Win Rate</span>
+                </div>
+                {profile.winStreak >= 2 && (
+                  <div className="mm-stat-chip">
+                    <span className="mm-stat-val" style={{ color: '#f97316' }}>🔥{profile.winStreak}</span>
+                    <span className="mm-stat-key">Streak</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Rank ladder */}
+              <div className="mm-rank-ladder">
+                {[0, 3, 6, 9, 12, 15].map(tierIdx => {
+                  const { RANK_TIERS } = require('../utils/rankSystem');
+                  const t = RANK_TIERS[tierIdx];
+                  const currentTierIdx = RANK_TIERS.findIndex((r: any) => r.name === rank.name);
+                  return (
+                    <div
+                      key={tierIdx}
+                      className={`mm-rank-pip ${currentTierIdx >= tierIdx ? 'active' : ''}`}
+                      style={{ background: currentTierIdx >= tierIdx ? t.color : undefined }}
+                      title={t.name}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Settings link */}
+              <button className="mm-settings-link" onClick={() => navigate('settings')}>
+                ⚙️ Settings &amp; Rules
               </button>
-              <button className="btn-secondary" onClick={() => setView('online-choice')}>
-                Play Online (Multiplayer)
-              </button>
-              <button className="btn-secondary" onClick={() => setView('settings')}>
-                Rules &amp; Settings
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </aside>
 
+            {/* Right panel: Game actions */}
+            <main className="mm-actions-panel">
+              {/* Logo */}
+              <div className="mm-logo-block">
+                <div className="mm-logo-cards">
+                  <div className="mm-logo-card c1">🂠</div>
+                  <div className="mm-logo-card c2">5</div>
+                  <div className="mm-logo-card c3">🂠</div>
+                </div>
+                <h1 className="mm-title">5 Cards</h1>
+                <p className="mm-tagline">Traditional Indian Card Game</p>
+              </div>
 
-      {view === 'offline' && (
-        <div className="menu-card glass-panel">
-          <h2 className="menu-title" style={{ fontSize: '2rem', marginBottom: '24px' }}>Offline Setup</h2>
-          
-          <div className="settings-group">
-            <label className="settings-label">Your Name</label>
-            <input 
-              type="text" 
-              className="settings-input" 
-              value={playerName} 
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Enter name"
-            />
-          </div>
-
-          <div className="settings-group">
-            <label className="settings-label">AI Opponents</label>
-            <div className="tab-selector">
-              {[1, 2, 3, 4, 5].map(n => (
-                <button
-                  key={n}
-                  type="button"
-                  className={`tab-option ${aiCount === n ? 'active' : ''}`}
-                  onClick={() => setAiCount(n)}
-                >
-                  {n}
+              {/* Action buttons */}
+              <div className="mm-action-grid">
+                <button className="mm-action-btn primary" onClick={() => navigate('offline')}>
+                  <span className="mm-action-icon">🤖</span>
+                  <div className="mm-action-text">
+                    <span className="mm-action-title">Play vs AI</span>
+                    <span className="mm-action-desc">Offline • No internet needed</span>
+                  </div>
+                  <span className="mm-action-arrow">›</span>
                 </button>
-              ))}
-            </div>
-          </div>
 
-
-
-          <div className="settings-group">
-            <label className="settings-label">Number of Rounds</label>
-            <div className="tab-selector">
-              {([3, 5, 10, 20] as const).map(rounds => (
-                <button
-                  key={rounds}
-                  type="button"
-                  className={`tab-option ${maxRounds === rounds ? 'active' : ''}`}
-                  onClick={() => setMaxRounds(rounds)}
-                >
-                  {rounds} {rounds === 3 ? '(Quick)' : ''}
+                <button className="mm-action-btn secondary" onClick={() => navigate('online-choice')}>
+                  <span className="mm-action-icon">🌐</span>
+                  <div className="mm-action-text">
+                    <span className="mm-action-title">Multiplayer</span>
+                    <span className="mm-action-desc">Play with friends online</span>
+                  </div>
+                  <span className="mm-action-arrow">›</span>
                 </button>
-              ))}
-            </div>
-          </div>
 
-          <div className="menu-options" style={{ marginTop: '32px' }}>
-            <button className="btn-primary" onClick={handleStartOffline}>
+                <button className="mm-action-btn ghost" onClick={onShowTutorial}>
+                  <span className="mm-action-icon">📖</span>
+                  <div className="mm-action-text">
+                    <span className="mm-action-title">How to Play</span>
+                    <span className="mm-action-desc">Learn the rules</span>
+                  </div>
+                  <span className="mm-action-arrow">›</span>
+                </button>
+              </div>
+            </main>
+          </div>
+        )}
+
+        {/* ── OFFLINE SETUP ─────────────────────────────────── */}
+        {view === 'offline' && (
+          <div className="mm-form-panel glass-panel">
+            <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
+            <div className="mm-form-header">
+              <span className="mm-form-icon">🤖</span>
+              <h2 className="mm-form-title">Play vs AI</h2>
+              <p className="mm-form-desc">Set up your offline game</p>
+            </div>
+
+            <div className="mm-form-body">
+              <div className="mm-field">
+                <label className="mm-field-label">Your Name</label>
+                <input
+                  className="mm-input"
+                  type="text"
+                  value={playerName}
+                  onChange={e => setPlayerName(e.target.value)}
+                  placeholder="Enter your name"
+                  maxLength={20}
+                />
+              </div>
+
+              <PickerRow label="AI Opponents">
+                {[1, 2, 3, 4, 5].map(n => (
+                  <button
+                    key={n}
+                    className={`mm-chip ${aiCount === n ? 'active' : ''}`}
+                    onClick={() => setAiCount(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              </PickerRow>
+
+              <PickerRow label="Rounds">
+                {([3, 5, 10, 20] as const).map(r => (
+                  <button
+                    key={r}
+                    className={`mm-chip ${maxRounds === r ? 'active' : ''}`}
+                    onClick={() => setMaxRounds(r)}
+                  >
+                    {r}{r === 3 ? ' ⚡' : ''}
+                  </button>
+                ))}
+              </PickerRow>
+            </div>
+
+            <button className="mm-cta-btn" onClick={handleStartOffline} disabled={!playerName.trim()}>
               Start Game 🚀
             </button>
-            <button className="btn-secondary" onClick={() => setView('main')}>
-              Back
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {view === 'online-choice' && (
-        <div className="menu-card glass-panel">
-          <h2 className="menu-title" style={{ fontSize: '2rem', marginBottom: '24px' }}>Online Multiplayer</h2>
-          
-          <div className="settings-group">
-            <label className="settings-label">Your Screen Name</label>
-            <input 
-              type="text" 
-              className="settings-input" 
-              value={playerName} 
-              onChange={(e) => setPlayerName(e.target.value)}
-              placeholder="Enter name"
-            />
-          </div>
-
-          <div className="menu-options" style={{ marginTop: '24px' }}>
-            <button className="btn-primary" onClick={() => setView('online-create')} disabled={!playerName.trim()}>
-              Create Custom Room
-            </button>
-            <button className="btn-secondary" onClick={() => setView('online-join')} disabled={!playerName.trim()}>
-              Join Room via Code
-            </button>
-            <button className="btn-secondary" onClick={() => setView('main')}>
-              Back
-            </button>
-          </div>
-        </div>
-      )}
-
-      {view === 'online-create' && (
-        <div className="menu-card glass-panel">
-          <h2 className="menu-title" style={{ fontSize: '2rem', marginBottom: '24px' }}>Create Room</h2>
-          
-          <div className="settings-group">
-            <label className="settings-label">Number of Rounds</label>
-            <div className="tab-selector">
-              {([3, 5, 10, 20] as const).map(rounds => (
-                <button
-                  key={rounds}
-                  type="button"
-                  className={`tab-option ${maxRounds === rounds ? 'active' : ''}`}
-                  onClick={() => setMaxRounds(rounds)}
-                >
-                  {rounds}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="menu-options" style={{ marginTop: '32px' }}>
-            <button className="btn-primary" onClick={handleCreateOnline}>
-              Create & Join Lobby
-            </button>
-            <button className="btn-secondary" onClick={() => setView('online-choice')}>
-              Back
-            </button>
-          </div>
-        </div>
-      )}
-
-      {view === 'online-join' && (
-        <div className="menu-card glass-panel">
-          <h2 className="menu-title" style={{ fontSize: '2rem', marginBottom: '24px' }}>Join Room</h2>
-          
-          <div className="settings-group">
-            <label className="settings-label">Room Code (6 characters)</label>
-            <input 
-              type="text" 
-              className="settings-input" 
-              value={roomId} 
-              onChange={(e) => setRoomId(e.target.value)}
-              placeholder="e.g. ABCDEF"
-              maxLength={6}
-              style={{ textTransform: 'uppercase', textAlign: 'center', fontSize: '1.2rem', letterSpacing: '2px', fontWeight: 800 }}
-            />
-          </div>
-
-          <div className="menu-options" style={{ marginTop: '32px' }}>
-            <button className="btn-primary" onClick={handleJoinOnline} disabled={roomId.length < 4}>
-              Join Room
-            </button>
-            <button className="btn-secondary" onClick={() => setView('online-choice')}>
-              Back
-            </button>
-          </div>
-        </div>
-      )}
-
-      {view === 'settings' && (
-        <div className="menu-card glass-panel" style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: '24px' }}>
-          <h2 className="menu-title" style={{ fontSize: '1.8rem', marginBottom: '12px' }}>Game Settings</h2>
-          
-          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
-            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Sound Effects</span>
-            <input 
-              type="checkbox" 
-              checked={soundEnabled} 
-              onChange={(e) => setSoundEnabled(e.target.checked)}
-              style={{ width: '22px', height: '22px', cursor: 'pointer' }}
-            />
-          </div>
-
-          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
-            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Vibration</span>
-            <input 
-              type="checkbox" 
-              checked={vibrationEnabled} 
-              onChange={(e) => setVibrationEnabled(e.target.checked)}
-              style={{ width: '22px', height: '22px', cursor: 'pointer' }}
-            />
-          </div>
-
-          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
-            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Battery Saver</span>
-            <input 
-              type="checkbox" 
-              checked={batterySaverEnabled} 
-              onChange={(e) => setBatterySaverEnabled(e.target.checked)}
-              style={{ width: '22px', height: '22px', cursor: 'pointer' }}
-            />
-          </div>
-
-          <div className="settings-group" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)', padding: '10px 16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '12px' }}>
-            <span className="settings-label" style={{ marginBottom: 0, fontSize: '0.95rem' }}>Game Tutorial</span>
-            <button 
-              className="btn-secondary" 
-              style={{ padding: '6px 12px', fontSize: '0.8rem', margin: 0 }}
-              onClick={onShowTutorial}
-            >
-              Show Guide 📖
-            </button>
-          </div>
-
-
-          <div style={{
-            background: 'rgba(0, 0, 0, 0.3)',
-            padding: '16px 20px',
-            borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            textAlign: 'left',
-            lineHeight: '1.6',
-            fontSize: '0.85rem',
-            flex: '1 1 auto',
-            maxHeight: 'min(240px, 45vh)',
-            overflowY: 'auto',
-            marginBottom: '16px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255,255,255,0.2) transparent'
-          }}>
-            <strong style={{ color: 'var(--color-gold)', display: 'block', marginBottom: '12px', fontSize: '1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '6px', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              📜 Game Rules
-            </strong>
-            
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🎯 Objective</strong>
-              Minimize the points in your hand. The player with the lowest total score at the end of all rounds wins the game.
+        {/* ── ONLINE CHOICE ─────────────────────────────────── */}
+        {view === 'online-choice' && (
+          <div className="mm-form-panel glass-panel">
+            <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
+            <div className="mm-form-header">
+              <span className="mm-form-icon">🌐</span>
+              <h2 className="mm-form-title">Multiplayer</h2>
+              <p className="mm-form-desc">Play with friends online</p>
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🃏 Joker System</strong>
-              - A card is revealed at the start of each round: its rank is the **Joker Rank** (e.g., if a 6 is revealed, all 6s in play are Jokers).<br />
-              - All cards of the Joker Rank, plus the 2 printed Jokers, are worth **0 points**.
+            <div className="mm-form-body">
+              <div className="mm-field">
+                <label className="mm-field-label">Your Name</label>
+                <input
+                  className="mm-input"
+                  type="text"
+                  value={playerName}
+                  onChange={e => setPlayerName(e.target.value)}
+                  placeholder="Enter your name"
+                  maxLength={20}
+                />
+              </div>
             </div>
 
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🔢 Card Values</strong>
-              - **Jokers:** 0 points<br />
-              - **Aces:** 1 point<br />
-              - **Numbered Cards (2-10):** Face value (2 to 10 points)<br />
-              - **Jack / Queen / King:** 11 / 12 / 13 points
-            </div>
-
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🔄 Turn Actions</strong>
-              On your turn, you must perform one of the following:<br />
-              1. **Declare "5 Cards" (Tick):** Can only be done at the start of your turn (before drawing or discarding) if you believe you have the lowest hand value.<br />
-              2. **Discard & Draw:**
-                 - Discard **one card** or **multiple cards of the same rank** (e.g., two 5s).
-                 - Draw **one card** from the face-down Draw Pile or the previously discarded card pile.
-            </div>
-
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>⚡ The Matching Rule</strong>
-              If the rank of a card you discard matches the rank of the top card of the discard pile *before* your discard, you **do not need to draw**. This reduces your hand size!
-            </div>
-
-            <div style={{ marginBottom: '12px' }}>
-              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>📢 Declaring "5 Cards" (Tick)</strong>
-              - **Correct Declare:** If your hand value is indeed the lowest (or tied for lowest), you get **0 points** for the round.<br />
-              - **Wrong Declare:** If any player has a strictly lower hand value than you, you get an **80-point penalty**, and the player with the lowest hand value gets **0 points**.<br />
-              - **Others:** Players get points equal to their remaining hand values.
-            </div>
-
-            <div>
-              <strong style={{ color: 'var(--color-cyan)', display: 'block', marginBottom: '2px' }}>🏁 Round Ending</strong>
-              A round ends when a player declares, runs out of cards (0 cards in hand), or the Draw Pile is exhausted.
+            <div className="mm-online-cards">
+              <button
+                className="mm-online-card"
+                onClick={() => navigate('online-create')}
+                disabled={!playerName.trim()}
+              >
+                <span className="mm-oc-icon">🏠</span>
+                <span className="mm-oc-title">Create Room</span>
+                <span className="mm-oc-desc">Host a private game</span>
+              </button>
+              <button
+                className="mm-online-card"
+                onClick={() => navigate('online-join')}
+                disabled={!playerName.trim()}
+              >
+                <span className="mm-oc-icon">🔑</span>
+                <span className="mm-oc-title">Join Room</span>
+                <span className="mm-oc-desc">Enter a room code</span>
+              </button>
             </div>
           </div>
+        )}
 
-          <div className="menu-options" style={{ marginTop: 'auto' }}>
-            <button className="btn-primary" onClick={async () => {
-              await savePersistentItem('soundEnabled', soundEnabled ? 'true' : 'false');
-              await savePersistentItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
-              await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
-              if (batterySaverEnabled) {
-                document.body.classList.add('battery-saver');
-              } else {
-                document.body.classList.remove('battery-saver');
-              }
-              setView('main');
-            }}>
-              Save & Back
+        {/* ── CREATE ROOM ───────────────────────────────────── */}
+        {view === 'online-create' && (
+          <div className="mm-form-panel glass-panel">
+            <button className="mm-back-btn" onClick={() => navigate('online-choice')}>← Back</button>
+            <div className="mm-form-header">
+              <span className="mm-form-icon">🏠</span>
+              <h2 className="mm-form-title">Create Room</h2>
+              <p className="mm-form-desc">Choose your game settings</p>
+            </div>
+
+            <div className="mm-form-body">
+              <PickerRow label="Rounds">
+                {([3, 5, 10, 20] as const).map(r => (
+                  <button
+                    key={r}
+                    className={`mm-chip ${maxRounds === r ? 'active' : ''}`}
+                    onClick={() => setMaxRounds(r)}
+                  >
+                    {r}{r === 3 ? ' ⚡' : ''}
+                  </button>
+                ))}
+              </PickerRow>
+            </div>
+
+            <button className="mm-cta-btn" onClick={handleCreateOnline}>
+              Create &amp; Join Lobby 🎮
             </button>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* ── JOIN ROOM ─────────────────────────────────────── */}
+        {view === 'online-join' && (
+          <div className="mm-form-panel glass-panel">
+            <button className="mm-back-btn" onClick={() => navigate('online-choice')}>← Back</button>
+            <div className="mm-form-header">
+              <span className="mm-form-icon">🔑</span>
+              <h2 className="mm-form-title">Join Room</h2>
+              <p className="mm-form-desc">Enter the 6-character room code</p>
+            </div>
+
+            <div className="mm-form-body">
+              <div className="mm-field">
+                <label className="mm-field-label">Room Code</label>
+                <input
+                  className="mm-input mm-room-code-input"
+                  type="text"
+                  value={roomId}
+                  onChange={e => setRoomId(e.target.value.toUpperCase())}
+                  placeholder="ABCDEF"
+                  maxLength={6}
+                />
+              </div>
+            </div>
+
+            <button className="mm-cta-btn" onClick={handleJoinOnline} disabled={roomId.length < 4}>
+              Join Room 🚀
+            </button>
+          </div>
+        )}
+
+        {/* ── SETTINGS & RULES ──────────────────────────────── */}
+        {view === 'settings' && (
+          <div className="mm-settings-layout">
+            <div className="mm-form-panel glass-panel mm-settings-left">
+              <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
+              <div className="mm-form-header" style={{ marginBottom: '20px' }}>
+                <span className="mm-form-icon">⚙️</span>
+                <h2 className="mm-form-title">Settings</h2>
+              </div>
+
+              <div className="mm-settings-list">
+                <div className="mm-setting-row">
+                  <div className="mm-setting-info">
+                    <span className="mm-setting-name">🔊 Sound Effects</span>
+                  </div>
+                  <Toggle id="snd" checked={soundEnabled} onChange={setSoundEnabled} />
+                </div>
+                <div className="mm-setting-row">
+                  <div className="mm-setting-info">
+                    <span className="mm-setting-name">📳 Vibration</span>
+                  </div>
+                  <Toggle id="vib" checked={vibrationEnabled} onChange={setVibrationEnabled} />
+                </div>
+                <div className="mm-setting-row">
+                  <div className="mm-setting-info">
+                    <span className="mm-setting-name">🔋 Battery Saver</span>
+                    <span className="mm-setting-hint">Reduces animations</span>
+                  </div>
+                  <Toggle id="bat" checked={batterySaverEnabled} onChange={setBatterySaverEnabled} />
+                </div>
+                <div className="mm-setting-row">
+                  <div className="mm-setting-info">
+                    <span className="mm-setting-name">📖 Tutorial</span>
+                  </div>
+                  <button className="mm-mini-btn" onClick={onShowTutorial}>Show Guide</button>
+                </div>
+              </div>
+
+              <button className="mm-cta-btn" style={{ marginTop: 'auto' }} onClick={handleSaveSettings}>
+                Save Settings ✓
+              </button>
+            </div>
+
+            <div className="mm-rules-panel glass-panel">
+              <h3 className="mm-rules-title">📜 Game Rules</h3>
+              <div className="mm-rules-scroll">
+                <div className="mm-rule-block">
+                  <div className="mm-rule-heading">🎯 Objective</div>
+                  <p>Minimize the points in your hand. The player with the lowest total score at the end of all rounds wins.</p>
+                </div>
+                <div className="mm-rule-block">
+                  <div className="mm-rule-heading">🃏 Joker System</div>
+                  <p>A card is revealed at the start of each round — its rank becomes the <strong>Joker Rank</strong>. All cards of that rank + 2 printed Jokers are worth <strong>0 points</strong>.</p>
+                </div>
+                <div className="mm-rule-block">
+                  <div className="mm-rule-heading">🔢 Card Values</div>
+                  <p>Jokers = 0 pts · Aces = 1 pt · Numbers 2-10 = face value · J/Q/K = 11/12/13 pts</p>
+                </div>
+                <div className="mm-rule-block">
+                  <div className="mm-rule-heading">🔄 Turn Actions</div>
+                  <p>On your turn: either declare "5 Cards" (Tick) at the start, or discard one or more cards of the same rank and draw one from the pile.</p>
+                </div>
+                <div className="mm-rule-block">
+                  <div className="mm-rule-heading">⚡ Matching Rule</div>
+                  <p>If your discarded card's rank matches the top of the discard pile, you skip drawing — your hand shrinks!</p>
+                </div>
+                <div className="mm-rule-block">
+                  <div className="mm-rule-heading">📢 Declaring Tick</div>
+                  <p><strong>Correct:</strong> Lowest hand = 0 pts. <strong>Wrong:</strong> 80-point penalty for you, 0 pts for the actual lowest player.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      </div>
     </div>
   );
 };
-

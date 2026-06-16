@@ -16,6 +16,7 @@ import { initPersistentStorage, savePersistentItem } from "./utils/persistentSto
 import { setupLocalNotifications } from "./utils/localNotifications";
 import { getLocalStats, saveLocalStats } from './utils/statsSystem';
 import { Haptics } from '@capacitor/haptics';
+import { App as CapacitorApp } from '@capacitor/app';
 
 export const App: React.FC = () => {
   const [screen, setScreen] = useState<'menu' | 'table'>('menu');
@@ -23,9 +24,7 @@ export const App: React.FC = () => {
   const [isKicked, setIsKicked] = useState<boolean>(false);
   const [storageInitialized, setStorageInitialized] = useState<boolean>(false);
   const [update, setUpdate] = useState<any>(null);
-  const [showTutorial, setShowTutorial] = useState<boolean>(() => {
-    return localStorage.getItem('hasSeenTutorial') === null;
-  });
+  const [showTutorial, setShowTutorial] = useState<boolean>(false);
   
   const {
     gameState,
@@ -54,6 +53,27 @@ export const App: React.FC = () => {
       document.body.classList.remove('battery-saver');
     }
   }, []);
+
+  // Hardware/navigation back button handling for native mobile devices
+  useEffect(() => {
+    if (!(window as any).Capacitor) return;
+
+    const listenerPromise = CapacitorApp.addListener('backButton', () => {
+      if (screen === 'table') {
+        const confirmLeave = window.confirm("Leave game?");
+        if (confirmLeave) {
+          handleLeave();
+        }
+      } else {
+        CapacitorApp.exitApp();
+      }
+    });
+
+    return () => {
+      listenerPromise.then(handle => handle.remove());
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
 
   const prevGameRef = useRef<any>(null);
 

@@ -66,31 +66,31 @@ export const GameTable: React.FC<GameTableProps> = ({
       title: "Joker Rank Info 🃏",
       text: "A random card is drawn at the start of each round to determine the Joker Rank. All cards of this rank (e.g., all 4s) plus printed Jokers are worth 0 points!",
       targetClass: "joker-display",
-      position: "center-deck" as const
+      position: "bottom-right" as const
     },
     {
       title: "The Draw Deck 🂠",
       text: "On your turn, you draw one card from this face-down pile after you discard. Tap it to draw.",
       targetClass: "tutorial-step-draw",
-      position: "center-deck" as const
+      position: "bottom-left" as const
     },
     {
       title: "The Discard Pile 🔄",
       text: "Discarded cards go here. If you discard a card that matches the rank of the top card on this pile, you skip drawing—instantly shrinking your hand size!",
       targetClass: "tutorial-step-discard",
-      position: "center-deck" as const
+      position: "bottom-left" as const
     },
     {
       title: "Your Hand & Score 🂱",
       text: "These are your cards. Drag to reorder. The sum value of your hand is shown in the gold badge on the top right.",
       targetClass: "user-hand-cards",
-      position: "bottom-hand" as const
+      position: "top-right" as const
     },
     {
       title: "Declare '5 Cards' 🔔",
       text: "When your total hand score is 5 points or less, you can declare '5 Cards' (Tick) at the start of your turn to claim victory. Be careful: if someone has a lower score, you'll receive an 80-point penalty!",
       targetClass: "hand-controls",
-      position: "bottom-declare" as const
+      position: "top-left" as const
     }
   ];
 
@@ -914,7 +914,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             }}
           />
           
-          <div className={`tutorial-card-popover pos-${tutorialSteps[tutorialStep].position} glass-panel`}>
+          <div className={`tutorial-card-popover pos-${tutorialSteps[tutorialStep].position}`}>
             <div className="tutorial-card-header">
               <span className="tutorial-step-indicator">Step {tutorialStep + 1} of {tutorialSteps.length}</span>
               <button className="tutorial-skip-btn" onClick={handleCompleteTutorial}>Skip</button>

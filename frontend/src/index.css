@@ -5317,6 +5317,22 @@ body.battery-saver .hud-btn-voice.speaking {
   background: rgba(239, 68, 68, 0.18);
   box-shadow: 0 0 15px rgba(239, 68, 68, 0.15);
 }
+.mm-stats-overview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+.mm-stats-reset-wrap {
+  margin-top: auto;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  width: 100%;
+}
+.mm-stats-grid.mini-grid {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+}
+
 .mm-stats-accuracy-box {
   display: flex;
   gap: 20px;
@@ -5379,14 +5395,73 @@ body.battery-saver .hud-btn-voice.speaking {
   }
   .mm-stats-left {
     width: 100%;
+    padding: 20px 16px;
+    max-height: none;
+  }
+  .mm-stats-overview-list {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px !important;
+  }
+  .mm-stats-summary-card {
+    flex: 1;
+    min-width: 90px;
+    padding: 12px 8px !important;
+  }
+  .mm-stats-summary-val {
+    font-size: 1.4rem !important;
+  }
+  .mm-stats-summary-key {
+    font-size: 0.6rem !important;
+    text-align: center;
+  }
+  .mm-stats-reset-wrap {
+    margin-top: 16px;
+    padding-top: 16px;
   }
   .mm-stats-right {
-    max-height: 60vh;
-    padding: 20px;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 20px 16px;
+    border-radius: 12px;
+  }
+  .mm-stats-scroll {
+    overflow-y: visible !important;
+    gap: 16px;
+  }
+  .mm-stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+  .mm-stats-grid.mini-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px;
+  }
+  .mm-stats-card {
+    padding: 12px;
+  }
+  .mm-stats-card-title {
+    font-size: 0.72rem !important;
+    margin-bottom: 8px;
+  }
+  .mm-stats-card-content > div {
+    font-size: 0.78rem !important;
+  }
+  .mm-stats-card.mini {
+    padding: 10px 6px !important;
+  }
+  .mm-stats-card.mini .mm-stats-card-key {
+    font-size: 0.6rem !important;
+  }
+  .mm-stats-card.mini .mm-stats-card-val {
+    font-size: 1.25rem !important;
   }
   .mm-stats-accuracy-box {
     flex-direction: column;
     text-align: center;
+    gap: 16px;
+    padding: 16px 12px;
   }
   .mm-stats-accuracy-details {
     width: 100%;

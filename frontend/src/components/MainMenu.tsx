@@ -478,7 +478,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </div>
 
               {/* Stats overview list */}
-              <div className="mm-stats-overview-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+              <div className="mm-stats-overview-list">
                 <div className="mm-stats-summary-card">
                   <span className="mm-stats-summary-val">{stats.gamesPlayedTotal}</span>
                   <span className="mm-stats-summary-key">Total Matches</span>
@@ -497,7 +497,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 </div>
                 
                 {/* Reset Section */}
-                <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                <div className="mm-stats-reset-wrap">
                   <button 
                     className="mm-reset-btn" 
                     onClick={() => {
@@ -577,7 +577,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 {/* Grid 3: Scoring & Records */}
                 <div className="mm-stats-section">
                   <h4 className="mm-stats-section-title">Scoring &amp; Records</h4>
-                  <div className="mm-stats-grid">
+                  <div className="mm-stats-grid mini-grid">
                     <div className="mm-stats-card mini">
                       <span className="mm-stats-card-key">Lowest Round Score</span>
                       <span className="mm-stats-card-val cyan">{stats.roundsPlayed > 0 ? stats.lowestRoundScore : '-'}</span>

@@ -5488,15 +5488,15 @@ body.battery-saver .hud-btn-voice.speaking {
 .tutorial-card-popover {
   position: absolute;
   z-index: 9999;
-  width: min(310px, 86vw);
+  width: min(270px, 82vw);
   background: linear-gradient(135deg, rgba(8, 24, 16, 0.96) 0%, rgba(3, 10, 7, 0.99) 100%) !important;
   border: 1.5px solid var(--color-gold) !important;
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
-  padding: 14px 16px;
+  padding: 10px 12px;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   animation: fadeIn 0.2s ease-out;
   pointer-events: auto;
 }
@@ -5530,7 +5530,7 @@ body.battery-saver .hud-btn-voice.speaking {
   align-items: center;
 }
 .tutorial-step-indicator {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   font-weight: 800;
   color: rgba(255,255,255,0.4);
   text-transform: uppercase;
@@ -5540,7 +5540,7 @@ body.battery-saver .hud-btn-voice.speaking {
   background: none;
   border: none;
   color: var(--color-gold);
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   cursor: pointer;
   padding: 2px 6px;
@@ -5552,15 +5552,15 @@ body.battery-saver .hud-btn-voice.speaking {
   text-shadow: 0 0 8px var(--color-gold-glow);
 }
 .tutorial-card-title {
-  font-size: 1.02rem;
+  font-size: 0.92rem;
   font-weight: 900;
   color: #fff;
   margin: 0;
   text-shadow: 0 0 10px rgba(255,255,255,0.1);
 }
 .tutorial-card-text {
-  font-size: 0.8rem;
-  line-height: 1.45;
+  font-size: 0.75rem;
+  line-height: 1.35;
   color: rgba(255,255,255,0.7);
   margin: 0;
 }
@@ -5568,9 +5568,9 @@ body.battery-saver .hud-btn-voice.speaking {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 4px;
+  margin-top: 2px;
   border-top: 1px solid rgba(255,255,255,0.06);
-  padding-top: 8px;
+  padding-top: 6px;
 }
 
 /* Progress dots */
@@ -5579,8 +5579,8 @@ body.battery-saver .hud-btn-voice.speaking {
   gap: 6px;
 }
 .tutorial-progress-dot {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: rgba(255,255,255,0.15);
   cursor: pointer;
@@ -5602,10 +5602,10 @@ body.battery-saver .hud-btn-voice.speaking {
 }
 .tutorial-nav-btn {
   font-family: inherit;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
-  padding: 5px 12px;
-  border-radius: 6px;
+  padding: 4px 10px;
+  border-radius: 4px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -5636,9 +5636,9 @@ body.battery-saver .hud-btn-voice.speaking {
 /* Adjustments for smaller viewports */
 @media (max-width: 480px) {
   .tutorial-card-popover {
-    width: 92vw;
-    padding: 12px 14px;
-    gap: 6px;
+    width: min(270px, 92vw);
+    padding: 10px 12px;
+    gap: 5px;
   }
   .tutorial-card-popover.pos-center-deck {
     top: auto;

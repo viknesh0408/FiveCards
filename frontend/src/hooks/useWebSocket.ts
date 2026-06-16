@@ -286,6 +286,8 @@ export const useWebSocket = () => {
   }, [sendAction]);
 
   const startNewGame = useCallback(() => {
+    localStorage.removeItem('processedGameId');
+    localStorage.removeItem('lastGameResults');
     sendAction('START');
   }, [sendAction]);
 

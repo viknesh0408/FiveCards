@@ -70,6 +70,10 @@ export const App: React.FC = () => {
 
     // 1. Shuffle / Next Round start
     if (gameState.status === 'IN_PROGRESS' && (prev.status === 'WAITING_FOR_PLAYERS' || prev.status === 'ROUND_OVER' || gameState.currentRoundNumber > prev.currentRoundNumber)) {
+      if (gameState.currentRoundNumber === 1) {
+        localStorage.removeItem('processedGameId');
+        localStorage.removeItem('lastGameResults');
+      }
       soundEffects.playShuffle();
       setTimeout(() => {
         soundEffects.playJoker();

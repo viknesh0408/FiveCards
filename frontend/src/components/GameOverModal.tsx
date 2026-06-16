@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
-import { parsePlayerName, getRankTier, getNextRankTier, processGameEnd } from '../utils/rankSystem';
-
-import type { ProcessedResults } from '../utils/rankSystem';
+import { processGameEndStats } from '../utils/statsSystem';
+import type { PlayerStats } from '../utils/statsSystem';
 
 interface GameOverModalProps {
   gameState: SanitizedGame;
@@ -11,29 +10,7 @@ interface GameOverModalProps {
   onMainMenu: () => void;
 }
 
-/** Animated integer counter hook */
-function useCountUp(target: number, duration = 1400): number {
-  const [val, setVal] = useState(0);
-  const startRef = useRef<number | null>(null);
-  const startValRef = useRef(0);
-  useEffect(() => {
-    startRef.current = null;
-    startValRef.current = 0;
-    let raf: number;
-    const animate = (ts: number) => {
-      if (startRef.current === null) startRef.current = ts;
-      const elapsed = ts - startRef.current;
-      const progress = Math.min(elapsed / duration, 1);
-      // Ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setVal(Math.round(eased * target));
-      if (progress < 1) raf = requestAnimationFrame(animate);
-    };
-    raf = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return val;
-}
+
 
 export const GameOverModal: React.FC<GameOverModalProps> = ({
   gameState,
@@ -42,9 +19,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   onMainMenu,
 }) => {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
-  const [results, setResults] = useState<ProcessedResults | null>(null);
-  const [showRankBurst, setShowRankBurst] = useState(false);
-  const [animXp, setAnimXp] = useState(0);
+  const [statsResults, setStatsResults] = useState<PlayerStats | null>(null);
 
   const { players, winnerId } = gameState;
 
@@ -59,34 +34,25 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   const podium2nd = sortedPlayers[1];
   const podium3rd = sortedPlayers[2];
 
-  // Animated MMR counter
-  const mmrTarget = results ? Math.abs(results.mmrGained) : 0;
-  const mmrAnimated = useCountUp(mmrTarget, 1600);
-
+  // Process match statistics at the end of the game
   useEffect(() => {
     if (!gameState || !currentPlayerId) return;
-    if (!gameState.isMultiplayer) {
-      setResults(null);
-      return;
-    }
     const myPlayer = players.find(p => p.id === currentPlayerId);
     if (!myPlayer) return;
 
     const processedGameId = localStorage.getItem('processedGameId');
-    let gameResults: ProcessedResults;
+    let gameStats: PlayerStats;
 
     if (processedGameId === gameState.gameId) {
       try {
-        const saved = localStorage.getItem('lastGameResults');
+        const saved = localStorage.getItem('lastGameStats');
         if (saved) {
-          gameResults = JSON.parse(saved);
-          gameResults.oldRank = getRankTier(gameResults.oldMmr);
-          gameResults.newRank = getRankTier(gameResults.newMmr);
-          setResults(gameResults);
+          gameStats = JSON.parse(saved);
+          setStatsResults(gameStats);
           return;
         }
       } catch (e) {
-        console.error('Failed to parse lastGameResults', e);
+        console.error('Failed to parse lastGameStats', e);
       }
     }
 
@@ -94,35 +60,47 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     const myPlacement = myIndex !== -1 ? myIndex + 1 : 1;
     const totalPlayersCount = players.length;
 
-    gameResults = processGameEnd(myPlacement, totalPlayersCount);
-    setResults(gameResults);
+    // Analyze completed rounds to extract scores and declare counts for the player
+    let declaresCorrect = 0;
+    let declaresWrong = 0;
+    let roundScores: number[] = [];
+
+    if (gameState.rounds) {
+      gameState.rounds.forEach(r => {
+        const score = r.playerScores ? r.playerScores[currentPlayerId] : undefined;
+        if (score !== undefined) {
+          roundScores.push(score);
+        }
+        if (r.tickPlayerId === currentPlayerId) {
+          const scoreForDeclare = r.playerScores ? r.playerScores[currentPlayerId] : 0;
+          if (scoreForDeclare === 80) {
+            declaresWrong++;
+          } else if (scoreForDeclare === 0) {
+            declaresCorrect++;
+          }
+        }
+      });
+    }
+
+    gameStats = processGameEndStats(
+      myPlacement,
+      totalPlayersCount,
+      gameState.isMultiplayer,
+      roundScores,
+      declaresCorrect,
+      declaresWrong
+    );
+    setStatsResults(gameStats);
 
     localStorage.setItem('processedGameId', gameState.gameId);
-    localStorage.setItem('lastGameResults', JSON.stringify(gameResults));
+    localStorage.setItem('lastGameStats', JSON.stringify(gameStats));
   }, [gameState?.gameId, currentPlayerId, players]);
 
-  // Trigger rank-up burst animation after a delay
-  useEffect(() => {
-    if (results?.rankUp) {
-      const t = setTimeout(() => setShowRankBurst(true), 800);
-      return () => clearTimeout(t);
-    }
-  }, [results]);
-
-  // Animate XP bar
-  useEffect(() => {
-    if (!results) return;
-    const xpNeeded = results.newLevel * 100;
-    const pct = Math.min((results.newXp / xpNeeded) * 100, 100);
-    const t = setTimeout(() => setAnimXp(pct), 600);
-    return () => clearTimeout(t);
-  }, [results]);
-
-  const drawPlayersNames = drawPlayers.map(p => parsePlayerName(p.name).name).join(' & ');
-  const winnerName = winner ? parsePlayerName(winner.name).name : '';
-  const podium1stName = podium1st ? parsePlayerName(podium1st.name).name : '';
-  const podium2ndName = podium2nd ? parsePlayerName(podium2nd.name).name : '';
-  const podium3rdName = podium3rd ? parsePlayerName(podium3rd.name).name : '';
+  const drawPlayersNames = drawPlayers.map(p => p.name).join(' & ');
+  const winnerName = winner ? winner.name : '';
+  const podium1stName = podium1st ? podium1st.name : '';
+  const podium2ndName = podium2nd ? podium2nd.name : '';
+  const podium3rdName = podium3rd ? podium3rd.name : '';
 
   const renderConfetti = () => {
     const colors = ['#22d3ee', '#fbbf24', '#f87171', '#34d399', '#c084fc'];
@@ -147,10 +125,9 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     );
   };
 
-  return (
-    <div className="modal-overlay">
-      {renderConfetti()}
-      {showRankBurst && <div className="rank-up-burst" onAnimationEnd={() => setShowRankBurst(false)} />}
+    return (
+      <div className="modal-overlay">
+        {renderConfetti()}
 
       <div className="modal-content glass-panel" style={{ width: '600px', zIndex: 20 }}>
         <h1 className="menu-title text-gold" style={{ fontSize: '2.8rem' }}>🏆 GAME OVER 🏆</h1>
@@ -192,115 +169,57 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         </div>
 
         {/* ── Progression Recap Panel ── */}
-        {results && (
-          <div className="progression-recap-panel glass-panel">
+        {statsResults && (
+          <div className="progression-recap-panel glass-panel" style={{ padding: '24px' }}>
+            <h3 className="recap-section-title" style={{ color: 'var(--color-cyan)', fontSize: '1.2rem', marginBottom: '16px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Achievements &amp; Stats Update
+            </h3>
 
-            {/* Rank-up / Rank-down banner */}
-            {results.rankUp && (
-              <div className="rank-change-banner rank-up-banner">
-                <span>🎉 RANK UP!</span>
-                <span style={{ color: results.newRank.color, fontWeight: 900 }}>
-                  {results.oldRank.name} → {results.newRank.name}
+            <div className="recap-stats-row" style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+              {/* Placement Card */}
+              <div className="recap-stat-card" style={{ flex: 1, minWidth: '130px', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', textAlign: 'center' }}>
+                <span className="recap-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Placement</span>
+                <span className="recap-stat-big" style={{ display: 'block', fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-gold)' }}>
+                  #{sortedPlayers.findIndex(p => p.id === currentPlayerId) + 1} / {players.length}
+                </span>
+                <span className="recap-stat-sub" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  {players.find(p => p.id === currentPlayerId)?.totalScore} total pts
                 </span>
               </div>
-            )}
-            {results.rankDown && (
-              <div className="rank-change-banner rank-down-banner">
-                <span>📉 Rank down</span>
-                <span>{results.oldRank.name} → {results.newRank.name}</span>
-              </div>
-            )}
-            {results.mmrProtected && (
-              <div className="rank-change-banner protection-banner">
-                🛡️ Rank protection activated — loss halved!
-              </div>
-            )}
 
-            <h3 className="recap-section-title">Your Progression</h3>
-
-            <div className="recap-stats-row">
-              {/* MMR animated card */}
-              <div className="recap-stat-card">
-                <span className="recap-stat-label">Rank MMR</span>
-                <span
-                  className="recap-stat-big"
-                  style={{ color: results.mmrGained >= 0 ? 'var(--color-green)' : 'var(--color-red)' }}
-                >
-                  {results.mmrGained >= 0 ? '+' : '-'}{mmrAnimated}
+              {/* Declares Accuracy */}
+              <div className="recap-stat-card" style={{ flex: 1, minWidth: '130px', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', textAlign: 'center' }}>
+                <span className="recap-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Declares (Tick)</span>
+                <span className="recap-stat-big" style={{ display: 'block', fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-cyan)' }}>
+                  {(() => {
+                    let decCorrect = 0;
+                    let decWrong = 0;
+                    if (gameState.rounds) {
+                      gameState.rounds.forEach(r => {
+                        if (r.tickPlayerId === currentPlayerId) {
+                          const score = r.playerScores ? r.playerScores[currentPlayerId] : 0;
+                          if (score === 80) decWrong++;
+                          else if (score === 0) decCorrect++;
+                        }
+                      });
+                    }
+                    return `${decCorrect}W - ${decWrong}L`;
+                  })()}
                 </span>
-                <span className="recap-stat-sub">{results.oldMmr} → {results.newMmr}</span>
-              </div>
-
-              {/* Rank tier card */}
-              <div className="recap-stat-card" style={{ borderColor: results.newRank.color + '44' }}>
-                <span className="recap-stat-label">Rank Tier</span>
-                <span
-                  className="recap-stat-big"
-                  style={{ color: results.newRank.color, textShadow: `0 0 14px ${results.newRank.color}` }}
-                >
-                  {results.newRank.crest} {results.newRank.name}
-                </span>
-                {results.rankUp
-                  ? <span className="badge-alert rank-up-pulse">RANK UP! ✨</span>
-                  : <span className="recap-stat-sub">Current Standing</span>
-                }
-              </div>
-
-              {/* XP / Level card */}
-              <div className="recap-stat-card">
-                <span className="recap-stat-label">Level {results.newLevel}</span>
-                <span className="recap-stat-big" style={{ color: 'var(--color-gold)' }}>+{results.xpGained} XP</span>
-                {results.levelUp
-                  ? <span className="badge-alert level-up-pulse">LEVEL UP! 🎉</span>
-                  : <span className="recap-stat-sub">To Lvl {results.newLevel + 1}</span>
-                }
-              </div>
-            </div>
-
-            {/* Win streak row */}
-            {results.newWinStreak >= 2 && (
-              <div className="recap-streak-row">
-                {'🔥'.repeat(Math.min(results.newWinStreak, 5))}
-                <span>{results.newWinStreak} win streak!</span>
-              </div>
-            )}
-
-            {/* XP Progress bar */}
-            <div className="recap-bar-section">
-              <div className="recap-bar-header">
-                <span>XP Progress</span>
-                <span style={{ color: 'var(--color-cyan)' }}>{results.newXp} / {results.newLevel * 100} XP</span>
-              </div>
-              <div className="recap-bar-track">
-                <div className="recap-xp-fill" style={{ width: `${animXp}%` }} />
-              </div>
-            </div>
-
-            {/* MMR within tier bar */}
-            <div className="recap-bar-section" style={{ marginTop: '10px' }}>
-              <div className="recap-bar-header">
-                <span>Rank Progress</span>
-                <span style={{ color: results.newRank.color }}>
-                  {results.newMmr - results.newRank.minMmr} pts in tier
+                <span className="recap-stat-sub" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  Correct vs Wrong
                 </span>
               </div>
-              <div className="recap-bar-track">
-                <div
-                  className="recap-mmr-fill"
-                  style={{
-                    width: (() => {
-                      const next = getNextRankTier(results.newMmr);
-                      if (!next) return '100%';
-                      const pct = Math.min(
-                        ((results.newMmr - results.newRank.minMmr) / (next.minMmr - results.newRank.minMmr)) * 100,
-                        100
-                      );
-                      return `${pct}%`;
-                    })(),
-                    background: `linear-gradient(90deg, ${results.newRank.color}77, ${results.newRank.color})`,
-                    boxShadow: `0 0 10px ${results.newRank.color}88`,
-                  }}
-                />
+
+              {/* Win Streak Card */}
+              <div className="recap-stat-card" style={{ flex: 1, minWidth: '130px', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', textAlign: 'center' }}>
+                <span className="recap-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Streak</span>
+                <span className="recap-stat-big" style={{ display: 'block', fontSize: '1.8rem', fontWeight: 900, color: '#f97316' }}>
+                  🔥 {statsResults.winStreakCurrent}
+                </span>
+                <span className="recap-stat-sub" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                  Best Streak: {statsResults.winStreakBest}
+                </span>
               </div>
             </div>
           </div>
@@ -309,34 +228,28 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         {/* Full Lobby Leaderboard */}
         <div className="results-grid" style={{ marginTop: '32px' }}>
           <h3 className="scoreboard-title" style={{ border: 'none', marginBottom: '8px' }}>Lobby Leaderboard</h3>
-          {sortedPlayers.map((p, idx) => {
-            const { name: parsedName, level, mmr } = parsePlayerName(p.name);
-            const rank = getRankTier(mmr);
-            return (
-              <div
-                key={p.id}
-                className={`player-result-row ${p.id === winnerId ? 'winner-row' : ''}`}
-                style={{ padding: '14px 20px', margin: '6px 0' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <span className="result-placement-badge" style={{
-                    background: idx === 0 ? 'var(--color-gold)' : 'rgba(255,255,255,0.08)',
-                    color: idx === 0 ? '#040814' : 'var(--color-text-muted)',
-                  }}>
-                    {idx + 1}
-                  </span>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    {!p.isAi && <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>}
-                    <span>{parsedName}</span>
-                    {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
-                    {p.isAi && <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)' }}>[BOT]</span>}
-                    {!p.isAi && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '4px' }}>LVL {level}</span>}
-                  </span>
-                </div>
-                <strong className="text-gold" style={{ fontSize: '1.15rem' }}>{p.totalScore} pts</strong>
+          {sortedPlayers.map((p, idx) => (
+            <div
+              key={p.id}
+              className={`player-result-row ${p.id === winnerId ? 'winner-row' : ''}`}
+              style={{ padding: '14px 20px', margin: '6px 0' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                <span className="result-placement-badge" style={{
+                  background: idx === 0 ? 'var(--color-gold)' : 'rgba(255,255,255,0.08)',
+                  color: idx === 0 ? '#040814' : 'var(--color-text-muted)',
+                }}>
+                  {idx + 1}
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <span>{p.name}</span>
+                  {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
+                  {p.isAi && <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)' }}>[BOT]</span>}
+                </span>
               </div>
-            );
-          })}
+              <strong className="text-gold" style={{ fontSize: '1.15rem' }}>{p.totalScore} pts</strong>
+            </div>
+          ))}
         </div>
 
         {/* Round Breakdown table */}
@@ -356,15 +269,13 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 </tr>
               </thead>
               <tbody>
-                {sortedPlayers.map(p => {
-                  const { name: parsedName } = parsePlayerName(p.name);
-                  return (
-                    <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: p.id === winner?.id ? 'rgba(251,191,36,0.02)' : 'transparent' }}>
-                      <td style={{ textAlign: 'left', padding: '12px 14px', fontSize: '0.9rem', fontWeight: p.id === winner?.id ? 800 : 500 }}>
-                        {parsedName}{' '}
-                        {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
-                        {p.isAi && <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}> [BOT]</span>}
-                      </td>
+                {sortedPlayers.map(p => (
+                  <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: p.id === winner?.id ? 'rgba(251,191,36,0.02)' : 'transparent' }}>
+                    <td style={{ textAlign: 'left', padding: '12px 14px', fontSize: '0.9rem', fontWeight: p.id === winner?.id ? 800 : 500 }}>
+                      {p.name}{' '}
+                      {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
+                      {p.isAi && <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}> [BOT]</span>}
+                    </td>
                       {gameState.rounds.map((r, i) => {
                         const score = r.playerScores ? r.playerScores[p.id] : undefined;
                         return (
@@ -377,8 +288,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                         {p.totalScore}
                       </td>
                     </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
           </div>

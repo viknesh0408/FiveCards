@@ -1,6 +1,5 @@
 import React from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
-import { parsePlayerName, getRankTier } from '../utils/rankSystem';
 
 interface ScoreboardProps {
   gameState: SanitizedGame;
@@ -30,9 +29,6 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
         const isCurrentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === p.id;
         const isSelf = p.id === currentPlayerId;
         const isLeader = index === 0;
-        const { name: parsedName, level, mmr } = parsePlayerName(p.name);
-        const rank = getRankTier(mmr);
-
         // Progress bar percentage (e.g. out of 100 points penalty limit)
         const progressPercent = Math.min((p.totalScore / 100) * 100, 100);
 
@@ -49,11 +45,9 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
                 </span>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: isSelf ? '#ffffff' : 'rgba(255,255,255,0.8)', display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
                   {isLeader && <span style={{ marginRight: '2px', filter: 'drop-shadow(0 0 4px var(--color-gold-glow))' }}>👑</span>}
-                  {!p.isAi && <span style={{ fontSize: '0.75rem' }} title={rank.name}>{rank.badge}</span>}
-                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{parsedName}</span>
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
                   {isSelf && <span style={{ fontSize: '0.75rem', color: 'var(--color-cyan)', flexShrink: 0 }}>(You)</span>}
                   {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', flexShrink: 0 }}>[BOT]</span>}
-                  {!p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-text-muted)', flexShrink: 0, marginLeft: '2px' }}>Lvl {level}</span>}
                 </span>
                 {isCurrentTurn && <span className="text-cyan animate-pulse" style={{ fontSize: '0.75rem', flexShrink: 0 }}>●</span>}
                 {p.declaredTick && <span className="text-red" style={{ fontSize: '0.7rem', fontWeight: 800, flexShrink: 0 }}>[TICK]</span>}

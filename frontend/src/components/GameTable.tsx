@@ -3,7 +3,6 @@ import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { Card } from './Card';
 import { Scoreboard } from './Scoreboard';
-import { parsePlayerName, getRankTier } from '../utils/rankSystem';
 
 interface GameTableProps {
   gameState: SanitizedGame;
@@ -414,7 +413,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                 <polyline points="12 6 12 12 16 14" />
               </svg>
               <span className="pill-value">
-                {isMyTurn ? 'Your Turn' : `${parsePlayerName(activePlayer.name).name}'s Turn`}
+                {isMyTurn ? 'Your Turn' : `${activePlayer.name}'s Turn`}
               </span>
             </div>
           )}
@@ -482,15 +481,13 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="opponents-column left">
             {opponents.slice(0, Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
-              const { name: parsedName, level, mmr } = parsePlayerName(opp.name);
-              const rank = getRankTier(mmr);
               return (
                 <div key={opp.id} className="opponent-slot">
                   <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : rank.color }}>
-                        {getInitials(parsedName)}
+                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)' }}>
+                        {getInitials(opp.name)}
                       </div>
                       {isOpponentTurn && (
                         <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
@@ -500,11 +497,10 @@ export const GameTable: React.FC<GameTableProps> = ({
                     </div>
                     <div className="avatar-info">
                       <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {!opp.isAi && <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>}
-                        <span>{parsedName}</span>
+                        <span>{opp.name}</span>
                         {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
                       </span>
-                      <span className="avatar-score">{opp.isAi ? '' : `LVL ${level} • `}{opp.totalScore} pts</span>
+                      <span className="avatar-score">{opp.totalScore} pts</span>
                     </div>
                     {activeReactions[opp.id] && (
                       <div className="reaction-bubble-opponent">
@@ -524,15 +520,13 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div className="opponents-column right">
             {opponents.slice(Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
-              const { name: parsedName, level, mmr } = parsePlayerName(opp.name);
-              const rank = getRankTier(mmr);
               return (
                 <div key={opp.id} className="opponent-slot">
                   <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : rank.color }}>
-                        {getInitials(parsedName)}
+                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)' }}>
+                        {getInitials(opp.name)}
                       </div>
                       {isOpponentTurn && (
                         <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
@@ -542,11 +536,10 @@ export const GameTable: React.FC<GameTableProps> = ({
                     </div>
                     <div className="avatar-info">
                       <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        {!opp.isAi && <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>}
-                        <span>{parsedName}</span>
+                        <span>{opp.name}</span>
                         {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
                       </span>
-                      <span className="avatar-score">{opp.isAi ? '' : `LVL ${level} • `}{opp.totalScore} pts</span>
+                      <span className="avatar-score">{opp.totalScore} pts</span>
                     </div>
                     {activeReactions[opp.id] && (
                       <div className="reaction-bubble-opponent">
@@ -649,21 +642,16 @@ export const GameTable: React.FC<GameTableProps> = ({
               </p>
               <div style={{ width: '100%', textAlign: 'left' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 800 }}>Joined:</span>
-                {players.map(p => {
-                  const { name: parsedName, mmr } = parsePlayerName(p.name);
-                  const rank = getRankTier(mmr);
-                  return (
-                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {!p.isAi && <span style={{ fontSize: '0.9rem' }} title={rank.name}>{rank.badge}</span>}
-                        <span>{parsedName} {p.isAi && '[AI]'}</span>
-                      </span>
+                {players.map(p => (
+                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>{p.name} {p.isAi && '[AI]'}</span>
+                    </span>
                       <span className={p.ready ? 'text-green' : 'text-red'} style={{ fontWeight: 800 }}>
                         {p.ready ? 'Ready' : 'Not Ready'}
                       </span>
                     </div>
-                  );
-                })}
+                ))}
               </div>
               <button 
                 className={self?.ready ? "btn-secondary" : "btn-primary"} 
@@ -705,7 +693,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             {status === 'WAITING_FOR_PLAYERS' && 'Waiting to start... Click ready.'}
             {isMyTurn && !hasDiscardedThisTurn && 'Your Turn: Select a card to Drop or Declare.'}
             {isMyTurn && hasDiscardedThisTurn && needsToDraw && 'Your Turn: Draw a card from the Draw Pile (bundle).'}
-            {!isMyTurn && status === 'IN_PROGRESS' && `Waiting for ${activePlayer ? parsePlayerName(activePlayer.name).name : ''}'s turn...`}
+            {!isMyTurn && status === 'IN_PROGRESS' && `Waiting for ${activePlayer ? activePlayer.name : ''}'s turn...`}
           </div>
           {isMyTurn && timeLeft !== null && status === 'IN_PROGRESS' && (
             <div className={`hand-instructions-timer ${timeLeft <= 15 ? 'warning' : ''}`}>

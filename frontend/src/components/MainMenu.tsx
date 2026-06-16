@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
-import { getLocalProfile, getRankTier, getXpForNextLevel, RANK_TIERS } from '../utils/rankSystem';
+import { getLocalStats, resetLocalStats } from '../utils/statsSystem';
+import type { PlayerStats } from '../utils/statsSystem';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -17,7 +18,7 @@ export interface OfflineSettings {
   maxRounds: number;
 }
 
-type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings';
+type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats';
 
 // Toggle Switch Component
 const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; id: string }> = ({ checked, onChange, id }) => (
@@ -53,10 +54,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
   const [animIn, setAnimIn] = useState(true);
 
-  const profile = getLocalProfile();
-  const rank = getRankTier(profile.mmr);
-  const xpNeeded = getXpForNextLevel(profile.level);
-  const xpPct = Math.min((profile.xp / xpNeeded) * 100, 100);
+  const [stats, setStats] = useState<PlayerStats>(() => getLocalStats());
 
   const navigate = (v: View) => {
     setAnimIn(false);
@@ -104,77 +102,70 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
             {/* Left panel: Profile card */}
             <aside className="mm-profile-panel glass-panel">
-              {/* Avatar / crest */}
-              <div className="mm-avatar-ring" style={{ borderColor: rank.color, boxShadow: `0 0 24px ${rank.color}55` }}>
-                <span className="mm-avatar-crest">{rank.crest}</span>
-                {profile.winStreak >= 2 && <span className="mm-avatar-streak">🔥</span>}
+              {/* Profile Initials/Avatar */}
+              <div className="mm-avatar-ring" style={{ borderColor: 'var(--color-gold)', boxShadow: `0 0 24px rgba(251, 191, 36, 0.25)` }}>
+                <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--color-gold)' }}>
+                  {(playerName || stats.name || 'P')[0].toUpperCase()}
+                </span>
+                {stats.winStreakCurrent >= 2 && <span className="mm-avatar-streak">🔥</span>}
               </div>
 
               {/* Player info */}
-              <div className="mm-profile-name">{profile.name || 'Player'}</div>
-              <div className="mm-profile-tier" style={{ color: rank.color }}>
-                {rank.name}
-              </div>
-              <div className="mm-profile-mmr">{profile.mmr} MMR • LVL {profile.level}</div>
-
-              {/* XP bar */}
-              <div className="mm-xp-wrap">
-                <div className="mm-xp-track">
-                  <div className="mm-xp-fill" style={{ width: `${xpPct}%` }} />
-                </div>
-                <span className="mm-xp-label">{profile.xp} / {xpNeeded} XP</span>
+              <div className="mm-profile-name">{playerName || stats.name || 'Player'}</div>
+              <div className="mm-profile-mmr" style={{ marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Local Competitor
               </div>
 
               {/* Recent form */}
-              {profile.recentForm.length > 0 && (
-                <div className="mm-recent-form">
-                  {profile.recentForm.map((r, i) => (
-                    <span key={i} className={`mm-form-dot ${r === 'W' ? 'win' : 'loss'}`} />
-                  ))}
+              {stats.recentForm && stats.recentForm.length > 0 && (
+                <div className="mm-recent-form" style={{ flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Recent Form</div>
+                  <div style={{ display: 'flex', gap: '5px' }}>
+                    {stats.recentForm.map((r, i) => (
+                      <span key={i} className={`mm-form-dot ${r === 'W' ? 'win' : 'loss'}`} title={r === 'W' ? 'Victory' : 'Defeat'} />
+                    ))}
+                  </div>
                 </div>
               )}
 
               {/* Stats row */}
               <div className="mm-stats-row">
                 <div className="mm-stat-chip">
-                  <span className="mm-stat-val">{profile.gamesPlayed}</span>
+                  <span className="mm-stat-val">{stats.gamesPlayedTotal}</span>
                   <span className="mm-stat-key">Games</span>
                 </div>
                 <div className="mm-stat-chip">
                   <span className="mm-stat-val" style={{ color: '#34d399' }}>
-                    {profile.gamesPlayed > 0 ? Math.round((profile.wins / profile.gamesPlayed) * 100) : 0}%
+                    {stats.gamesPlayedTotal > 0 ? Math.round((stats.winsTotal / stats.gamesPlayedTotal) * 100) : 0}%
                   </span>
                   <span className="mm-stat-key">Win Rate</span>
                 </div>
-                {profile.winStreak >= 2 && (
+                {stats.winStreakCurrent >= 2 && (
                   <div className="mm-stat-chip">
-                    <span className="mm-stat-val" style={{ color: '#f97316' }}>🔥{profile.winStreak}</span>
+                    <span className="mm-stat-val" style={{ color: '#f97316' }}>🔥{stats.winStreakCurrent}</span>
                     <span className="mm-stat-key">Streak</span>
                   </div>
                 )}
               </div>
 
-              {/* Rank ladder — 6 representative pips */}
-              {(() => {
-                const pivots = [0, 3, 6, 9, 12, 15];
-                const currentTierIdx = RANK_TIERS.findIndex(r => r.name === rank.name);
-                return (
-                  <div className="mm-rank-ladder">
-                    {pivots.map((tierIdx) => {
-                      const t = RANK_TIERS[tierIdx];
-                      const passed = currentTierIdx >= tierIdx;
-                      return (
-                        <div
-                          key={tierIdx}
-                          className={`mm-rank-pip ${passed ? 'active' : ''}`}
-                          style={{ background: passed ? t.color : undefined }}
-                          title={t.name}
-                        />
-                      );
-                    })}
-                  </div>
-                );
-              })()}
+              {/* View Detailed Stats button */}
+              <button 
+                className="mm-settings-link detailed-stats-btn" 
+                onClick={() => navigate('stats')}
+                style={{
+                  background: 'rgba(52, 211, 153, 0.08)',
+                  borderColor: 'rgba(52, 211, 153, 0.25)',
+                  color: '#34d399',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '6px',
+                  marginBottom: '10px'
+                }}
+              >
+                📊 View Detailed Stats
+              </button>
 
               {/* Settings link */}
               <button className="mm-settings-link" onClick={() => navigate('settings')}>
@@ -245,7 +236,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   className="mm-input"
                   type="text"
                   value={playerName}
-                  onChange={e => setPlayerName(e.target.value)}
+                  onChange={e => {
+                    const newName = e.target.value;
+                    setPlayerName(newName);
+                    localStorage.setItem('tickPlayerName', newName);
+                    setStats(prev => ({ ...prev, name: newName }));
+                  }}
                   placeholder="Enter your name"
                   maxLength={20}
                 />
@@ -299,7 +295,12 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   className="mm-input"
                   type="text"
                   value={playerName}
-                  onChange={e => setPlayerName(e.target.value)}
+                  onChange={e => {
+                    const newName = e.target.value;
+                    setPlayerName(newName);
+                    localStorage.setItem('tickPlayerName', newName);
+                    setStats(prev => ({ ...prev, name: newName }));
+                  }}
                   placeholder="Enter your name"
                   maxLength={20}
                 />
@@ -459,6 +460,145 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <div className="mm-rule-heading">📢 Declaring Tick</div>
                   <p><strong>Correct:</strong> Lowest hand = 0 pts. <strong>Wrong:</strong> 80-point penalty for you, 0 pts for the actual lowest player.</p>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── STATS VIEW ─────────────────────────────────────── */}
+        {view === 'stats' && (
+          <div className="mm-stats-layout">
+            {/* Left Column: Summary and Reset */}
+            <div className="mm-form-panel glass-panel mm-stats-left">
+              <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
+              <div className="mm-form-header" style={{ marginBottom: '20px' }}>
+                <span className="mm-form-icon">📊</span>
+                <h2 className="mm-form-title">Overview</h2>
+                <p className="mm-form-desc">Career statistics summary</p>
+              </div>
+
+              {/* Stats overview list */}
+              <div className="mm-stats-overview-list" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                <div className="mm-stats-summary-card">
+                  <span className="mm-stats-summary-val">{stats.gamesPlayedTotal}</span>
+                  <span className="mm-stats-summary-key">Total Matches</span>
+                </div>
+                <div className="mm-stats-summary-card">
+                  <span className="mm-stats-summary-val" style={{ color: '#22d3ee' }}>
+                    {stats.gamesPlayedTotal > 0 ? Math.round((stats.winsTotal / stats.gamesPlayedTotal) * 100) : 0}%
+                  </span>
+                  <span className="mm-stats-summary-key">Win Rate</span>
+                </div>
+                <div className="mm-stats-summary-card">
+                  <span className="mm-stats-summary-val" style={{ color: '#fbbf24' }}>
+                    {stats.winStreakBest}
+                  </span>
+                  <span className="mm-stats-summary-key">Best Win Streak</span>
+                </div>
+                
+                {/* Reset Section */}
+                <div style={{ marginTop: 'auto', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  <button 
+                    className="mm-reset-btn" 
+                    onClick={() => {
+                      if (confirm("Are you sure you want to reset all your statistics? This cannot be undone.")) {
+                        resetLocalStats();
+                        setStats(getLocalStats());
+                      }
+                    }}
+                  >
+                    🗑️ Reset Statistics
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Detailed Grid */}
+            <div className="mm-stats-right glass-panel">
+              <h3 className="mm-stats-title">📈 Detailed Performance</h3>
+              <div className="mm-stats-scroll">
+                
+                {/* Grid 1: Split Modes */}
+                <div className="mm-stats-section">
+                  <h4 className="mm-stats-section-title">Mode Statistics</h4>
+                  <div className="mm-stats-grid">
+                    <div className="mm-stats-card">
+                      <span className="mm-stats-card-title">🤖 Vs AI Matches</span>
+                      <div className="mm-stats-card-content">
+                        <div><span>Played</span><strong>{stats.gamesPlayedOffline}</strong></div>
+                        <div><span>Wins</span><strong>{stats.winsOffline}</strong></div>
+                        <div><span>Win Rate</span><strong style={{ color: '#34d399' }}>{stats.gamesPlayedOffline > 0 ? Math.round((stats.winsOffline / stats.gamesPlayedOffline) * 100) : 0}%</strong></div>
+                      </div>
+                    </div>
+                    
+                    <div className="mm-stats-card">
+                      <span className="mm-stats-card-title">🌐 Multiplayer Matches</span>
+                      <div className="mm-stats-card-content">
+                        <div><span>Played</span><strong>{stats.gamesPlayedOnline}</strong></div>
+                        <div><span>Wins</span><strong>{stats.winsOnline}</strong></div>
+                        <div><span>Win Rate</span><strong style={{ color: '#34d399' }}>{stats.gamesPlayedOnline > 0 ? Math.round((stats.winsOnline / stats.gamesPlayedOnline) * 100) : 0}%</strong></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid 2: Declare Accuracy */}
+                <div className="mm-stats-section">
+                  <h4 className="mm-stats-section-title">Declare (Tick) Accuracy</h4>
+                  <div className="mm-stats-accuracy-box">
+                    <div className="mm-stats-accuracy-chart-wrap">
+                      <div className="mm-stats-accuracy-val">
+                        {(() => {
+                          const total = stats.declaresCorrect + stats.declaresWrong;
+                          return total > 0 ? `${Math.round((stats.declaresCorrect / total) * 100)}%` : '0%';
+                        })()}
+                      </div>
+                      <span className="mm-stats-accuracy-label">Accuracy</span>
+                    </div>
+                    <div className="mm-stats-accuracy-details">
+                      <div className="mm-stats-detail-row">
+                        <span className="dot-correct">●</span>
+                        <span>Correct Declares</span>
+                        <strong>{stats.declaresCorrect}</strong>
+                      </div>
+                      <div className="mm-stats-detail-row">
+                        <span className="dot-wrong">●</span>
+                        <span>Wrong Declares</span>
+                        <strong>{stats.declaresWrong}</strong>
+                      </div>
+                      <div className="mm-stats-detail-row">
+                        <span>Total Declares</span>
+                        <strong>{stats.declaresCorrect + stats.declaresWrong}</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grid 3: Scoring & Records */}
+                <div className="mm-stats-section">
+                  <h4 className="mm-stats-section-title">Scoring &amp; Records</h4>
+                  <div className="mm-stats-grid">
+                    <div className="mm-stats-card mini">
+                      <span className="mm-stats-card-key">Lowest Round Score</span>
+                      <span className="mm-stats-card-val cyan">{stats.roundsPlayed > 0 ? stats.lowestRoundScore : '-'}</span>
+                    </div>
+                    <div className="mm-stats-card mini">
+                      <span className="mm-stats-card-key">Highest Round Score</span>
+                      <span className="mm-stats-card-val orange">{stats.roundsPlayed > 0 ? stats.highestRoundScore : '-'}</span>
+                    </div>
+                    <div className="mm-stats-card mini">
+                      <span className="mm-stats-card-key">Average Round Score</span>
+                      <span className="mm-stats-card-val gold">
+                        {stats.roundsPlayed > 0 ? (stats.totalPointsScored / stats.roundsPlayed).toFixed(1) : '-'}
+                      </span>
+                    </div>
+                    <div className="mm-stats-card mini">
+                      <span className="mm-stats-card-key">Total Rounds Played</span>
+                      <span className="mm-stats-card-val">{stats.roundsPlayed}</span>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
           </div>

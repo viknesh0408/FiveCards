@@ -14,7 +14,7 @@ import UpdateModal from "./components/UpdateModal";
 import { TutorialModal } from "./components/TutorialModal";
 import { initPersistentStorage, savePersistentItem } from "./utils/persistentStorage";
 import { setupLocalNotifications } from "./utils/localNotifications";
-import { getLocalProfile, saveLocalProfile } from './utils/rankSystem';
+import { getLocalStats, saveLocalStats } from './utils/statsSystem';
 import { Haptics } from '@capacitor/haptics';
 
 export const App: React.FC = () => {
@@ -252,13 +252,12 @@ export const App: React.FC = () => {
       const gameId = createData.gameId;
 
       // Save name locally
-      const profile = getLocalProfile();
-      profile.name = settings.playerName;
-      saveLocalProfile(profile);
+      const stats = getLocalStats();
+      stats.name = settings.playerName;
+      saveLocalStats(stats);
 
       // 2. Join the human player
-      const userFullName = `${settings.playerName}||${profile.level}||${profile.mmr}`;
-      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(userFullName)}`, {
+      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(settings.playerName)}`, {
         method: 'POST',
       });
 
@@ -266,13 +265,8 @@ export const App: React.FC = () => {
       for (let i = 0; i < settings.aiCount; i++) {
         const level: AiLevel = 'MEDIUM';
         const botName = `Bot ${i + 1}`;
-        
-        // Generate dynamic bot levels & MMR based on difficulty
-        const botMmr = Math.floor(100 + Math.random() * 1100); // 100 to 1200 MMR
-        const botLevel = Math.floor(botMmr / 40) + 1;
-        const botFullName = `${botName}||${botLevel}||${botMmr}`;
 
-        await fetch(`${apiBase}/api/game/${gameId}/add-ai?name=${encodeURIComponent(botFullName)}&aiLevel=${level}`, {
+        await fetch(`${apiBase}/api/game/${gameId}/add-ai?name=${encodeURIComponent(botName)}&aiLevel=${level}`, {
           method: 'POST',
         });
       }
@@ -302,13 +296,12 @@ export const App: React.FC = () => {
       const gameId = createData.gameId;
 
       // Save name locally
-      const profile = getLocalProfile();
-      profile.name = name;
-      saveLocalProfile(profile);
+      const stats = getLocalStats();
+      stats.name = name;
+      saveLocalStats(stats);
 
       // 2. Join player
-      const userFullName = `${name}||${profile.level}||${profile.mmr}`;
-      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(userFullName)}`, {
+      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}`, {
         method: 'POST',
       });
 
@@ -325,13 +318,12 @@ export const App: React.FC = () => {
   const handleJoinOnline = async (gameId: string, name: string) => {
     try {
       // Save name locally
-      const profile = getLocalProfile();
-      profile.name = name;
-      saveLocalProfile(profile);
+      const stats = getLocalStats();
+      stats.name = name;
+      saveLocalStats(stats);
 
       // 1. Join player
-      const userFullName = `${name}||${profile.level}||${profile.mmr}`;
-      const joinRes = await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(userFullName)}`, {
+      const joinRes = await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}`, {
         method: 'POST',
       });
 

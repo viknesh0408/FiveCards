@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { Card } from './Card';
-import { parsePlayerName, getRankTier } from '../utils/rankSystem';
 
 const calculateHandValue = (hand?: CardType[] | null): number => {
   if (!hand) return 0;
@@ -48,7 +47,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 
   // Find who called tick
   const tickPlayer = players.find(p => p.id === currentRound.tickPlayerId);
-  const tickPlayerName = tickPlayer ? parsePlayerName(tickPlayer.name).name : '';
+  const tickPlayerName = tickPlayer ? tickPlayer.name : '';
   const endCondition = currentRound.endCondition; // "TICK" or "DECK_EXHAUSTED"
 
   // Check if current player is ready
@@ -92,9 +91,6 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
             if (isWinner) rowClass = 'winner-row';
             else if (isWrongTick) rowClass = 'tick-declarer-wrong';
 
-            const { name: parsedName, level, mmr } = parsePlayerName(p.name);
-            const rank = getRankTier(mmr);
-
             return (
               <div 
                 key={p.id} 
@@ -102,11 +98,9 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               >
                 <div className="result-player-info">
                   <span className="result-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    {!p.isAi && <span style={{ fontSize: '0.85rem' }} title={rank.name}>{rank.badge}</span>}
-                    <span>{parsedName}</span>
+                    <span>{p.name}</span>
                     {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
                     {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
-                    {!p.isAi && <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)', marginLeft: '4px' }}>LVL {level}</span>}
                     {gameState.isMultiplayer && (
                       <span 
                         className={`result-badge ${p.ready ? 'ready' : 'waiting'}`}

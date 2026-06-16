@@ -173,7 +173,7 @@ export const processGameEnd = (placement: number, totalPlayers: number): Process
 
   // ─── Win streak & form ───────────────────────────────────────
   const newWinStreak = isWin ? oldProfile.winStreak + 1 : 0;
-  const newRecentForm: ('W' | 'L')[] = [...oldProfile.recentForm, isWin ? 'W' : 'L'].slice(-5);
+  const newRecentForm: ('W' | 'L')[] = [...oldProfile.recentForm, (isWin ? 'W' : 'L') as ('W' | 'L')].slice(-5);
 
   const newRank = getRankTier(newMmr);
   const rankUp = newRank.minMmr > oldRank.minMmr;

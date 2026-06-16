@@ -39,6 +39,65 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
   const [activeReactions, setActiveReactions] = useState<Record<string, { emoji: string; timestamp: number }>>({});
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
+  const [tutorialActive, setTutorialActive] = useState<boolean>(false);
+  const [tutorialStep, setTutorialStep] = useState<number>(0);
+
+  // Trigger tutorial automatically when the match starts for the first time
+  useEffect(() => {
+    if (status === 'IN_PROGRESS') {
+      const completed = localStorage.getItem('tick_game_tutorial_completed');
+      if (!completed) {
+        setTutorialActive(true);
+        setTutorialStep(0);
+      }
+    } else {
+      setTutorialActive(false);
+    }
+  }, [status]);
+
+  const tutorialSteps = [
+    {
+      title: "Welcome to 5 Cards! 🂠",
+      text: "The objective of 5 Cards is to minimize the total point value of the cards in your hand. Hand values: Jokers = 0 pts · Aces = 1 pt · Cards 2-10 = face value · J/Q/K = 11/12/13 pts.",
+      targetClass: "",
+      position: "center" as const
+    },
+    {
+      title: "Joker Rank Info 🃏",
+      text: "A random card is drawn at the start of each round to determine the Joker Rank. All cards of this rank (e.g., all 4s) plus printed Jokers are worth 0 points!",
+      targetClass: "joker-display",
+      position: "center-deck" as const
+    },
+    {
+      title: "The Draw Deck 🂠",
+      text: "On your turn, you draw one card from this face-down pile after you discard. Tap it to draw.",
+      targetClass: "tutorial-step-draw",
+      position: "center-deck" as const
+    },
+    {
+      title: "The Discard Pile 🔄",
+      text: "Discarded cards go here. If you discard a card that matches the rank of the top card on this pile, you skip drawing—instantly shrinking your hand size!",
+      targetClass: "tutorial-step-discard",
+      position: "center-deck" as const
+    },
+    {
+      title: "Your Hand & Score 🂱",
+      text: "These are your cards. Drag to reorder. The sum value of your hand is shown in the gold badge on the top right.",
+      targetClass: "user-hand-cards",
+      position: "bottom-hand" as const
+    },
+    {
+      title: "Declare '5 Cards' 🔔",
+      text: "When your total hand score is 5 points or less, you can declare '5 Cards' (Tick) at the start of your turn to claim victory. Be careful: if someone has a lower score, you'll receive an 80-point penalty!",
+      targetClass: "hand-controls",
+      position: "bottom-declare" as const
+    }
+  ];
+
+  const handleCompleteTutorial = () => {
+    localStorage.setItem('tick_game_tutorial_completed', 'true');
+    setTutorialActive(false);
+  };
 
   // Listen for latest reaction
   useEffect(() => {
@@ -562,7 +621,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             <div className="center-play-wrapper">
               {/* Center Card Stacks */}
               <div className="center-stacks">
-                <div className="joker-display">
+                <div className={`joker-display ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'joker-display' ? 'tutorial-highlight' : ''}`}>
                   <span className="joker-label">Joker Rank</span>
                   <Card card={currentRound.jokerCard} className="mini-card" />
                   <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', fontWeight: 800 }}>
@@ -572,7 +631,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
                 {/* Draw Stack */}
                 <div
-                  className={`card-pile ${isMyTurn && hasDiscardedThisTurn && needsToDraw ? 'interactive glow-cyan' : ''}`}
+                  className={`card-pile ${isMyTurn && hasDiscardedThisTurn && needsToDraw ? 'interactive glow-cyan' : ''} ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'tutorial-step-draw' ? 'tutorial-highlight' : ''}`}
                   style={{ cursor: isMyTurn && hasDiscardedThisTurn && needsToDraw ? 'pointer' : 'default' }}
                   onClick={() => { if (isMyTurn && hasDiscardedThisTurn && needsToDraw) onDraw(false); }}
                 >
@@ -583,7 +642,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
                 {/* Discard Stack */}
                 <div
-                  className={`card-pile ${isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard ? 'interactive glow-cyan' : ''}`}
+                  className={`card-pile ${isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard ? 'interactive glow-cyan' : ''} ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'tutorial-step-discard' ? 'tutorial-highlight' : ''}`}
                   style={{ cursor: isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard ? 'pointer' : 'default' }}
                   onClick={() => { if (isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard) onDraw(true); }}
                 >
@@ -703,7 +762,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         {/* Hand Cards */}
-        <div className="user-hand-cards" style={{ position: 'relative', overflow: 'visible' }}>
+        <div className={`user-hand-cards ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'user-hand-cards' ? 'tutorial-highlight' : ''}`} style={{ position: 'relative', overflow: 'visible' }}>
           {/* Hand Value Sum - Top Right Corner */}
           {self && (
             <div className="hand-value-badge">
@@ -743,7 +802,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         {/* Action Controls */}
-        <div className="hand-controls">
+        <div className={`hand-controls ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'hand-controls' ? 'tutorial-highlight' : ''}`}>
           {/* Normal Discard Button */}
           {selectedClientIds.length > 0 && !hasDiscardedThisTurn && (
             <button
@@ -839,6 +898,64 @@ export const GameTable: React.FC<GameTableProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Interactive Visual Tutorial Overlay */}
+      {tutorialActive && (
+        <>
+          <div 
+            className="tutorial-backdrop" 
+            onClick={() => {
+              if (tutorialStep < tutorialSteps.length - 1) {
+                setTutorialStep(s => s + 1);
+              } else {
+                handleCompleteTutorial();
+              }
+            }}
+          />
+          
+          <div className={`tutorial-card-popover pos-${tutorialSteps[tutorialStep].position} glass-panel`}>
+            <div className="tutorial-card-header">
+              <span className="tutorial-step-indicator">Step {tutorialStep + 1} of {tutorialSteps.length}</span>
+              <button className="tutorial-skip-btn" onClick={handleCompleteTutorial}>Skip</button>
+            </div>
+            
+            <h3 className="tutorial-card-title">{tutorialSteps[tutorialStep].title}</h3>
+            <p className="tutorial-card-text">{tutorialSteps[tutorialStep].text}</p>
+            
+            <div className="tutorial-card-footer">
+              <div className="tutorial-progress-dots">
+                {tutorialSteps.map((_, idx) => (
+                  <span 
+                    key={idx} 
+                    className={`tutorial-progress-dot ${idx === tutorialStep ? 'active' : ''} ${idx < tutorialStep ? 'passed' : ''}`}
+                    onClick={() => setTutorialStep(idx)}
+                  />
+                ))}
+              </div>
+              
+              <div className="tutorial-card-nav-btns">
+                {tutorialStep > 0 && (
+                  <button className="tutorial-nav-btn secondary" onClick={() => setTutorialStep(s => s - 1)}>
+                    ← Back
+                  </button>
+                )}
+                <button 
+                  className="tutorial-nav-btn primary" 
+                  onClick={() => {
+                    if (tutorialStep < tutorialSteps.length - 1) {
+                      setTutorialStep(s => s + 1);
+                    } else {
+                      handleCompleteTutorial();
+                    }
+                  }}
+                >
+                  {tutorialStep === tutorialSteps.length - 1 ? 'Finish ✓' : 'Next →'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
     </div>

@@ -215,4 +215,5 @@ export const resetLocalStats = () => {
   localStorage.removeItem('playerMmr');
   localStorage.removeItem('playerWinStreak');
   localStorage.removeItem('playerRecentForm');
+  localStorage.removeItem('tick_game_tutorial_completed');
 };

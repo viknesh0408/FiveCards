@@ -201,7 +201,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <span className="mm-action-icon">🤖</span>
                   <div className="mm-action-text">
                     <span className="mm-action-title">Play vs AI</span>
-                    <span className="mm-action-desc">Offline • No internet needed</span>
+                    <span className="mm-action-desc">Single player vs bots</span>
                   </div>
                   <span className="mm-action-arrow">›</span>
                 </button>

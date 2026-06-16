@@ -5472,11 +5472,9 @@ body.battery-saver .hud-btn-voice.speaking {
 .tutorial-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(0, 0, 0, 0.45);
   z-index: 9990;
-  backdrop-filter: blur(2.5px);
-  -webkit-backdrop-filter: blur(2.5px);
-  animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 .tutorial-highlight {
   position: relative !important;
@@ -5490,16 +5488,16 @@ body.battery-saver .hud-btn-voice.speaking {
 .tutorial-card-popover {
   position: absolute;
   z-index: 9999;
-  width: min(380px, 90vw);
-  background: linear-gradient(135deg, rgba(8, 24, 16, 0.95) 0%, rgba(3, 10, 7, 0.98) 100%) !important;
+  width: min(310px, 86vw);
+  background: linear-gradient(135deg, rgba(8, 24, 16, 0.96) 0%, rgba(3, 10, 7, 0.99) 100%) !important;
   border: 1.5px solid var(--color-gold) !important;
-  box-shadow: 0 12px 40px rgba(251, 191, 36, 0.2) !important;
-  padding: 20px;
-  border-radius: 16px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6) !important;
+  padding: 14px 16px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  animation: popIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  gap: 8px;
+  animation: fadeIn 0.2s ease-out;
   pointer-events: auto;
 }
 
@@ -5512,17 +5510,17 @@ body.battery-saver .hud-btn-voice.speaking {
 .tutorial-card-popover.pos-center-deck {
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -110%);
+  transform: translate(-50%, -125%);
 }
 .tutorial-card-popover.pos-bottom-hand {
-  bottom: 220px;
+  bottom: 200px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, 0);
 }
 .tutorial-card-popover.pos-bottom-declare {
-  bottom: 120px;
+  bottom: 110px;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, 0);
 }
 
 /* Popover header & details */
@@ -5532,7 +5530,7 @@ body.battery-saver .hud-btn-voice.speaking {
   align-items: center;
 }
 .tutorial-step-indicator {
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 800;
   color: rgba(255,255,255,0.4);
   text-transform: uppercase;
@@ -5542,7 +5540,7 @@ body.battery-saver .hud-btn-voice.speaking {
   background: none;
   border: none;
   color: var(--color-gold);
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
   cursor: pointer;
   padding: 2px 6px;
@@ -5554,15 +5552,15 @@ body.battery-saver .hud-btn-voice.speaking {
   text-shadow: 0 0 8px var(--color-gold-glow);
 }
 .tutorial-card-title {
-  font-size: 1.15rem;
+  font-size: 1.02rem;
   font-weight: 900;
   color: #fff;
   margin: 0;
   text-shadow: 0 0 10px rgba(255,255,255,0.1);
 }
 .tutorial-card-text {
-  font-size: 0.85rem;
-  line-height: 1.55;
+  font-size: 0.8rem;
+  line-height: 1.45;
   color: rgba(255,255,255,0.7);
   margin: 0;
 }
@@ -5570,9 +5568,9 @@ body.battery-saver .hud-btn-voice.speaking {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 4px;
   border-top: 1px solid rgba(255,255,255,0.06);
-  padding-top: 12px;
+  padding-top: 8px;
 }
 
 /* Progress dots */
@@ -5581,8 +5579,8 @@ body.battery-saver .hud-btn-voice.speaking {
   gap: 6px;
 }
 .tutorial-progress-dot {
-  width: 7px;
-  height: 7px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: rgba(255,255,255,0.15);
   cursor: pointer;
@@ -5604,10 +5602,10 @@ body.battery-saver .hud-btn-voice.speaking {
 }
 .tutorial-nav-btn {
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  padding: 6px 14px;
-  border-radius: 8px;
+  padding: 5px 12px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
@@ -5635,51 +5633,28 @@ body.battery-saver .hud-btn-voice.speaking {
   to { opacity: 1; }
 }
 
-@keyframes popIn {
-  from { opacity: 0; transform: translate(-50%, -45%) scale(0.95); }
-  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-/* Adjust popIn for different positions */
-.tutorial-card-popover.pos-center-deck {
-  animation: popInDeck 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.tutorial-card-popover.pos-bottom-hand {
-  animation: popInHand 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.tutorial-card-popover.pos-bottom-declare {
-  animation: popInDeclare 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-@keyframes popInDeck {
-  from { opacity: 0; transform: translate(-50%, -100%) scale(0.95); }
-  to { opacity: 1; transform: translate(-50%, -110%) scale(1); }
-}
-@keyframes popInHand {
-  from { opacity: 0; transform: translate(-50%, 10px) scale(0.95); }
-  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
-}
-@keyframes popInDeclare {
-  from { opacity: 0; transform: translate(-50%, 10px) scale(0.95); }
-  to { opacity: 1; transform: translate(-50%, 0) scale(1); }
-}
-
 /* Adjustments for smaller viewports */
 @media (max-width: 480px) {
   .tutorial-card-popover {
     width: 92vw;
-    padding: 16px;
+    padding: 12px 14px;
+    gap: 6px;
   }
   .tutorial-card-popover.pos-center-deck {
     top: auto;
-    bottom: 250px;
-    transform: translateX(-50%);
-    animation: popInHand 0.3s ease;
+    bottom: 230px;
+    left: 50%;
+    transform: translate(-50%, 0);
   }
   .tutorial-card-popover.pos-bottom-hand {
-    bottom: 230px;
+    bottom: 180px;
+    left: 50%;
+    transform: translate(-50%, 0);
   }
   .tutorial-card-popover.pos-bottom-declare {
-    bottom: 110px;
+    bottom: 95px;
+    left: 50%;
+    transform: translate(-50%, 0);
   }
 }
 

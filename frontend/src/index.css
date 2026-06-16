@@ -5109,7 +5109,7 @@ body.battery-saver .hud-btn-voice.speaking {
    MOBILE RESPONSIVE  (≤ 700px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  .mm-scene { padding: 12px; overflow-y: auto; align-items: flex-start; }
+  .mm-scene { padding: 12px; overflow-y: auto; align-items: center; }
 
   /* Main layout: stack vertically */
   .mm-main-layout {

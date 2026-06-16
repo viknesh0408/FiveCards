@@ -649,14 +649,21 @@ export const GameTable: React.FC<GameTableProps> = ({
               </p>
               <div style={{ width: '100%', textAlign: 'left' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 800 }}>Joined:</span>
-                {players.map(p => (
-                  <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                    <span>{p.name} {p.isAi && '[AI]'}</span>
-                    <span className={p.ready ? 'text-green' : 'text-red'} style={{ fontWeight: 800 }}>
-                      {p.ready ? 'Ready' : 'Not Ready'}
-                    </span>
-                  </div>
-                ))}
+                {players.map(p => {
+                  const { name: parsedName, mmr } = parsePlayerName(p.name);
+                  const rank = getRankTier(mmr);
+                  return (
+                    <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {!p.isAi && <span style={{ fontSize: '0.9rem' }} title={rank.name}>{rank.badge}</span>}
+                        <span>{parsedName} {p.isAi && '[AI]'}</span>
+                      </span>
+                      <span className={p.ready ? 'text-green' : 'text-red'} style={{ fontWeight: 800 }}>
+                        {p.ready ? 'Ready' : 'Not Ready'}
+                      </span>
+                    </div>
+                  );
+                })}
               </div>
               <button 
                 className={self?.ready ? "btn-secondary" : "btn-primary"} 

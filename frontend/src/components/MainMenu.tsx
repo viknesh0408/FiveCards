@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
-import { getLocalProfile, getRankTier, getXpForNextLevel } from '../utils/rankSystem';
+// import { getLocalProfile, getRankTier, getXpForNextLevel } from '../utils/rankSystem';
 import { RankProfileCard } from './RankProfileCard';
 
 
@@ -59,34 +59,40 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   return (
     <div className="menu-container">
       {view === 'main' && (
-        <div className="menu-card glass-panel">
-          {/* Rank Profile Card */}
-          <RankProfileCard />
-
-          <div className="menu-logo-area">
-            <h1 className="menu-title">5 Cards</h1>
-            <p className="menu-subtitle">Traditional Indian Card Game</p>
+        <div className="menu-desktop-layout">
+          {/* LEFT: Rank Profile Card */}
+          <div className="menu-desktop-left glass-panel">
+            <RankProfileCard />
           </div>
 
-          <div className="floating-cards-preview">
-            <div className="floating-preview-card card-1" />
-            <div className="floating-preview-card card-2">5</div>
-            <div className="floating-preview-card card-3" />
-          </div>
-          
-          <div className="menu-options">
-            <button className="btn-primary" onClick={() => setView('offline')}>
-              Play Offline (vs AI)
-            </button>
-            <button className="btn-secondary" onClick={() => setView('online-choice')}>
-              Play Online (Multiplayer)
-            </button>
-            <button className="btn-secondary" onClick={() => setView('settings')}>
-              Rules & Settings
-            </button>
+          {/* RIGHT: Logo + Buttons */}
+          <div className="menu-desktop-right glass-panel">
+            <div className="menu-logo-area">
+              <h1 className="menu-title">5 Cards</h1>
+              <p className="menu-subtitle">Traditional Indian Card Game</p>
+            </div>
+
+            <div className="floating-cards-preview">
+              <div className="floating-preview-card card-1" />
+              <div className="floating-preview-card card-2">5</div>
+              <div className="floating-preview-card card-3" />
+            </div>
+            
+            <div className="menu-options">
+              <button className="btn-primary" onClick={() => setView('offline')}>
+                Play Offline (vs AI)
+              </button>
+              <button className="btn-secondary" onClick={() => setView('online-choice')}>
+                Play Online (Multiplayer)
+              </button>
+              <button className="btn-secondary" onClick={() => setView('settings')}>
+                Rules &amp; Settings
+              </button>
+            </div>
           </div>
         </div>
       )}
+
 
       {view === 'offline' && (
         <div className="menu-card glass-panel">

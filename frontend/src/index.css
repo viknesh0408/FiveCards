@@ -136,6 +136,40 @@ body {
   margin: auto 0;
 }
 
+/* ── Desktop two-column main menu layout ── */
+.menu-desktop-layout {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 20px;
+  width: min(960px, 96vw);
+  max-height: calc(100vh - 60px);
+  max-height: calc(100dvh - 60px);
+  z-index: 10;
+}
+
+.menu-desktop-left {
+  width: 340px;
+  flex-shrink: 0;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  overflow-y: auto;
+}
+
+.menu-desktop-right {
+  flex: 1;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .menu-logo-area {
   position: relative;
   margin-bottom: 36px;
@@ -1566,6 +1600,24 @@ body {
 .menu-card {
   width: 96%;
   max-width: 420px;
+  padding: 24px 20px;
+}
+
+/* Collapse two-column layout to stacked on mobile */
+.menu-desktop-layout {
+  flex-direction: column;
+  width: 96%;
+  max-width: 420px;
+  max-height: none;
+  gap: 12px;
+}
+
+.menu-desktop-left {
+  width: 100%;
+  padding: 20px 18px;
+}
+
+.menu-desktop-right {
   padding: 24px 20px;
 }
 

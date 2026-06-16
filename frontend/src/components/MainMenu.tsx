@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
-import { getLocalProfile, getRankTier, getXpForNextLevel } from '../utils/rankSystem';
+import { getLocalProfile, getRankTier, getXpForNextLevel, RANK_TIERS } from '../utils/rankSystem';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -154,22 +154,27 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 )}
               </div>
 
-              {/* Rank ladder */}
-              <div className="mm-rank-ladder">
-                {[0, 3, 6, 9, 12, 15].map(tierIdx => {
-                  const { RANK_TIERS } = require('../utils/rankSystem');
-                  const t = RANK_TIERS[tierIdx];
-                  const currentTierIdx = RANK_TIERS.findIndex((r: any) => r.name === rank.name);
-                  return (
-                    <div
-                      key={tierIdx}
-                      className={`mm-rank-pip ${currentTierIdx >= tierIdx ? 'active' : ''}`}
-                      style={{ background: currentTierIdx >= tierIdx ? t.color : undefined }}
-                      title={t.name}
-                    />
-                  );
-                })}
-              </div>
+              {/* Rank ladder — 6 representative pips */}
+              {(() => {
+                const pivots = [0, 3, 6, 9, 12, 15];
+                const currentTierIdx = RANK_TIERS.findIndex(r => r.name === rank.name);
+                return (
+                  <div className="mm-rank-ladder">
+                    {pivots.map((tierIdx) => {
+                      const t = RANK_TIERS[tierIdx];
+                      const passed = currentTierIdx >= tierIdx;
+                      return (
+                        <div
+                          key={tierIdx}
+                          className={`mm-rank-pip ${passed ? 'active' : ''}`}
+                          style={{ background: passed ? t.color : undefined }}
+                          title={t.name}
+                        />
+                      );
+                    })}
+                  </div>
+                );
+              })()}
 
               {/* Settings link */}
               <button className="mm-settings-link" onClick={() => navigate('settings')}>

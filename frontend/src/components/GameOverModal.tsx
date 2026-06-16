@@ -65,6 +65,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
   useEffect(() => {
     if (!gameState || !currentPlayerId) return;
+    if (!gameState.isMultiplayer) {
+      setResults(null);
+      return;
+    }
     const myPlayer = players.find(p => p.id === currentPlayerId);
     if (!myPlayer) return;
 

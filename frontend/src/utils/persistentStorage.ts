@@ -6,7 +6,22 @@ const PERSISTENT_KEYS = [
   'soundEnabled',
   'vibrationEnabled',
   'batterySaverEnabled',
-  'hasSeenTutorial'
+  'hasSeenTutorial',
+  'stats_gamesPlayedTotal',
+  'stats_gamesPlayedOffline',
+  'stats_gamesPlayedOnline',
+  'stats_winsTotal',
+  'stats_winsOffline',
+  'stats_winsOnline',
+  'stats_winStreakCurrent',
+  'stats_winStreakBest',
+  'stats_recentForm',
+  'stats_totalPointsScored',
+  'stats_roundsPlayed',
+  'stats_lowestRoundScore',
+  'stats_highestRoundScore',
+  'stats_declaresCorrect',
+  'stats_declaresWrong'
 ];
 
 /**

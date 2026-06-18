@@ -55,6 +55,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [animIn, setAnimIn] = useState(true);
 
   const [stats, setStats] = useState<PlayerStats>(() => getLocalStats());
+  const [activeTab, setActiveTab] = useState<'main' | 'me'>('main');
 
   const navigate = (v: View) => {
     setAnimIn(false);
@@ -98,125 +99,154 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
         {/* ── MAIN VIEW ─────────────────────────────────────── */}
         {view === 'main' && (
-          <div className="mm-main-layout">
+          <>
+            <div className="mm-main-layout">
 
-            {/* Left panel: Profile card */}
-            <aside className="mm-profile-panel glass-panel">
-              {/* Profile Initials/Avatar */}
-              <div className="mm-avatar-ring" style={{ borderColor: 'var(--color-gold)', boxShadow: `0 0 24px rgba(251, 191, 36, 0.25)` }}>
-                <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--color-gold)' }}>
-                  {(playerName || stats.name || 'P')[0].toUpperCase()}
-                </span>
-                {stats.winStreakCurrent >= 2 && <span className="mm-avatar-streak">🔥</span>}
-              </div>
-
-              {/* Player info */}
-              <div className="mm-profile-name">{playerName || stats.name || 'Player'}</div>
-              <div className="mm-profile-mmr" style={{ marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Local Competitor
-              </div>
-
-              {/* Recent form */}
-              {stats.recentForm && stats.recentForm.length > 0 && (
-                <div className="mm-recent-form" style={{ flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
-                  <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Recent Form</div>
-                  <div style={{ display: 'flex', gap: '5px' }}>
-                    {stats.recentForm.map((r, i) => (
-                      <span key={i} className={`mm-form-dot ${r === 'W' ? 'win' : 'loss'}`} title={r === 'W' ? 'Victory' : 'Defeat'} />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Stats row */}
-              <div className="mm-stats-row">
-                <div className="mm-stat-chip">
-                  <span className="mm-stat-val">{stats.gamesPlayedTotal}</span>
-                  <span className="mm-stat-key">Games</span>
-                </div>
-                <div className="mm-stat-chip">
-                  <span className="mm-stat-val" style={{ color: '#34d399' }}>
-                    {stats.gamesPlayedTotal > 0 ? Math.round((stats.winsTotal / stats.gamesPlayedTotal) * 100) : 0}%
+              {/* Left panel: Profile card */}
+              <aside className={`mm-profile-panel glass-panel ${activeTab === 'me' ? 'mobile-visible' : 'mobile-hidden'}`}>
+                <h2 className="mm-mobile-tab-header">Me</h2>
+                
+                {/* Profile Initials/Avatar */}
+                <div className="mm-avatar-ring" style={{ borderColor: 'var(--color-gold)', boxShadow: `0 0 24px rgba(251, 191, 36, 0.25)` }}>
+                  <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--color-gold)' }}>
+                    {(playerName || stats.name || 'P')[0].toUpperCase()}
                   </span>
-                  <span className="mm-stat-key">Win Rate</span>
+                  {stats.winStreakCurrent >= 2 && <span className="mm-avatar-streak">🔥</span>}
                 </div>
-                {stats.winStreakCurrent >= 2 && (
-                  <div className="mm-stat-chip">
-                    <span className="mm-stat-val" style={{ color: '#f97316' }}>🔥{stats.winStreakCurrent}</span>
-                    <span className="mm-stat-key">Streak</span>
+
+                {/* Player info */}
+                <div className="mm-profile-name">{playerName || stats.name || 'Player'}</div>
+                <div className="mm-profile-mmr" style={{ marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Local Competitor
+                </div>
+
+                {/* Recent form */}
+                {stats.recentForm && stats.recentForm.length > 0 && (
+                  <div className="mm-recent-form" style={{ flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
+                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Recent Form</div>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      {stats.recentForm.map((r, i) => (
+                        <span key={i} className={`mm-form-dot ${r === 'W' ? 'win' : 'loss'}`} title={r === 'W' ? 'Victory' : 'Defeat'} />
+                      ))}
+                    </div>
                   </div>
                 )}
-              </div>
 
-              {/* View Detailed Stats button */}
-              <button 
-                className="mm-settings-link detailed-stats-btn" 
-                onClick={() => navigate('stats')}
-                style={{
-                  background: 'rgba(52, 211, 153, 0.08)',
-                  borderColor: 'rgba(52, 211, 153, 0.25)',
-                  color: '#34d399',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  marginBottom: '10px'
-                }}
-              >
-                📊 View Detailed Stats
-              </button>
-
-              {/* Settings link */}
-              <button className="mm-settings-link" onClick={() => navigate('settings')}>
-                ⚙️ Settings &amp; Rules
-              </button>
-            </aside>
-
-            {/* Right panel: Game actions */}
-            <main className="mm-actions-panel">
-              {/* Logo */}
-              <div className="mm-logo-block">
-                <div className="mm-logo-cards">
-                  <div className="mm-logo-card c1">🂠</div>
-                  <div className="mm-logo-card c2">5</div>
-                  <div className="mm-logo-card c3">🂠</div>
+                {/* Stats row */}
+                <div className="mm-stats-row">
+                  <div className="mm-stat-chip">
+                    <span className="mm-stat-val">{stats.gamesPlayedTotal}</span>
+                    <span className="mm-stat-key">Games</span>
+                  </div>
+                  <div className="mm-stat-chip">
+                    <span className="mm-stat-val" style={{ color: '#34d399' }}>
+                      {stats.gamesPlayedTotal > 0 ? Math.round((stats.winsTotal / stats.gamesPlayedTotal) * 100) : 0}%
+                    </span>
+                    <span className="mm-stat-key">Win Rate</span>
+                  </div>
+                  {stats.winStreakCurrent >= 2 && (
+                    <div className="mm-stat-chip">
+                      <span className="mm-stat-val" style={{ color: '#f97316' }}>🔥{stats.winStreakCurrent}</span>
+                      <span className="mm-stat-key">Streak</span>
+                    </div>
+                  )}
                 </div>
-                <h1 className="mm-title">5 Cards</h1>
-                <p className="mm-tagline">Traditional Indian Card Game</p>
-              </div>
 
-              {/* Action buttons */}
-              <div className="mm-action-grid">
-                <button className="mm-action-btn primary" onClick={() => navigate('offline')}>
-                  <span className="mm-action-icon">🤖</span>
-                  <div className="mm-action-text">
-                    <span className="mm-action-title">Play vs AI</span>
-                    <span className="mm-action-desc">Single player vs bots</span>
-                  </div>
-                  <span className="mm-action-arrow">›</span>
-                </button>
+                {/* Me Menu List */}
+                <div className="mm-me-menu-list">
+                  <button 
+                    className="mm-me-menu-item" 
+                    onClick={() => navigate('stats')}
+                  >
+                    <span className="mm-me-menu-icon">📊</span>
+                    <span className="mm-me-menu-label">Stats</span>
+                    <span className="mm-me-menu-arrow">›</span>
+                  </button>
 
-                <button className="mm-action-btn secondary" onClick={() => navigate('online-choice')}>
-                  <span className="mm-action-icon">🌐</span>
-                  <div className="mm-action-text">
-                    <span className="mm-action-title">Multiplayer</span>
-                    <span className="mm-action-desc">Play with friends online</span>
-                  </div>
-                  <span className="mm-action-arrow">›</span>
-                </button>
+                  <button 
+                    className="mm-me-menu-item" 
+                    onClick={() => navigate('settings')}
+                  >
+                    <span className="mm-me-menu-icon">⚙️</span>
+                    <span className="mm-me-menu-label">Settings</span>
+                    <span className="mm-me-menu-arrow">›</span>
+                  </button>
+                </div>
+              </aside>
 
-                <button className="mm-action-btn ghost" onClick={onShowTutorial}>
-                  <span className="mm-action-icon">📖</span>
-                  <div className="mm-action-text">
-                    <span className="mm-action-title">How to Play</span>
-                    <span className="mm-action-desc">Learn the rules</span>
+              {/* Right panel: Game actions */}
+              <main className={`mm-actions-panel ${activeTab === 'main' ? 'mobile-visible' : 'mobile-hidden'}`}>
+                {/* Logo */}
+                <div className="mm-logo-block">
+                  <div className="mm-logo-cards">
+                    <div className="mm-logo-card c1">🂠</div>
+                    <div className="mm-logo-card c2">5</div>
+                    <div className="mm-logo-card c3">🂠</div>
                   </div>
-                  <span className="mm-action-arrow">›</span>
-                </button>
-              </div>
-            </main>
-          </div>
+                  <h1 className="mm-title">5 Cards</h1>
+                  <p className="mm-tagline">Traditional Indian Card Game</p>
+                </div>
+
+                {/* Action buttons */}
+                <div className="mm-action-grid">
+                  <button className="mm-action-btn primary" onClick={() => navigate('offline')}>
+                    <span className="mm-action-icon">🤖</span>
+                    <div className="mm-action-text">
+                      <span className="mm-action-title">Play vs AI</span>
+                      <span className="mm-action-desc">Single player vs bots</span>
+                    </div>
+                    <span className="mm-action-arrow">›</span>
+                  </button>
+
+                  <button className="mm-action-btn secondary" onClick={() => navigate('online-choice')}>
+                    <span className="mm-action-icon">🌐</span>
+                    <div className="mm-action-text">
+                      <span className="mm-action-title">Multiplayer</span>
+                      <span className="mm-action-desc">Play with friends online</span>
+                    </div>
+                    <span className="mm-action-arrow">›</span>
+                  </button>
+
+                  <button className="mm-action-btn ghost" onClick={onShowTutorial}>
+                    <span className="mm-action-icon">📖</span>
+                    <div className="mm-action-text">
+                      <span className="mm-action-title">How to Play</span>
+                      <span className="mm-action-desc">Learn the rules</span>
+                    </div>
+                    <span className="mm-action-arrow">›</span>
+                  </button>
+                </div>
+              </main>
+            </div>
+
+            {/* Footer Tabs */}
+            <div className="mm-footer-tabs">
+              <button 
+                className={`mm-tab-btn ${activeTab === 'main' ? 'active' : ''}`}
+                onClick={() => setActiveTab('main')}
+              >
+                <span className="mm-tab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                    <polyline points="9 22 9 12 15 12 15 22" />
+                  </svg>
+                </span>
+                <span className="mm-tab-label">Main</span>
+              </button>
+              <button 
+                className={`mm-tab-btn ${activeTab === 'me' ? 'active' : ''}`}
+                onClick={() => setActiveTab('me')}
+              >
+                <span className="mm-tab-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </span>
+                <span className="mm-tab-label">Me</span>
+              </button>
+            </div>
+          </>
         )}
 
         {/* ── OFFLINE SETUP ─────────────────────────────────── */}

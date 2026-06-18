@@ -5671,4 +5671,259 @@ body.battery-saver .hud-btn-voice.speaking {
   }
 }
 
+/* ── MAIN MENU FOOTER TABS & ME SECTION ── */
+
+.mm-mobile-tab-header {
+  display: none;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--color-text);
+  margin-bottom: 24px;
+  text-align: center;
+  width: 100%;
+  letter-spacing: -0.5px;
+}
+
+/* Me Menu list design */
+.mm-me-menu-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 24px;
+}
+
+.mm-me-menu-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-bounce);
+  text-align: left;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.mm-me-menu-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(34, 211, 238, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(34, 211, 238, 0.1);
+}
+
+.mm-me-menu-icon {
+  font-size: 1.3rem;
+  margin-right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mm-me-menu-label {
+  flex: 1;
+}
+
+.mm-me-menu-arrow {
+  font-size: 1.3rem;
+  color: var(--color-text-muted);
+  transition: var(--transition-smooth);
+}
+
+.mm-me-menu-item:hover .mm-me-menu-arrow {
+  color: var(--color-cyan);
+  transform: translateX(3px);
+}
+
+/* Footer Tabs */
+.mm-footer-tabs {
+  display: none; /* Hidden on desktop */
+}
+
+/* ── Mobile Layout Tab switching (width ≤ 700px) ── */
+@media (max-width: 700px) {
+  /* Hide the profile links, we use unified list now */
+  .mm-settings-link {
+    display: none !important;
+  }
+
+  .mm-mobile-tab-header {
+    display: block;
+  }
+
+  /* Footer tab bar */
+  .mm-footer-tabs {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 64px;
+    background: rgba(4, 12, 8, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-top: 1.5px solid rgba(255, 255, 255, 0.08);
+    z-index: 100;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mm-tab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--color-text-muted);
+    font-family: var(--font-family);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    flex: 1;
+    height: 100%;
+    gap: 3px;
+  }
+
+  .mm-tab-btn .mm-tab-icon {
+    font-size: 1.35rem;
+    transition: var(--transition-bounce);
+  }
+
+  .mm-tab-btn.active {
+    color: #fff;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.35);
+  }
+
+  .mm-tab-btn.active .mm-tab-icon {
+    transform: scale(1.15) translateY(-2px);
+    color: #fff;
+  }
+
+  /* Main screen updates with footer space */
+  .mm-scene {
+    padding-bottom: 84px !important; /* Make room for the footer tab bar */
+  }
+
+  /* Visibility of panels depending on active tab */
+  .mm-main-layout {
+    flex-direction: column !important;
+    gap: 0 !important;
+    min-height: calc(100dvh - 100px) !important;
+    display: flex !important;
+  }
+
+  .mm-profile-panel.mobile-hidden,
+  .mm-actions-panel.mobile-hidden {
+    display: none !important;
+  }
+
+  .mm-profile-panel.mobile-visible {
+    display: flex !important;
+    width: 100% !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 16px 8px !important;
+    overflow-y: visible !important;
+    margin-top: 20px !important;
+  }
+
+  .mm-actions-panel.mobile-visible {
+    display: flex !important;
+    flex: none !important;
+    height: auto !important;
+    width: 100% !important;
+    background: linear-gradient(135deg, rgba(8, 24, 16, 0.75) 0%, rgba(3, 10, 7, 0.92) 100%) !important;
+    border: 1px solid rgba(52, 211, 153, 0.15) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    padding: 28px 24px !important;
+    margin: auto 0 !important;
+  }
+
+  /* Reset mm-profile-panel order values from earlier mobile stack rules */
+  .mm-xp-wrap, .mm-recent-form, .mm-stats-row, .mm-rank-ladder, .mm-me-menu-list {
+    order: unset !important;
+  }
+
+  /* Center the stats row on full mobile profile */
+  .mm-stats-row {
+    width: 100% !important;
+    margin-top: 12px;
+  }
+}
+
+/* ── CARD ANIMATION STYLES ── */
+
+@keyframes card-appear-hand {
+  0% {
+    opacity: 0;
+    transform: translateY(35px) scale(0.88);
+  }
+}
+
+@keyframes card-appear-discard-bottom {
+  0% {
+    opacity: 0;
+    transform: translateY(160px) rotate(0deg) scale(0.85);
+  }
+}
+
+@keyframes card-appear-discard-left {
+  0% {
+    opacity: 0;
+    transform: translate(-150px, -60px) rotate(-25deg) scale(0.85);
+  }
+}
+
+@keyframes card-appear-discard-right {
+  0% {
+    opacity: 0;
+    transform: translate(150px, -60px) rotate(25deg) scale(0.85);
+  }
+}
+
+@keyframes card-appear-discard-center {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+
+.user-hand-cards .game-card {
+  animation: card-appear-hand 0.28s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+}
+
+.top-discard-card.discard-from-bottom .game-card {
+  animation: card-appear-discard-bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+}
+
+.top-discard-card.discard-from-left .game-card {
+  animation: card-appear-discard-left 0.45s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+}
+
+.top-discard-card.discard-from-right .game-card {
+  animation: card-appear-discard-right 0.45s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+}
+
+.top-discard-card.discard-from-center .game-card {
+  animation: card-appear-discard-center 0.35s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+}
+
+
 

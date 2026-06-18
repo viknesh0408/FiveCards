@@ -1,3 +1,5 @@
+import { savePersistentItem } from './persistentStorage';
+
 export interface PlayerStats {
   name: string;
   gamesPlayedTotal: number;
@@ -118,22 +120,22 @@ export const getLocalStats = (): PlayerStats => {
 
 export const saveLocalStats = (stats: PlayerStats) => {
   if (typeof window === 'undefined') return;
-  localStorage.setItem('tickPlayerName', stats.name);
-  localStorage.setItem('stats_gamesPlayedTotal', stats.gamesPlayedTotal.toString());
-  localStorage.setItem('stats_gamesPlayedOffline', stats.gamesPlayedOffline.toString());
-  localStorage.setItem('stats_gamesPlayedOnline', stats.gamesPlayedOnline.toString());
-  localStorage.setItem('stats_winsTotal', stats.winsTotal.toString());
-  localStorage.setItem('stats_winsOffline', stats.winsOffline.toString());
-  localStorage.setItem('stats_winsOnline', stats.winsOnline.toString());
-  localStorage.setItem('stats_winStreakCurrent', stats.winStreakCurrent.toString());
-  localStorage.setItem('stats_winStreakBest', stats.winStreakBest.toString());
-  localStorage.setItem('stats_recentForm', JSON.stringify(stats.recentForm));
-  localStorage.setItem('stats_totalPointsScored', stats.totalPointsScored.toString());
-  localStorage.setItem('stats_roundsPlayed', stats.roundsPlayed.toString());
-  localStorage.setItem('stats_lowestRoundScore', stats.lowestRoundScore.toString());
-  localStorage.setItem('stats_highestRoundScore', stats.highestRoundScore.toString());
-  localStorage.setItem('stats_declaresCorrect', stats.declaresCorrect.toString());
-  localStorage.setItem('stats_declaresWrong', stats.declaresWrong.toString());
+  savePersistentItem('tickPlayerName', stats.name);
+  savePersistentItem('stats_gamesPlayedTotal', stats.gamesPlayedTotal.toString());
+  savePersistentItem('stats_gamesPlayedOffline', stats.gamesPlayedOffline.toString());
+  savePersistentItem('stats_gamesPlayedOnline', stats.gamesPlayedOnline.toString());
+  savePersistentItem('stats_winsTotal', stats.winsTotal.toString());
+  savePersistentItem('stats_winsOffline', stats.winsOffline.toString());
+  savePersistentItem('stats_winsOnline', stats.winsOnline.toString());
+  savePersistentItem('stats_winStreakCurrent', stats.winStreakCurrent.toString());
+  savePersistentItem('stats_winStreakBest', stats.winStreakBest.toString());
+  savePersistentItem('stats_recentForm', JSON.stringify(stats.recentForm));
+  savePersistentItem('stats_totalPointsScored', stats.totalPointsScored.toString());
+  savePersistentItem('stats_roundsPlayed', stats.roundsPlayed.toString());
+  savePersistentItem('stats_lowestRoundScore', stats.lowestRoundScore.toString());
+  savePersistentItem('stats_highestRoundScore', stats.highestRoundScore.toString());
+  savePersistentItem('stats_declaresCorrect', stats.declaresCorrect.toString());
+  savePersistentItem('stats_declaresWrong', stats.declaresWrong.toString());
 };
 
 export const processGameEndStats = (

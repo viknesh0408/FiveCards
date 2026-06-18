@@ -25,6 +25,7 @@ export const App: React.FC = () => {
   const [storageInitialized, setStorageInitialized] = useState<boolean>(false);
   const [update, setUpdate] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
+  const [showAppLeaveConfirm, setShowAppLeaveConfirm] = useState<boolean>(false);
   
   const {
     gameState,
@@ -59,11 +60,10 @@ export const App: React.FC = () => {
     if (!(window as any).Capacitor) return;
 
     const listenerPromise = CapacitorApp.addListener('backButton', () => {
-      if (screen === 'table') {
-        const confirmLeave = window.confirm("Leave game?");
-        if (confirmLeave) {
-          handleLeave();
-        }
+      if (showAppLeaveConfirm) {
+        setShowAppLeaveConfirm(false);
+      } else if (screen === 'table') {
+        setShowAppLeaveConfirm(true);
       } else {
         CapacitorApp.exitApp();
       }
@@ -73,7 +73,7 @@ export const App: React.FC = () => {
       listenerPromise.then(handle => handle.remove());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen]);
+  }, [screen, showAppLeaveConfirm]);
 
   const prevGameRef = useRef<any>(null);
 
@@ -367,6 +367,7 @@ export const App: React.FC = () => {
     localStorage.removeItem('activeGameId');
     disconnect();
     setScreen('menu');
+    setShowAppLeaveConfirm(false);
   };
 
   if (!storageInitialized) {
@@ -484,6 +485,37 @@ export const App: React.FC = () => {
           setShowTutorial(false);
         }}
       />
+
+      {/* Back Button Leave Confirmation Modal */}
+      {showAppLeaveConfirm && (
+        <div className="modal-overlay" onClick={() => setShowAppLeaveConfirm(false)}>
+          <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', textAlign: 'center', padding: '24px' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Leave Game?</h2>
+            <p style={{ marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '1rem' }}>
+              Are you sure you want to leave the game? Your current progress will be lost.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowAppLeaveConfirm(false)}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setShowAppLeaveConfirm(false);
+                  handleLeave();
+                }}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -158,6 +158,51 @@ export const GameTable: React.FC<GameTableProps> = ({
   // Opponents are everyone except index 0 (self)
   const opponents = rotatedPlayers.slice(1);
 
+  const [lastDiscarderId, setLastDiscarderId] = useState<string | null>(null);
+  const prevDiscardLengthRef = useRef<number>(0);
+  const prevTopCardRef = useRef<string>('');
+
+  useEffect(() => {
+    const discardPile = currentRound?.discardPile || [];
+    const currentLength = discardPile.length;
+    const topCard = currentLength > 0 ? discardPile[currentLength - 1] : null;
+    const topCardKey = topCard ? `${topCard.rank}-${topCard.suit}-${topCard.joker}` : '';
+
+    if (currentLength > prevDiscardLengthRef.current || topCardKey !== prevTopCardRef.current) {
+      if (currentLength > 0) {
+        if (currentLength === 1 && currentRound && !currentRound.firstTurnCompleted) {
+          setLastDiscarderId('system');
+        } else if (currentRound && currentRound.currentPlayerIndex !== undefined && players[currentRound.currentPlayerIndex]) {
+          setLastDiscarderId(players[currentRound.currentPlayerIndex].id);
+        }
+      } else {
+        setLastDiscarderId(null);
+      }
+      prevDiscardLengthRef.current = currentLength;
+      prevTopCardRef.current = topCardKey;
+    }
+  }, [currentRound?.discardPile, currentRound?.currentPlayerIndex, players, currentRound?.firstTurnCompleted]);
+
+  const getDiscardDirectionClass = (): string => {
+    if (!lastDiscarderId) return 'discard-from-center';
+    if (lastDiscarderId === 'system') return 'discard-from-center';
+    if (lastDiscarderId === currentPlayerId) return 'discard-from-bottom';
+    
+    const leftOpponents = opponents.slice(0, Math.ceil(opponents.length / 2));
+    if (leftOpponents.some(o => o.id === lastDiscarderId)) {
+      return 'discard-from-left';
+    }
+    
+    const rightOpponents = opponents.slice(Math.ceil(opponents.length / 2));
+    if (rightOpponents.some(o => o.id === lastDiscarderId)) {
+      return 'discard-from-right';
+    }
+    
+    return 'discard-from-center';
+  };
+
+  const discardDirectionClass = getDiscardDirectionClass();
+
   // Find who is the active player whose turn it is
   const activePlayer = currentRound && !currentRound.roundEnded
     ? players[currentRound.currentPlayerIndex]
@@ -377,6 +422,16 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   const isCardSelected = (card: any) =>
     selectedClientIds.includes(card.clientId);
+
+  const hasMatch = (): boolean => {
+    if (!self || !self.hand || !currentRound || !currentRound.discardPile || currentRound.discardPile.length === 0) return false;
+    const topDiscard = currentRound.discardPile[currentRound.discardPile.length - 1];
+    return self.hand.some(c => 
+      (c.rank && topDiscard.rank && c.rank === topDiscard.rank) ||
+      (c.joker && topDiscard.joker)
+    );
+  };
+  const isDiscardMatch = hasMatch();
 
   const handleCardClick = (card: any) => {
     if (!isMyTurn || hasDiscardedThisTurn) return;
@@ -656,8 +711,17 @@ export const GameTable: React.FC<GameTableProps> = ({
                       {drawableDiscardCard && (
                         <div className="previous-discard-card"><Card card={drawableDiscardCard} /></div>
                       )}
-                      <div className="top-discard-card">
-                        <Card card={currentRound.discardPile[currentRound.discardPile.length - 1]} className={`rot-${currentRound.discardPile.length % 6}`} />
+                      <div 
+                        className={`top-discard-card ${discardDirectionClass}`}
+                        key={`${currentRound.discardPile.length}-${currentRound.discardPile[currentRound.discardPile.length - 1].rank ?? 'none'}-${currentRound.discardPile[currentRound.discardPile.length - 1].suit ?? 'none'}-${currentRound.discardPile[currentRound.discardPile.length - 1].joker ? 'joker' : 'normal'}`}
+                      >
+                        <Card 
+                          card={currentRound.discardPile[currentRound.discardPile.length - 1]} 
+                          className={[
+                            `rot-${currentRound.discardPile.length % 6}`,
+                            isDiscardMatch ? 'joker-glow' : ''
+                          ].join(' ').trim()} 
+                        />
                       </div>
                     </div>
                   ) : (
@@ -773,18 +837,21 @@ export const GameTable: React.FC<GameTableProps> = ({
             const topDiscard = currentRound?.discardPile && currentRound.discardPile.length > 0 
               ? currentRound.discardPile[currentRound.discardPile.length - 1] 
               : null;
-            const isMatch = topDiscard && c.rank === topDiscard.rank;
+            const isMatch = topDiscard && (
+              (c.rank && topDiscard.rank && c.rank === topDiscard.rank) ||
+              (c.joker && topDiscard.joker)
+            );
             const selected = isCardSelected(c);
             // Dim cards of a different rank when some cards are already selected
             const firstSelectedCard = orderedHand.find(card => selectedClientIds.includes(card.clientId));
             const sameRankAsSelection = !firstSelectedCard || c.rank === firstSelectedCard.rank;
             return (
               <Card
-                key={idx}
+                key={c.clientId}
                 card={c}
                 selected={selected}
                 className={[
-                  isMyTurn && !hasDiscardedThisTurn && isMatch ? 'joker-glow' : '',
+                  isMatch ? 'joker-glow' : '',
                   isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedClientIds.length > 0 ? 'card-dimmed' : ''
                 ].join(' ').trim()}
                 onClick={() => handleCardClick(c)}

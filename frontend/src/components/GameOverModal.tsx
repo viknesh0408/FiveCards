@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
 import { processGameEndStats } from '../utils/statsSystem';
 import type { PlayerStats } from '../utils/statsSystem';
+import { recordGameResult } from '../utils/dailySystem';
 
 interface GameOverModalProps {
   gameState: SanitizedGame;
@@ -91,6 +92,17 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       declaresWrong
     );
     setStatsResults(gameStats);
+
+    // Update daily mission progress for this game
+    recordGameResult(
+      {
+        isWin: myPlacement === 1,
+        isTop2: myIndex <= 1,
+        correctTicks: declaresCorrect,
+        winScore: myPlayer.totalScore,
+      },
+      gameState.gameId
+    );
 
     localStorage.setItem('processedGameId', gameState.gameId);
     localStorage.setItem('lastGameStats', JSON.stringify(gameStats));

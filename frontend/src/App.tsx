@@ -88,13 +88,17 @@ export const App: React.FC = () => {
 
     if (!prev) return;
 
-    // 1. Shuffle / Next Round start
+    // 1. Next Round start
     if (gameState.status === 'IN_PROGRESS' && (prev.status === 'WAITING_FOR_PLAYERS' || prev.status === 'ROUND_OVER' || gameState.currentRoundNumber > prev.currentRoundNumber)) {
       if (gameState.currentRoundNumber === 1) {
         localStorage.removeItem('processedGameId');
         localStorage.removeItem('lastGameResults');
+        localStorage.setItem('consecutive_correct_ticks', '0');
+        // Clear processed round indicators
+        for (let i = 1; i <= 30; i++) {
+          localStorage.removeItem(`processed_streak_round_${i}`);
+        }
       }
-      soundEffects.playShuffle();
       setTimeout(() => {
         soundEffects.playJoker();
       }, 1200);

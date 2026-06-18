@@ -31,8 +31,13 @@ export const GameTable: React.FC<GameTableProps> = ({
   latestReaction,
   onSendReaction,
 }) => {
-  const { gameId, players, currentRound, status } = gameState;
+  const [displayedGameState, setDisplayedGameState] = useState<SanitizedGame>(gameState);
+  const { gameId, players, currentRound, status } = displayedGameState;
+  const bufferedStateRef = useRef<SanitizedGame>(gameState);
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
+  const [isPickingFromPile, setIsPickingFromPile] = useState<boolean>(false);
+  const [animateHand, setAnimateHand] = useState<boolean>(true);
+  const drawTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [showScoreboard, setShowScoreboard] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [showDeclareConfirm, setShowDeclareConfirm] = useState<boolean>(false);
@@ -41,6 +46,9 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [tutorialActive, setTutorialActive] = useState<boolean>(false);
   const [tutorialStep, setTutorialStep] = useState<number>(0);
+
+  const selectedBack = localStorage.getItem('selected_card_back') || 'classic';
+  const selectedAvatar = localStorage.getItem('selected_avatar') || 'none';
 
   // Trigger tutorial automatically when the match starts for the first time
   useEffect(() => {
@@ -262,6 +270,79 @@ export const GameTable: React.FC<GameTableProps> = ({
       return newOrderedHand;
     });
   }, [self?.hand]);
+
+  const handleDraw = (fromDiscard: boolean) => {
+    if (drawTimeoutRef.current) {
+      clearTimeout(drawTimeoutRef.current);
+    }
+    setIsPickingFromPile(true);
+    onDraw(fromDiscard);
+    drawTimeoutRef.current = setTimeout(() => {
+      setIsPickingFromPile(false);
+    }, 1000);
+  };
+
+  const prevHandLength = useRef(self?.hand?.length || 0);
+
+  useEffect(() => {
+    const currentLength = self?.hand?.length || 0;
+    if (currentLength !== prevHandLength.current) {
+      if (isPickingFromPile) {
+        if (drawTimeoutRef.current) {
+          clearTimeout(drawTimeoutRef.current);
+        }
+        drawTimeoutRef.current = setTimeout(() => {
+          setIsPickingFromPile(false);
+        }, 150);
+      }
+      prevHandLength.current = currentLength;
+    }
+  }, [self?.hand?.length, isPickingFromPile]);
+
+  useEffect(() => {
+    return () => {
+      if (drawTimeoutRef.current) {
+        clearTimeout(drawTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Sync effect to keep bufferedStateRef pointing to latest live gameState prop
+  useEffect(() => {
+    bufferedStateRef.current = gameState;
+  }, [gameState]);
+
+  useEffect(() => {
+    const prevRoundNumber = displayedGameState?.currentRoundNumber;
+    const prevStatus = displayedGameState?.status;
+    const newRoundNumber = gameState?.currentRoundNumber;
+    const newStatus = gameState?.status;
+
+    // Check if a new round or new game started
+    const isNewRound = gameState && displayedGameState && (
+      (newStatus === 'IN_PROGRESS' && prevStatus === 'WAITING_FOR_PLAYERS') ||
+      (newRoundNumber > prevRoundNumber)
+    );
+
+    if (isNewRound) {
+      // Set the initial round state to displayedGameState
+      setDisplayedGameState(gameState);
+      setAnimateHand(false);
+
+      // Set timer to enable hand animation after 300ms
+      const handAnimateTimer = setTimeout(() => {
+        setDisplayedGameState(bufferedStateRef.current);
+        setAnimateHand(true);
+      }, 300);
+
+      return () => {
+        clearTimeout(handAnimateTimer);
+      };
+    } else {
+      // Update the displayed game state instantly
+      setDisplayedGameState(gameState);
+    }
+  }, [gameState, displayedGameState]);
 
   const handleDragStart = (e: React.DragEvent, idx: number) => {
     draggedIndexRef.current = idx;
@@ -623,7 +704,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                     )}
                   </div>
                   <div className="opponent-mini-hand">
-                    {Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (<div key={cIdx} className="card-back" />))}
+                    {Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (<div key={cIdx} className={`card-back card-back-${selectedBack}`} />))}
                   </div>
                 </div>
               );
@@ -662,7 +743,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                     )}
                   </div>
                   <div className="opponent-mini-hand">
-                    {Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (<div key={cIdx} className="card-back" />))}
+                    {Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (<div key={cIdx} className={`card-back card-back-${selectedBack}`} />))}
                   </div>
                 </div>
               );
@@ -676,7 +757,9 @@ export const GameTable: React.FC<GameTableProps> = ({
             <div className="center-play-wrapper">
               {/* Center Card Stacks */}
               <div className="center-stacks">
-                <div className={`joker-display ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'joker-display' ? 'tutorial-highlight' : ''}`}>
+                <div
+                  className={`joker-display ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'joker-display' ? 'tutorial-highlight' : ''}`}
+                >
                   <span className="joker-label">Joker Rank</span>
                   <Card card={currentRound.jokerCard} className="mini-card" />
                   <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', fontWeight: 800 }}>
@@ -688,18 +771,17 @@ export const GameTable: React.FC<GameTableProps> = ({
                 <div
                   className={`card-pile ${isMyTurn && hasDiscardedThisTurn && needsToDraw ? 'interactive glow-cyan' : ''} ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'tutorial-step-draw' ? 'tutorial-highlight' : ''}`}
                   style={{ cursor: isMyTurn && hasDiscardedThisTurn && needsToDraw ? 'pointer' : 'default' }}
-                  onClick={() => { if (isMyTurn && hasDiscardedThisTurn && needsToDraw) onDraw(false); }}
+                  onClick={() => { if (isMyTurn && hasDiscardedThisTurn && needsToDraw) handleDraw(false); }}
                 >
                   <span className="pile-label">Deck</span>
                   <Card isBack={true} />
                   <div className="card-pile-count">{currentRound.drawPileSize}</div>
                 </div>
 
-                {/* Discard Stack */}
                 <div
                   className={`card-pile ${isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard ? 'interactive glow-cyan' : ''} ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'tutorial-step-discard' ? 'tutorial-highlight' : ''}`}
                   style={{ cursor: isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard ? 'pointer' : 'default' }}
-                  onClick={() => { if (isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard) onDraw(true); }}
+                  onClick={() => { if (isMyTurn && hasDiscardedThisTurn && needsToDraw && drawableDiscardCard) handleDraw(true); }}
                 >
                   <span className="pile-label">
                     {currentRound.firstTurnCompleted 
@@ -725,7 +807,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="game-card card-back" style={{ opacity: 0.2 }}>
+                    <div className={`game-card card-back card-back-${selectedBack}`} style={{ opacity: 0.2 }}>
                       <div style={{ display: 'flex', alignItems: 'center', justifySelf: 'center', height: '100%', fontSize: '0.8rem', color: 'black' }}>Empty</div>
                     </div>
                   )}
@@ -741,13 +823,13 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <button
                     className="btn-draw btn-pick-discard"
                     disabled={!drawableDiscardCard}
-                    onClick={() => onDraw(true)}
+                    onClick={() => handleDraw(true)}
                   >
                     {currentRound.firstTurnCompleted ? 'Pick dropped card' : 'Pick open card'}
                   </button>
                   <button
                     className="btn-draw btn-pick-pile"
-                    onClick={() => onDraw(false)}
+                    onClick={() => handleDraw(false)}
                   >
                     Draw from pile
                   </button>
@@ -812,11 +894,19 @@ export const GameTable: React.FC<GameTableProps> = ({
         )}
         {/* Helper instructions & Turn Timer */}
         <div className="hand-instructions-wrapper">
-          <div className="hand-instructions-text">
-            {status === 'WAITING_FOR_PLAYERS' && 'Waiting to start... Click ready.'}
-            {isMyTurn && !hasDiscardedThisTurn && 'Your Turn: Select a card to Drop or Declare.'}
-            {isMyTurn && hasDiscardedThisTurn && needsToDraw && 'Your Turn: Draw a card from the Draw Pile (bundle).'}
-            {!isMyTurn && status === 'IN_PROGRESS' && `Waiting for ${activePlayer ? activePlayer.name : ''}'s turn...`}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className={`player-hud-avatar-ring avatar-frame-${selectedAvatar}`}>
+              {selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.7)', top: '-11px', zIndex: 10 }}>👑</span>}
+              <span className="player-hud-avatar-crest">
+                {(self?.name || localStorage.getItem('tickPlayerName') || 'P')[0].toUpperCase()}
+              </span>
+            </div>
+            <div className="hand-instructions-text">
+              {status === 'WAITING_FOR_PLAYERS' && 'Waiting to start... Click ready.'}
+              {isMyTurn && !hasDiscardedThisTurn && 'Your Turn: Select a card to Drop or Declare.'}
+              {isMyTurn && hasDiscardedThisTurn && needsToDraw && 'Your Turn: Draw a card from the Draw Pile (bundle).'}
+              {!isMyTurn && status === 'IN_PROGRESS' && `Waiting for ${activePlayer ? activePlayer.name : ''}'s turn...`}
+            </div>
           </div>
           {isMyTurn && timeLeft !== null && status === 'IN_PROGRESS' && (
             <div className={`hand-instructions-timer ${timeLeft <= 15 ? 'warning' : ''}`}>
@@ -825,8 +915,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           )}
         </div>
 
-        {/* Hand Cards */}
-        <div className={`user-hand-cards ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'user-hand-cards' ? 'tutorial-highlight' : ''}`} style={{ position: 'relative', overflow: 'visible' }}>
+        <div className={`user-hand-cards ${isPickingFromPile ? 'no-pick-transition' : ''} ${!animateHand ? 'no-appear-animation' : ''} ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'user-hand-cards' ? 'tutorial-highlight' : ''}`} style={{ position: 'relative', overflow: 'visible' }}>
           {/* Hand Value Sum - Top Right Corner */}
           {self && (
             <div className="hand-value-badge">
@@ -899,7 +988,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       {/* Scoreboard panel — positioned relative to the whole table screen to avoid clipping */}
       <div className={`side-scoreboard-container ${showScoreboard ? 'open' : ''}`}>
         <Scoreboard
-          gameState={gameState}
+          gameState={displayedGameState}
           currentPlayerId={currentPlayerId}
           onClose={() => setShowScoreboard(false)}
         />

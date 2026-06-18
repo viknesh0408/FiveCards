@@ -22,6 +22,12 @@ export const TutorialModal: React.FC<TutorialModalProps> = ({
           <p style={{ fontSize: '1rem', color: 'var(--color-text)', lineHeight: '1.6', textAlign: 'center' }}>
             The main objective of **Five Cards** is to minimize the total points in your hand. The player who accumulates the **lowest total score** across all rounds wins the entire game.
           </p>
+          <div className="mm-luck-disclaimer" style={{ margin: '8px 0', borderStyle: 'solid', borderColor: 'rgba(251, 140, 0, 0.2)' }}>
+            <span className="mm-luck-disclaimer-icon">🍀</span>
+            <p className="mm-luck-disclaimer-text" style={{ color: 'var(--color-text)' }}>
+              <strong>Fair Play Notice:</strong> There is no Easy, Medium, or Hard difficulty in this game. Everything is completely random and based on luck.
+            </p>
+          </div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
             <span style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 10px var(--color-cyan-glow))' }}>🃏</span>
             <span style={{ fontSize: '2.5rem', filter: 'drop-shadow(0 0 10px var(--color-gold-glow))' }}>🃏</span>

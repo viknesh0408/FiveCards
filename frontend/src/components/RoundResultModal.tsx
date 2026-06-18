@@ -43,6 +43,36 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 }) => {
   const { currentRound, players, currentRoundNumber, maxRounds } = gameState;
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
+  const [showStreakCelebration, setShowStreakCelebration] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!currentRound) return;
+    
+    // Only process once per round when the modal is shown
+    const roundKey = `processed_streak_round_${currentRoundNumber}`;
+    const alreadyProcessed = localStorage.getItem(roundKey) === 'true';
+    if (alreadyProcessed) return;
+    localStorage.setItem(roundKey, 'true');
+
+    if (maxRounds > 3) {
+      const selfPlayer = players.find(p => p.id === currentPlayerId);
+      const isTickDeclaringPlayer = currentRound.tickPlayerId === currentPlayerId;
+      
+      if (isTickDeclaringPlayer) {
+        const isCorrect = selfPlayer && selfPlayer.roundScore === 0;
+        if (isCorrect) {
+          const currentStreak = parseInt(localStorage.getItem('consecutive_correct_ticks') || '0') + 1;
+          localStorage.setItem('consecutive_correct_ticks', currentStreak.toString());
+          if (currentStreak >= 3) {
+            setShowStreakCelebration(true);
+          }
+        } else {
+          localStorage.setItem('consecutive_correct_ticks', '0');
+        }
+      }
+    }
+  }, [currentRound, players, currentPlayerId, maxRounds, currentRoundNumber]);
+
   if (!currentRound) return null;
 
   // Find who called tick
@@ -244,6 +274,41 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Fiery Streak Celebration Overlay */}
+      {showStreakCelebration && (
+        <div className="streak-celebration-overlay" onClick={() => setShowStreakCelebration(false)}>
+          <div className="streak-celebration-content" onClick={e => e.stopPropagation()}>
+            <div className="fire-streak-badge">🔥 🔥 🔥</div>
+            <h1 className="streak-title animate-bounce">TICK STREAK!</h1>
+            <p className="streak-desc">3 Correct Declares in a Row!</p>
+            <div className="streak-sub">Unstoppable performance in {maxRounds} rounds!</div>
+            <button className="btn-primary" style={{ marginTop: '24px', padding: '10px 24px' }} onClick={() => setShowStreakCelebration(false)}>
+              Awesomeness! 🚀
+            </button>
+          </div>
+          {Array.from({ length: 22 }).map((_, i) => {
+            const left = Math.random() * 100;
+            const delay = Math.random() * 2.5;
+            const duration = 2 + Math.random() * 2;
+            const size = 1.2 + Math.random() * 1.5;
+            return (
+              <span 
+                key={i} 
+                className="floating-flame-particle"
+                style={{
+                  left: `${left}%`,
+                  animationDelay: `${delay}s`,
+                  animationDuration: `${duration}s`,
+                  fontSize: `${size}rem`,
+                }}
+              >
+                🔥
+              </span>
+            );
+          })}
         </div>
       )}
     </div>

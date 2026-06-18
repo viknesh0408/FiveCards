@@ -3,6 +3,9 @@ import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
 import { getLocalStats, resetLocalStats } from '../utils/statsSystem';
 import type { PlayerStats } from '../utils/statsSystem';
+import { DailyPanel } from './DailyPanel';
+import { ShopPanel } from './ShopPanel';
+import { hasUnclaimedDaily } from '../utils/dailySystem';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -18,7 +21,7 @@ export interface OfflineSettings {
   maxRounds: number;
 }
 
-type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats';
+type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop';
 
 // Toggle Switch Component
 const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; id: string }> = ({ checked, onChange, id }) => (
@@ -53,13 +56,27 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
   const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
   const [animIn, setAnimIn] = useState(true);
+  const [hasDailyNotif, setHasDailyNotif] = useState<boolean>(() => hasUnclaimedDaily());
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
 
   const [stats, setStats] = useState<PlayerStats>(() => getLocalStats());
   const [activeTab, setActiveTab] = useState<'main' | 'me'>('main');
 
+  const refreshMainMenuState = () => {
+    setHasDailyNotif(hasUnclaimedDaily());
+    setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+  };
+
   const navigate = (v: View) => {
     setAnimIn(false);
-    setTimeout(() => { setView(v); setAnimIn(true); }, 180);
+    setTimeout(() => {
+      setView(v);
+      setAnimIn(true);
+      if (v === 'main') {
+        setHasDailyNotif(hasUnclaimedDaily());
+        setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+      }
+    }, 180);
   };
 
   const handleStartOffline = () => {
@@ -107,8 +124,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <h2 className="mm-mobile-tab-header">Me</h2>
                 
                 {/* Profile Initials/Avatar */}
-                <div className="mm-avatar-ring" style={{ borderColor: 'var(--color-gold)', boxShadow: `0 0 24px rgba(251, 191, 36, 0.25)` }}>
-                  <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, color: 'var(--color-gold)' }}>
+                <div className={`mm-avatar-ring avatar-frame-${selectedAvatar}`}>
+                  {selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(1.3)', top: '-14px', zIndex: 10 }}>👑</span>}
+                  <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900 }}>
                     {(playerName || stats.name || 'P')[0].toUpperCase()}
                   </span>
                   {stats.winStreakCurrent >= 2 && <span className="mm-avatar-streak">🔥</span>}
@@ -219,33 +237,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </main>
             </div>
 
-            {/* Footer Tabs */}
-            <div className="mm-footer-tabs">
-              <button 
-                className={`mm-tab-btn ${activeTab === 'main' ? 'active' : ''}`}
-                onClick={() => setActiveTab('main')}
-              >
-                <span className="mm-tab-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-                    <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-                    <polyline points="9 22 9 12 15 12 15 22" />
-                  </svg>
-                </span>
-                <span className="mm-tab-label">Main</span>
-              </button>
-              <button 
-                className={`mm-tab-btn ${activeTab === 'me' ? 'active' : ''}`}
-                onClick={() => setActiveTab('me')}
-              >
-                <span className="mm-tab-icon">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </span>
-                <span className="mm-tab-label">Me</span>
-              </button>
-            </div>
           </>
         )}
 
@@ -634,7 +625,93 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
         )}
 
+        {/* ── DAILY VIEW ─────────────────────────────────────── */}
+        {view === 'daily' && (
+          <DailyPanel
+            onBack={() => navigate('main')}
+            onStateChange={() => setHasDailyNotif(hasUnclaimedDaily())}
+          />
+        )}
+
+        {/* ── SHOP VIEW ───────────────────────────────────────── */}
+        {view === 'shop' && (
+          <ShopPanel
+            onBack={() => navigate('main')}
+            onStateChange={refreshMainMenuState}
+          />
+        )}
+
       </div>
+
+      {(view === 'main' || view === 'daily' || view === 'shop') && (
+        <div className="mm-footer-tabs">
+          <button 
+            className={`mm-tab-btn ${activeTab === 'main' && view === 'main' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('main');
+              navigate('main');
+            }}
+          >
+            <span className="mm-tab-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+                <polyline points="9 22 9 12 15 12 15 22" />
+              </svg>
+            </span>
+            <span className="mm-tab-label">Main</span>
+          </button>
+
+          <button 
+            className={`mm-tab-btn ${view === 'daily' ? 'active' : ''}`}
+            onClick={() => navigate('daily')}
+            style={{ position: 'relative' }}
+          >
+            <span className="mm-tab-icon" style={{ position: 'relative', display: 'inline-flex' }}>
+              {hasDailyNotif && <span className="mm-tab-badge" />}
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+                <line x1="8" y1="14" x2="8" y2="14" strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="12" y1="14" x2="12" y2="14" strokeWidth="2.5" strokeLinecap="round" />
+                <line x1="16" y1="14" x2="16" y2="14" strokeWidth="2.5" strokeLinecap="round" />
+              </svg>
+            </span>
+            <span className="mm-tab-label">Daily</span>
+          </button>
+
+          <button 
+            className={`mm-tab-btn ${view === 'shop' ? 'active' : ''}`}
+            onClick={() => navigate('shop')}
+          >
+            <span className="mm-tab-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </span>
+            <span className="mm-tab-label">Shop</span>
+          </button>
+
+          <button 
+            className={`mm-tab-btn ${activeTab === 'me' && view === 'main' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('me');
+              navigate('main');
+            }}
+          >
+            <span className="mm-tab-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </span>
+            <span className="mm-tab-label">Me</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 };

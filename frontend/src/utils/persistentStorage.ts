@@ -21,7 +21,8 @@ const PERSISTENT_KEYS = [
   'stats_lowestRoundScore',
   'stats_highestRoundScore',
   'stats_declaresCorrect',
-  'stats_declaresWrong'
+  'stats_declaresWrong',
+  'daily_state',
 ];
 
 /**

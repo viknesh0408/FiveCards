@@ -34,9 +34,10 @@ export const Card: React.FC<CardProps> = ({
   dataIndex,
 }) => {
   if (isBack) {
+    const selectedBack = localStorage.getItem('selected_card_back') || 'classic';
     return (
       <div 
-        className={`game-card card-back ${className}`} 
+        className={`game-card card-back card-back-${selectedBack} ${className}`} 
         onClick={onClick}
         draggable={draggable}
         onDragStart={onDragStart}

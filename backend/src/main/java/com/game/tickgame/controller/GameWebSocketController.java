@@ -322,7 +322,7 @@ public class GameWebSocketController {
                                     e.printStackTrace();
                                 }
                             }
-                        }, 1200, TimeUnit.MILLISECONDS);
+                        }, 500, TimeUnit.MILLISECONDS);
                     } else {
                         // Matching card played; no need to draw. Schedule End Turn directly
                         scheduleAiEndTurn(gameId, aiPlayerId, game, aiPlayer);
@@ -333,7 +333,7 @@ public class GameWebSocketController {
                     e.printStackTrace();
                 }
             }
-        }, 1500, TimeUnit.MILLISECONDS);
+        }, 600, TimeUnit.MILLISECONDS);
     }
 
     private void scheduleAiEndTurn(String gameId, String aiPlayerId, Game game, Player aiPlayer) {
@@ -370,7 +370,7 @@ public class GameWebSocketController {
                     e.printStackTrace();
                 }
             }
-        }, 1200, TimeUnit.MILLISECONDS);
+        }, 500, TimeUnit.MILLISECONDS);
     }
 
     private void autoEndTurnIfComplete(Game game, String playerId) {

@@ -80,7 +80,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   min-height: 100vh;
   min-height: 100dvh;
   width: 100vw;
@@ -89,6 +89,7 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 40px 16px;
+  box-sizing: border-box;
 }
 
 /* Dynamic glowing aura background */
@@ -586,7 +587,7 @@ body {
   box-shadow: var(--card-shadow);
   user-select: none;
   position: relative;
-  transition: var(--transition-smooth);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, box-shadow 0.2s ease;
   background: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.12);
   display: flex;
@@ -4471,11 +4472,18 @@ body.battery-saver .hud-btn-voice.speaking {
   position: fixed;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  overflow: hidden;
+  overflow: auto;
   background: var(--bg-table);
   font-family: var(--font-family);
+}
+.mm-root.mm-no-scroll {
+  overflow: hidden !important;
+}
+.mm-root.mm-no-scroll .mm-scene {
+  overflow: hidden !important;
+  max-height: 100vh;
 }
 
 /* Animated background orbs */
@@ -4512,11 +4520,15 @@ body.battery-saver .hud-btn-voice.speaking {
 /* Scene with fade transition */
 .mm-scene {
   width: 100%;
-  height: 100%;
+  min-height: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
+  box-sizing: border-box;
+}
+.mm-scene > * {
+  margin: auto;
 }
 .mm-fade-in  { animation: mm-fade 0.22s ease-out both; }
 .mm-fade-out { animation: mm-fade-out-kf 0.18s ease-in both; }
@@ -4559,8 +4571,10 @@ body.battery-saver .hud-btn-voice.speaking {
 /* Avatar ring */
 .mm-avatar-ring {
   position: relative;
-  width: 72px;
-  height: 72px;
+  width: 72px !important;
+  height: 72px !important;
+  flex-shrink: 0;
+  flex-grow: 0;
   border-radius: 50%;
   border: 2.5px solid;
   display: flex;
@@ -4995,6 +5009,8 @@ body.battery-saver .hud-btn-voice.speaking {
 .mm-settings-left {
   width: 340px;
   flex-shrink: 0;
+  max-height: none !important;
+  overflow: visible !important;
 }
 .mm-settings-list {
   display: flex;
@@ -5077,7 +5093,9 @@ body.battery-saver .hud-btn-voice.speaking {
 .mm-rules-scroll {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-right: 8px;
+  padding-bottom: 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.12) transparent;
   display: flex;
@@ -5109,7 +5127,7 @@ body.battery-saver .hud-btn-voice.speaking {
    MOBILE RESPONSIVE  (≤ 700px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  .mm-scene { padding: 12px; overflow-y: auto; align-items: center; }
+  .mm-scene { padding: 12px; overflow-y: auto; align-items: flex-start; }
 
   .daily-root {
     height: calc(100vh - 40px - 64px - env(safe-area-inset-bottom, 0px));
@@ -5166,7 +5184,6 @@ body.battery-saver .hud-btn-voice.speaking {
     width: 100%;
   }
   .mm-settings-left { width: 100%; }
-  .mm-rules-panel { max-height: 50vh; }
 }
 
 /* ── DETAILED STATISTICS VIEW ────────────────────────────── */
@@ -5174,14 +5191,20 @@ body.battery-saver .hud-btn-voice.speaking {
   display: flex;
   gap: 16px;
   width: min(900px, 96vw);
-  max-height: calc(100vh - 40px);
+  max-height: calc(100vh - 80px);
   align-items: stretch;
+  overflow-y: auto;
 }
 .mm-stats-left {
   width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  /* Override mm-form-panel width to prevent overlapping */
+  max-width: 300px;
+  min-width: 0;
+  max-height: none !important;
+  overflow: visible !important;
 }
 .mm-stats-right {
   flex: 1;
@@ -5190,7 +5213,7 @@ body.battery-saver .hud-btn-voice.speaking {
   padding: 28px;
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 40px);
+  max-height: calc(100vh - 80px);
   overflow: hidden;
   border-radius: 16px;
 }
@@ -5207,7 +5230,9 @@ body.battery-saver .hud-btn-voice.speaking {
 .mm-stats-scroll {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-right: 8px;
+  padding-bottom: 8px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,0.12) transparent;
   display: flex;
@@ -5391,7 +5416,7 @@ body.battery-saver .hud-btn-voice.speaking {
 .mm-stats-detail-row .dot-wrong { color: #ef4444; margin-right: 4px; }
 
 /* Responsive adjustments for stats view */
-@media (max-width: 700px) {
+@media (max-width: 850px) {
   .mm-stats-layout {
     flex-direction: column;
     max-height: none;
@@ -5399,7 +5424,17 @@ body.battery-saver .hud-btn-voice.speaking {
     gap: 12px;
   }
   .mm-stats-left {
-    width: 100%;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 20px 16px;
+    max-height: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .mm-stats-left {
+    width: 100% !important;
+    max-width: 100% !important;
     padding: 20px 16px;
     max-height: none;
   }
@@ -5911,7 +5946,7 @@ body.battery-saver .hud-btn-voice.speaking {
 }
 
 .user-hand-cards .game-card {
-  animation: card-appear-hand 0.28s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-hand 0.15s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 .user-hand-cards.no-pick-transition .game-card {
@@ -5923,19 +5958,19 @@ body.battery-saver .hud-btn-voice.speaking {
 }
 
 .top-discard-card.discard-from-bottom .game-card {
-  animation: card-appear-discard-bottom 0.4s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-bottom 0.2s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 .top-discard-card.discard-from-left .game-card {
-  animation: card-appear-discard-left 0.45s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-left 0.22s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 .top-discard-card.discard-from-right .game-card {
-  animation: card-appear-discard-right 0.45s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-right 0.22s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 .top-discard-card.discard-from-center .game-card {
-  animation: card-appear-discard-center 0.35s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-center 0.18s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 
@@ -7047,3 +7082,32 @@ body.battery-saver .hud-btn-voice.speaking {
   color: #ffa726; /* Warm amber/gold font */
   font-weight: 700;
 }
+
+/* Coins styling for Main Menu */
+.mm-global-coins {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 500;
+  pointer-events: auto;
+}
+@media (max-width: 700px) {
+  .mm-global-coins {
+    top: 14px;
+    right: 14px;
+  }
+}
+
+/* PC View desktop non-scrollable overrides for Main Menu, Settings, and Stats */
+@media (min-width: 851px) {
+  .mm-root {
+    overflow: hidden !important;
+  }
+  .mm-scene {
+    overflow: hidden !important;
+  }
+  .mm-stats-layout {
+    overflow: hidden !important;
+  }
+}
+

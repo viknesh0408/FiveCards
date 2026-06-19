@@ -5,7 +5,7 @@ import { getLocalStats, resetLocalStats } from '../utils/statsSystem';
 import type { PlayerStats } from '../utils/statsSystem';
 import { DailyPanel } from './DailyPanel';
 import { ShopPanel } from './ShopPanel';
-import { hasUnclaimedDaily } from '../utils/dailySystem';
+import { hasUnclaimedDaily, getDailyState } from '../utils/dailySystem';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -21,7 +21,7 @@ export interface OfflineSettings {
   maxRounds: number;
 }
 
-type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop';
+type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop' | 'rules';
 
 // Toggle Switch Component
 const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; id: string }> = ({ checked, onChange, id }) => (
@@ -58,6 +58,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [animIn, setAnimIn] = useState(true);
   const [hasDailyNotif, setHasDailyNotif] = useState<boolean>(() => hasUnclaimedDaily());
   const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
+  const [coins, setCoins] = useState<number>(() => getDailyState().coins);
 
   const [stats, setStats] = useState<PlayerStats>(() => getLocalStats());
   const [activeTab, setActiveTab] = useState<'main' | 'me'>('main');
@@ -65,6 +66,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const refreshMainMenuState = () => {
     setHasDailyNotif(hasUnclaimedDaily());
     setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+    setCoins(getDailyState().coins);
   };
 
   const navigate = (v: View) => {
@@ -106,11 +108,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   return (
-    <div className="mm-root">
+    <div className={`mm-root mm-view-${view} ${(view === 'main' || view === 'settings' || view === 'rules' || view === 'daily' || view === 'shop') ? 'mm-no-scroll' : ''}`}>
       {/* Animated background orbs */}
       <div className="mm-orb mm-orb-1" />
       <div className="mm-orb mm-orb-2" />
       <div className="mm-orb mm-orb-3" />
+
+      {/* Global Top-Right Coins Display */}
+      {view !== 'daily' && view !== 'shop' && view !== 'settings' && view !== 'stats' && view !== 'rules' && !(view === 'main' && activeTab === 'me') && (
+        <div className="mm-global-coins">
+          <div className="daily-coins-pill" style={{ background: 'rgba(251,191,36,0.08)' }}>
+            <span>🪙</span>
+            <span className="daily-coins-val">{coins.toLocaleString()}</span>
+          </div>
+        </div>
+      )}
 
       <div className={`mm-scene ${animIn ? 'mm-fade-in' : 'mm-fade-out'}`}>
 
@@ -189,11 +201,21 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <span className="mm-me-menu-label">Settings</span>
                     <span className="mm-me-menu-arrow">›</span>
                   </button>
+
+                  <button 
+                    className="mm-me-menu-item" 
+                    onClick={() => navigate('rules')}
+                  >
+                    <span className="mm-me-menu-icon">📜</span>
+                    <span className="mm-me-menu-label">Game Rules</span>
+                    <span className="mm-me-menu-arrow">›</span>
+                  </button>
                 </div>
               </aside>
 
               {/* Right panel: Game actions */}
               <main className={`mm-actions-panel ${activeTab === 'main' ? 'mobile-visible' : 'mobile-hidden'}`}>
+
                 {/* Logo */}
                 <div className="mm-logo-block">
                   <div className="mm-logo-cards">
@@ -411,76 +433,77 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
         )}
 
-        {/* ── SETTINGS & RULES ──────────────────────────────── */}
         {view === 'settings' && (
-          <div className="mm-settings-layout">
-            <div className="mm-form-panel glass-panel mm-settings-left">
-              <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
-              <div className="mm-form-header" style={{ marginBottom: '20px' }}>
-                <span className="mm-form-icon">⚙️</span>
-                <h2 className="mm-form-title">Settings</h2>
-              </div>
-
-              <div className="mm-settings-list">
-                <div className="mm-setting-row">
-                  <div className="mm-setting-info">
-                    <span className="mm-setting-name">🔊 Sound Effects</span>
-                  </div>
-                  <Toggle id="snd" checked={soundEnabled} onChange={setSoundEnabled} />
-                </div>
-                <div className="mm-setting-row">
-                  <div className="mm-setting-info">
-                    <span className="mm-setting-name">📳 Vibration</span>
-                  </div>
-                  <Toggle id="vib" checked={vibrationEnabled} onChange={setVibrationEnabled} />
-                </div>
-                <div className="mm-setting-row">
-                  <div className="mm-setting-info">
-                    <span className="mm-setting-name">🔋 Battery Saver</span>
-                    <span className="mm-setting-hint">Reduces animations</span>
-                  </div>
-                  <Toggle id="bat" checked={batterySaverEnabled} onChange={setBatterySaverEnabled} />
-                </div>
-                <div className="mm-setting-row">
-                  <div className="mm-setting-info">
-                    <span className="mm-setting-name">📖 Tutorial</span>
-                  </div>
-                  <button className="mm-mini-btn" onClick={onShowTutorial}>Show Guide</button>
-                </div>
-              </div>
-
-              <button className="mm-cta-btn" style={{ marginTop: 'auto' }} onClick={handleSaveSettings}>
-                Save Settings ✓
-              </button>
+          <div className="mm-form-panel glass-panel" style={{ overflow: 'hidden' }}>
+            <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
+            <div className="mm-form-header" style={{ marginBottom: '20px' }}>
+              <span className="mm-form-icon">⚙️</span>
+              <h2 className="mm-form-title">Settings</h2>
             </div>
 
-            <div className="mm-rules-panel glass-panel">
-              <h3 className="mm-rules-title">📜 Game Rules</h3>
-              <div className="mm-rules-scroll">
-                <div className="mm-rule-block">
-                  <div className="mm-rule-heading">🎯 Objective</div>
-                  <p>Minimize the points in your hand. The player with the lowest total score at the end of all rounds wins.</p>
+            <div className="mm-settings-list">
+              <div className="mm-setting-row">
+                <div className="mm-setting-info">
+                  <span className="mm-setting-name">🔊 Sound Effects</span>
                 </div>
-                <div className="mm-rule-block">
-                  <div className="mm-rule-heading">🃏 Joker System</div>
-                  <p>A card is revealed at the start of each round — its rank becomes the <strong>Joker Rank</strong>. All cards of that rank + 2 printed Jokers are worth <strong>0 points</strong>.</p>
+                <Toggle id="snd" checked={soundEnabled} onChange={setSoundEnabled} />
+              </div>
+              <div className="mm-setting-row">
+                <div className="mm-setting-info">
+                  <span className="mm-setting-name">📳 Vibration</span>
                 </div>
-                <div className="mm-rule-block">
-                  <div className="mm-rule-heading">🔢 Card Values</div>
-                  <p>Jokers = 0 pts · Aces = 1 pt · Numbers 2-10 = face value · J/Q/K = 11/12/13 pts</p>
+                <Toggle id="vib" checked={vibrationEnabled} onChange={setVibrationEnabled} />
+              </div>
+              <div className="mm-setting-row">
+                <div className="mm-setting-info">
+                  <span className="mm-setting-name">🔋 Battery Saver</span>
+                  <span className="mm-setting-hint">Reduces animations</span>
                 </div>
-                <div className="mm-rule-block">
-                  <div className="mm-rule-heading">🔄 Turn Actions</div>
-                  <p>On your turn: either declare "5 Cards" (Tick) at the start, or discard one or more cards of the same rank and draw one from the pile.</p>
+                <Toggle id="bat" checked={batterySaverEnabled} onChange={setBatterySaverEnabled} />
+              </div>
+              <div className="mm-setting-row">
+                <div className="mm-setting-info">
+                  <span className="mm-setting-name">📖 Tutorial</span>
                 </div>
-                <div className="mm-rule-block">
-                  <div className="mm-rule-heading">⚡ Matching Rule</div>
-                  <p>If your discarded card's rank matches the top of the discard pile, you skip drawing — your hand shrinks!</p>
-                </div>
-                <div className="mm-rule-block">
-                  <div className="mm-rule-heading">📢 Declaring Tick</div>
-                  <p><strong>Correct:</strong> Lowest hand = 0 pts. <strong>Wrong:</strong> 80-point penalty for you, 0 pts for the actual lowest player.</p>
-                </div>
+                <button className="mm-mini-btn" onClick={onShowTutorial}>Show Guide</button>
+              </div>
+            </div>
+
+            <button className="mm-cta-btn" style={{ marginTop: '24px' }} onClick={handleSaveSettings}>
+              Save Settings ✓
+            </button>
+          </div>
+        )}
+
+        {/* ── GAME RULES ──────────────────────────────── */}
+        {view === 'rules' && (
+          <div className="mm-rules-panel glass-panel" style={{ width: 'min(600px, 96vw)', maxHeight: 'calc(100vh - 40px)', flex: 'none', margin: 'auto' }}>
+            <button className="mm-back-btn" onClick={() => navigate('main')} style={{ marginBottom: '16px' }}>← Back</button>
+            <h3 className="mm-rules-title">📜 Game Rules</h3>
+            <div className="mm-rules-scroll">
+              <div className="mm-rule-block">
+                <div className="mm-rule-heading">🎯 Objective</div>
+                <p>Minimize the points in your hand. The player with the lowest total score at the end of all rounds wins.</p>
+              </div>
+              <div className="mm-rule-block">
+                <div className="mm-rule-heading">🃏 Joker System</div>
+                <p>A card is revealed at the start of each round — its rank becomes the <strong>Joker Rank</strong>. All cards of that rank + 2 printed Jokers are worth <strong>0 points</strong>.</p>
+              </div>
+              <div className="mm-rule-block">
+                <div className="mm-rule-heading">🔢 Card Values</div>
+                <p>Jokers = 0 pts · Aces = 1 pt · Numbers 2-10 = face value · J/Q/K = 11/12/13 pts</p>
+              </div>
+              <div className="mm-rule-block">
+                <div className="mm-rule-heading">🔄 Turn Actions</div>
+                <p>On your turn: either declare "5 Cards" (Tick) at the start, or discard one or more cards of the same rank and draw one from the pile.</p>
+              </div>
+              <div className="mm-rule-block">
+                <div className="mm-rule-heading">⚡ Matching Rule</div>
+                <p>If your discarded card's rank matches the top of the discard pile, you skip drawing — your hand shrinks!</p>
+              </div>
+              <div className="mm-rule-block">
+                <div className="mm-rule-heading">📢 Declaring Tick</div>
+                <p><strong>Correct:</strong> Lowest hand = 0 pts. <strong>Wrong:</strong> 80-point penalty for you, 0 pts for the actual lowest player.</p>
               </div>
             </div>
           </div>
@@ -629,7 +652,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         {view === 'daily' && (
           <DailyPanel
             onBack={() => navigate('main')}
-            onStateChange={() => setHasDailyNotif(hasUnclaimedDaily())}
+            onStateChange={refreshMainMenuState}
           />
         )}
 

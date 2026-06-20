@@ -80,10 +80,6 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   const tickPlayerName = tickPlayer ? tickPlayer.name : '';
   const endCondition = currentRound.endCondition; // "TICK" or "DECK_EXHAUSTED"
 
-  // Check if current player is ready
-  const self = players.find(p => p.id === currentPlayerId);
-  const isSelfReady = self?.ready;
-
   // Determine round winner(s) (whoever scored 0 points in this round)
   const roundWinners = players.filter(p => p.roundScore === 0);
 
@@ -131,26 +127,6 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                     <span>{p.name}</span>
                     {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
                     {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
-                    {gameState.isMultiplayer && (
-                      <span 
-                        className={`result-badge ${p.ready ? 'ready' : 'waiting'}`}
-                        style={{
-                          background: p.ready ? 'rgba(34, 197, 94, 0.15)' : 'rgba(148, 163, 184, 0.12)',
-                          color: p.ready ? 'var(--color-green)' : 'var(--color-text-muted)',
-                          border: p.ready ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(148, 163, 184, 0.2)',
-                          padding: '1px 6px',
-                          borderRadius: '4px',
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.5px',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                        }}
-                      >
-                        {p.ready ? 'Ready ✓' : 'Waiting... ⌛'}
-                      </span>
-                    )}
                   </span>
                   
                   {isTickDeclaringPlayer && (
@@ -215,29 +191,25 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
             <button className="btn-primary" style={{ margin: '0' }} onClick={onShowLeaderboard}>
               View Game Results
             </button>
-          ) : gameState.isMultiplayer ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <button
-                className={isSelfReady ? "btn-secondary" : "btn-primary"}
-                style={{
-                  margin: '0',
-                  transition: 'var(--transition-smooth)',
-                  ...(isSelfReady ? {
-                    background: 'rgba(239, 68, 68, 0.15)',
-                    border: '1px solid rgba(239, 68, 68, 0.4)',
-                    color: '#f87171',
-                  } : {})
-                }}
-                onClick={onNextRound}
-              >
-                {isSelfReady ? 'Cancel Ready' : 'Ready for Next Round'}
-              </button>
-              {isSelfReady && (
-                <p className="text-cyan" style={{ fontSize: '0.8rem', margin: '0' }}>
-                  Waiting for other players...
-                </p>
-              )}
-            </div>
+          ) : (gameState.isMultiplayer || (gameState as any).multiplayer) ? (
+            (() => {
+              const isHost = gameState.hostId === currentPlayerId;
+              if (isHost) {
+                return (
+                  <button className="btn-primary" style={{ margin: '0' }} onClick={onNextRound}>
+                    Next Round ({currentRoundNumber} / {maxRounds})
+                  </button>
+                );
+              } else {
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                    <p className="text-cyan" style={{ fontSize: '1rem', margin: '0', fontWeight: 600 }}>
+                      Waiting for host to start next round... ⌛
+                    </p>
+                  </div>
+                );
+              }
+            })()
           ) : (
             <button className="btn-primary" style={{ margin: '0' }} onClick={onNextRound}>
               Next Round ({currentRoundNumber} / {maxRounds})

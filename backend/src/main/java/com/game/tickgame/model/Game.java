@@ -20,6 +20,7 @@ public class Game {
     private GameStatus status = GameStatus.WAITING_FOR_PLAYERS;
     private String winnerId;
     private boolean isMultiplayer = false;
+    private String hostId;
 
     public Player getPlayerById(String id) {
         if (players == null) return null;

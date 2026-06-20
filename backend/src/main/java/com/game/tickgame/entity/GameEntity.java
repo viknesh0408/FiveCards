@@ -33,4 +33,7 @@ public class GameEntity {
 
     @Column(name = "is_multiplayer")
     private boolean isMultiplayer;
+
+    @Column(name = "host_id")
+    private String hostId;
 }

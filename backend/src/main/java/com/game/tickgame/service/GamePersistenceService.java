@@ -43,7 +43,8 @@ public class GamePersistenceService {
                 game.getCurrentRoundNumber(),
                 game.getMaxRounds(),
                 game.getWinnerId(),
-                game.isMultiplayer()
+                game.isMultiplayer(),
+                game.getHostId()
         );
 
         List<PlayerEntity> playerEntities = new ArrayList<>();
@@ -177,6 +178,7 @@ public class GamePersistenceService {
         game.setMaxRounds(gameEntity.getMaxRounds());
         game.setWinnerId(gameEntity.getWinnerId());
         game.setMultiplayer(gameEntity.isMultiplayer());
+        game.setHostId(gameEntity.getHostId());
         game.setPlayers(players);
         game.setRounds(rounds.stream().filter(Round::isRoundEnded).collect(Collectors.toList()));
 
@@ -196,6 +198,7 @@ public class GamePersistenceService {
         activeGame.setRounds(game.getRounds());
         activeGame.setWinnerId(game.getWinnerId());
         activeGame.setMultiplayer(game.isMultiplayer());
+        activeGame.setHostId(game.getHostId());
 
         return activeGame;
     }

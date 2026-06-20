@@ -72,6 +72,9 @@ public class GameEngine {
         player.setReady(isAi); // AI is always ready
         player.setHand(new ArrayList<>());
 
+        if (game.getPlayers().isEmpty()) {
+            game.setHostId(playerId);
+        }
         game.getPlayers().add(player);
         return player;
     }

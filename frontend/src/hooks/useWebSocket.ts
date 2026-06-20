@@ -42,6 +42,7 @@ export interface SanitizedGame {
   rounds: SanitizedRound[];
   status: 'WAITING_FOR_PLAYERS' | 'IN_PROGRESS' | 'ROUND_OVER' | 'GAME_OVER';
   winnerId: string | null;
+  hostId: string;
   isMultiplayer: boolean;
 }
 
@@ -291,6 +292,10 @@ export const useWebSocket = () => {
     sendAction('START');
   }, [sendAction]);
 
+  const startNextRound = useCallback(() => {
+    sendAction('START_NEXT_ROUND');
+  }, [sendAction]);
+
   const endGame = useCallback(() => {
     sendAction('END_GAME');
   }, [sendAction]);
@@ -322,6 +327,7 @@ export const useWebSocket = () => {
     endTurn,
     markReady,
     startNewGame,
+    startNextRound,
     endGame,
     latestReaction,
     sendReaction,

@@ -169,6 +169,19 @@ public class GameWebSocketController {
                         }
                         break;
 
+                    case "START_NEXT_ROUND":
+                        if (playerId.equals(game.getHostId())) {
+                            if (game.getStatus() == GameStatus.ROUND_OVER) {
+                                gameEngine.startNextRound(gameId);
+                                Round rNext = game.getCurrentRound();
+                                if (rNext != null && !rNext.isRoundEnded()) {
+                                    Player startingPlayer = game.getPlayers().get(rNext.getCurrentPlayerIndex());
+                                    startTurnTimer(gameId, startingPlayer.getId(), "DISCARD");
+                                }
+                            }
+                        }
+                        break;
+
                     case "END_GAME":
                         gameEngine.endGame(gameId);
                         break;
@@ -227,6 +240,14 @@ public class GameWebSocketController {
     }
 
     private void scheduleAiAction(String gameId, String aiPlayerId) {
+        Game gameInstance = gameEngine.getGame(gameId);
+        if (gameInstance == null) return;
+        boolean isMulti = gameInstance.isMultiplayer();
+        
+        final long discardDelay = isMulti ? 600 : 1500;
+        final long drawDelay = isMulti ? 500 : 1000;
+        final long endTurnDelay = isMulti ? 500 : 1000;
+
         // Run AI turn asynchronously with delays to simulate human thinking
         aiExecutor.schedule(() -> {
             Game game = gameEngine.getGame(gameId);
@@ -293,7 +314,7 @@ public class GameWebSocketController {
 
                     // Check if AI needs to draw
                     if (round.isNeedsToDraw()) {
-                        // Schedule DRAW action after 1.2s
+                        // Schedule DRAW action after delay
                         aiExecutor.schedule(() -> {
                             synchronized (game) {
                                 Round rDraw = game.getCurrentRound();
@@ -314,18 +335,18 @@ public class GameWebSocketController {
                                         return;
                                     }
 
-                                    // Schedule End Turn after another 1.2s
-                                    scheduleAiEndTurn(gameId, aiPlayerId, game, aiPlayer);
+                                    // Schedule End Turn after delay
+                                    scheduleAiEndTurn(gameId, aiPlayerId, game, aiPlayer, endTurnDelay);
 
                                 } catch (Exception e) {
                                     activeAiGames.remove(gameId);
                                     e.printStackTrace();
                                 }
                             }
-                        }, 500, TimeUnit.MILLISECONDS);
+                        }, drawDelay, TimeUnit.MILLISECONDS);
                     } else {
                         // Matching card played; no need to draw. Schedule End Turn directly
-                        scheduleAiEndTurn(gameId, aiPlayerId, game, aiPlayer);
+                        scheduleAiEndTurn(gameId, aiPlayerId, game, aiPlayer, endTurnDelay);
                     }
 
                 } catch (Exception e) {
@@ -333,10 +354,10 @@ public class GameWebSocketController {
                     e.printStackTrace();
                 }
             }
-        }, 600, TimeUnit.MILLISECONDS);
+        }, discardDelay, TimeUnit.MILLISECONDS);
     }
 
-    private void scheduleAiEndTurn(String gameId, String aiPlayerId, Game game, Player aiPlayer) {
+    private void scheduleAiEndTurn(String gameId, String aiPlayerId, Game game, Player aiPlayer, long delay) {
         aiExecutor.schedule(() -> {
             synchronized (game) {
                 Round r2 = game.getCurrentRound();
@@ -370,7 +391,7 @@ public class GameWebSocketController {
                     e.printStackTrace();
                 }
             }
-        }, 500, TimeUnit.MILLISECONDS);
+        }, delay, TimeUnit.MILLISECONDS);
     }
 
     private void autoEndTurnIfComplete(Game game, String playerId) {

@@ -1,0 +1,78 @@
+> Task :compileJava
+> Task :processResources UP-TO-DATE
+> Task :classes
+> Task :resolveMainClassName
+
+> Task :bootRun
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.0.6)
+
+2026-06-20T23:56:14.366+05:30  INFO 10576 --- [tickgame] [           main] com.game.tickgame.TickGameApplication    : Starting TickGameApplication using Java 21.0.11 with PID 10576 (C:\Users\vikne\Desktop\YuvinaTech Projects\Game - App\backend\build\classes\java\main started by viknesh in C:\Users\vikne\Desktop\YuvinaTech Projects\Game - App\backend)
+2026-06-20T23:56:14.373+05:30  INFO 10576 --- [tickgame] [           main] com.game.tickgame.TickGameApplication    : No active profile set, falling back to 1 default profile: "default"
+2026-06-20T23:56:15.727+05:30  INFO 10576 --- [tickgame] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-20T23:56:15.826+05:30  INFO 10576 --- [tickgame] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 86 ms. Found 3 JPA repository interfaces.
+2026-06-20T23:56:16.635+05:30  INFO 10576 --- [tickgame] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-06-20T23:56:16.657+05:30  INFO 10576 --- [tickgame] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-20T23:56:16.657+05:30  INFO 10576 --- [tickgame] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.21]
+2026-06-20T23:56:16.765+05:30  INFO 10576 --- [tickgame] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 2266 ms
+2026-06-20T23:56:17.061+05:30  INFO 10576 --- [tickgame] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-06-20T23:56:17.154+05:30  INFO 10576 --- [tickgame] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.2.12.Final
+2026-06-20T23:56:18.178+05:30  INFO 10576 --- [tickgame] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-20T23:56:18.246+05:30  INFO 10576 --- [tickgame] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-20T23:56:18.552+05:30  INFO 10576 --- [tickgame] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:tickgamedb user=SA
+2026-06-20T23:56:18.556+05:30  INFO 10576 --- [tickgame] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-20T23:56:18.603+05:30  WARN 10576 --- [tickgame] [           main] org.hibernate.orm.deprecation            : HHH90000025: H2Dialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-06-20T23:56:18.681+05:30  INFO 10576 --- [tickgame] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:h2:mem:tickgamedb]
+	Database driver: H2 JDBC Driver
+	Database dialect: H2Dialect
+	Database version: 2.4.240
+	Default catalog/schema: TICKGAMEDB/PUBLIC
+	Autocommit mode: undefined/unknown
+	Isolation level: READ_COMMITTED [default READ_COMMITTED]
+	JDBC fetch size: 100
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-06-20T23:56:20.885+05:30  INFO 10576 --- [tickgame] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-20T23:56:21.012+05:30  INFO 10576 --- [tickgame] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-20T23:56:21.183+05:30  INFO 10576 --- [tickgame] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-20T23:56:22.037+05:30  WARN 10576 --- [tickgame] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-06-20T23:56:22.218+05:30  INFO 10576 --- [tickgame] [           main] o.s.b.w.a.WelcomePageHandlerMapping      : Adding welcome page: class path resource [static/index.html]
+2026-06-20T23:56:22.620+05:30  INFO 10576 --- [tickgame] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Starting...
+2026-06-20T23:56:22.621+05:30  INFO 10576 --- [tickgame] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : BrokerAvailabilityEvent[available=true, SimpleBrokerMessageHandler [org.springframework.messaging.simp.broker.DefaultSubscriptionRegistry@32192a69]]
+2026-06-20T23:56:22.622+05:30  INFO 10576 --- [tickgame] [           main] o.s.m.s.b.SimpleBrokerMessageHandler     : Started.
+2026-06-20T23:56:22.655+05:30  INFO 10576 --- [tickgame] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-06-20T23:56:22.665+05:30  INFO 10576 --- [tickgame] [           main] com.game.tickgame.TickGameApplication    : Started TickGameApplication in 9.893 seconds (process running for 10.886)
+2026-06-20T23:57:22.631+05:30  INFO 10576 --- [tickgame] [MessageBroker-1] o.s.w.s.c.WebSocketMessageBrokerStats    : WebSocketSession[0 current WS(0)-HttpStream(0)-HttpPoll(0), 0 total, 0 closed abnormally (0 connect failure, 0 send limit, 0 transport error)], stompSubProtocol[processed CONNECT(0)-CONNECTED(0)-DISCONNECT(0)], stompBrokerRelay[null], inboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], outboundChannel[pool size = 0, active threads = 0, queued tasks = 0, completed tasks = 0], sockJsScheduler[pool size = 1, active threads = 1, queued tasks = 0, completed tasks = 0]
+2026-06-20T23:58:10.327+05:30  INFO 10576 --- [tickgame] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-20T23:58:10.327+05:30  INFO 10576 --- [tickgame] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-20T23:58:10.329+05:30  INFO 10576 --- [tickgame] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms
+[startNextRound] currentRound=0, maxRounds=3, nextRoundNumber=1
+[TIMER] Attempting to start timer for game: 4F2302, player: USR_W1W7NDTXIKT, phase: DISCARD
+[TIMER] Scheduling 60s timeout task for player: Vicky 
+[TIMER] Attempting to start timer for game: 4F2302, player: USR_W1W7NDTXIKT, phase: DRAW
+[TIMER] Cancelled existing timer task for game: 4F2302
+[TIMER] Scheduling 60s timeout task for player: Vicky 
+[TIMER] Attempting to start timer for game: 4F2302, player: AI_bb966a, phase: DISCARD
+[TIMER] Cancelled existing timer task for game: 4F2302
+[TIMER] Player is AI, not scheduling human timer: Bot 1
+[TIMER] Attempting to start timer for game: 4F2302, player: USR_W1W7NDTXIKT, phase: DISCARD
+[TIMER] Scheduling 60s timeout task for player: Vicky 
+[TIMER] Attempting to start timer for game: 4F2302, player: AI_bb966a, phase: DISCARD
+[TIMER] Cancelled existing timer task for game: 4F2302
+[TIMER] Player is AI, not scheduling human timer: Bot 1
+[TIMER] Attempting to start timer for game: 4F2302, player: USR_W1W7NDTXIKT, phase: DISCARD
+[TIMER] Scheduling 60s timeout task for player: Vicky 
+[DISCONNECT] Player USR_W1W7NDTXIKT did not reconnect. Removing player.
+[TIMER] Attempting to start timer for game: 4F2302, player: AI_bb966a, phase: DISCARD
+[TIMER] Cancelled existing timer task for game: 4F2302
+[TIMER] Player is AI, not scheduling human timer: Bot 1
+[endRound] Setting ROUND_OVER for round 1

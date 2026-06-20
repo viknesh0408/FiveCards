@@ -598,11 +598,11 @@ body {
 }
 
 .game-card.joker {
-  border: 2px solid var(--color-gold);
   background: linear-gradient(135deg, #ffffff 0%, #fffbeb 100%);
 }
 
 .game-card.joker::before {
+  display: none;
   content: '★ JOKER';
   position: absolute;
   font-size: 0.55rem;
@@ -618,6 +618,7 @@ body {
 
 /* Result page cards: only display the star to save space */
 .results-grid .game-card.joker::before {
+  display: block !important;
   content: '★' !important;
   font-size: 0.55rem !important;
   padding: 1px 3px !important;
@@ -2043,8 +2044,8 @@ body {
   /* Opponents: back to absolute left/right columns */
   .opponents-top-container {
     position: absolute;
-    top: 70px;
-    bottom: 180px;
+    top: 20px;
+    bottom: 20px;
     left: 0;
     right: 0;
     background: transparent;
@@ -2081,13 +2082,22 @@ body {
     gap: 8px;
   }
 
+  .opponents-column.left .opponent-slot,
+  .opponents-column.right .opponent-slot {
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+
   .opponent-avatar-card {
-    flex-direction: row;
-    align-items: center;
-    text-align: left;
-    padding: 8px 14px;
-    gap: 10px;
-    border-radius: 16px;
+    flex-direction: row !important;
+    align-items: center !important;
+    text-align: left !important;
+    padding: 8px 14px !important;
+    gap: 10px !important;
+    border-radius: 16px !important;
+    width: auto !important;
+    min-width: 140px;
   }
 
   .avatar-info { align-items: flex-start; }
@@ -3439,6 +3449,7 @@ body {
 
   /* Make sure result page cards still display only the star on mobile */
   .results-grid .game-card.joker::before {
+    display: block !important;
     content: '★' !important;
     font-size: 0.5rem !important;
     padding: 1px 2.5px !important;

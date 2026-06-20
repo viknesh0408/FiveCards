@@ -39,6 +39,7 @@ export const App: React.FC = () => {
     endTurn,
     markReady,
     startNewGame,
+    startNextRound,
     endGame,
     latestReaction,
     sendReaction,
@@ -453,7 +454,7 @@ export const App: React.FC = () => {
             <RoundResultModal
               gameState={gameState}
               currentPlayerId={playerId}
-              onNextRound={markReady}
+              onNextRound={(gameState.isMultiplayer || (gameState as any).multiplayer) ? startNextRound : markReady}
               onLeave={handleLeave}
               onShowLeaderboard={endGame}
             />

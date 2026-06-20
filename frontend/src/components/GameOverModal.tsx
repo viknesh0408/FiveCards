@@ -86,7 +86,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     gameStats = processGameEndStats(
       myPlacement,
       totalPlayersCount,
-      gameState.isMultiplayer,
+      gameState.isMultiplayer || (gameState as any).multiplayer,
       roundScores,
       declaresCorrect,
       declaresWrong

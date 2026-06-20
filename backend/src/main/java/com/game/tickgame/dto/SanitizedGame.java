@@ -18,7 +18,15 @@ public class SanitizedGame {
     private List<SanitizedRound> rounds;
     private GameStatus status;
     private String winnerId;
+    @com.fasterxml.jackson.annotation.JsonProperty("isMultiplayer")
     private boolean isMultiplayer;
+
+    @com.fasterxml.jackson.annotation.JsonProperty("isMultiplayer")
+    public boolean isMultiplayer() {
+        return isMultiplayer;
+    }
+
+    private String hostId;
 
     @Data
     public static class SanitizedPlayer {
@@ -32,6 +40,11 @@ public class SanitizedGame {
         private int totalScore;
         private boolean isReady;
         private boolean declaredTick;
+
+        @com.fasterxml.jackson.annotation.JsonProperty("isAi")
+        public boolean isAi() {
+            return isAi;
+        }
     }
 
     @Data
@@ -62,6 +75,7 @@ public class SanitizedGame {
         sg.setMaxRounds(game.getMaxRounds());
         sg.setStatus(game.getStatus());
         sg.setWinnerId(game.getWinnerId());
+        sg.setHostId(game.getHostId());
         sg.setMultiplayer(game.isMultiplayer());
 
         boolean revealAll = (game.getStatus() == GameStatus.ROUND_OVER || game.getStatus() == GameStatus.GAME_OVER);

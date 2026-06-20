@@ -509,7 +509,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     const topDiscard = currentRound.discardPile[currentRound.discardPile.length - 1];
     return self.hand.some(c => 
       (c.rank && topDiscard.rank && c.rank === topDiscard.rank) ||
-      (c.joker && topDiscard.joker)
+      (c.joker && !c.rank && topDiscard.joker && !topDiscard.rank)
     );
   };
   const isDiscardMatch = hasMatch();
@@ -928,7 +928,7 @@ export const GameTable: React.FC<GameTableProps> = ({
               : null;
             const isMatch = topDiscard && (
               (c.rank && topDiscard.rank && c.rank === topDiscard.rank) ||
-              (c.joker && topDiscard.joker)
+              (c.joker && !c.rank && topDiscard.joker && !topDiscard.rank)
             );
             const selected = isCardSelected(c);
             // Dim cards of a different rank when some cards are already selected
@@ -940,7 +940,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                 card={c}
                 selected={selected}
                 className={[
-                  isMatch ? 'joker-glow' : '',
+                  isMatch && !(c.joker && c.rank) ? 'joker-glow' : '',
                   isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedClientIds.length > 0 ? 'card-dimmed' : ''
                 ].join(' ').trim()}
                 onClick={() => handleCardClick(c)}

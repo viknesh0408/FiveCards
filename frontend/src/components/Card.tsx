@@ -66,7 +66,7 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={`game-card ${suitClass} ${isJoker ? 'joker joker-glow' : ''} ${selected ? 'selected' : ''} ${className}`}
+      className={`game-card ${suitClass} ${isJoker ? (isPrintedJoker ? 'joker joker-glow' : 'joker') : ''} ${selected ? 'selected' : ''} ${className}`}
       onClick={onClick}
       draggable={draggable}
       onDragStart={onDragStart}
@@ -102,7 +102,7 @@ export const Card: React.FC<CardProps> = ({
               left: '4px',
               right: '4px',
               bottom: '4px',
-              border: isJoker ? '1px solid rgba(251, 191, 36, 0.25)' : '1px solid rgba(0, 0, 0, 0.04)',
+              border: '1px solid rgba(0, 0, 0, 0.04)',
               borderRadius: '6px',
               pointerEvents: 'none',
             }}
@@ -114,7 +114,7 @@ export const Card: React.FC<CardProps> = ({
           </div>
           
           <div className="card-center-suit" style={{ opacity: isJoker ? 1 : 0.85 }}>
-            {isJoker ? '★' : suitSymbol}
+            {suitSymbol}
           </div>
           
           <div className="card-corner bottom">

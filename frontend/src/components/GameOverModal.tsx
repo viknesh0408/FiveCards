@@ -24,6 +24,21 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
   const { players, winnerId } = gameState;
 
+  const getAvatarPic = (player: any): string | null => {
+    if (player.id === currentPlayerId) {
+      const pic = localStorage.getItem('selected_avatar_pic');
+      return pic && pic !== 'none' ? pic : null;
+    }
+    if (player.isAi) {
+      const name = player.name || '';
+      const numMatch = name.match(/\d+/);
+      const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
+      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
+    }
+    return null;
+  };
+
   const sortedPlayers = [...players].sort((a, b) => a.totalScore - b.totalScore);
   const isDraw = winnerId === 'DRAW';
   const winner = !isDraw ? (players.find(p => p.id === winnerId) || sortedPlayers[0]) : null;
@@ -156,6 +171,18 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         <div className="podium-container">
           {podium2nd && (
             <div className="podium-stand second">
+              {(() => {
+                const pic = getAvatarPic(podium2nd);
+                return (
+                  <div className="podium-avatar-wrap" style={{ width: '38px', height: '38px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium2nd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)', fontSize: '0.85rem', fontWeight: 800 }}>
+                    {pic ? (
+                      <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      (podium2nd.name || 'P')[0].toUpperCase()
+                    )}
+                  </div>
+                );
+              })()}
               <span className="podium-name">{podium2ndName}</span>
               <span className="podium-crown">🥈</span>
               <span className="podium-number">2</span>
@@ -164,6 +191,18 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium1st && (
             <div className="podium-stand first">
+              {(() => {
+                const pic = getAvatarPic(podium1st);
+                return (
+                  <div className="podium-avatar-wrap" style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium1st.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)', fontSize: '1rem', fontWeight: 800 }}>
+                    {pic ? (
+                      <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      (podium1st.name || 'P')[0].toUpperCase()
+                    )}
+                  </div>
+                );
+              })()}
               <span className="podium-name" style={{ fontSize: '0.95rem' }}>{podium1stName}</span>
               <span className="podium-crown" style={{ fontSize: '2.2rem', top: '-42px' }}>👑</span>
               <span className="podium-number" style={{ color: 'var(--color-gold)' }}>1</span>
@@ -172,6 +211,18 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium3rd && (
             <div className="podium-stand third">
+              {(() => {
+                const pic = getAvatarPic(podium3rd);
+                return (
+                  <div className="podium-avatar-wrap" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium3rd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)', fontSize: '0.8rem', fontWeight: 800 }}>
+                    {pic ? (
+                      <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      (podium3rd.name || 'P')[0].toUpperCase()
+                    )}
+                  </div>
+                );
+              })()}
               <span className="podium-name">{podium3rdName}</span>
               <span className="podium-crown">🥉</span>
               <span className="podium-number">3</span>
@@ -253,6 +304,21 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 }}>
                   {idx + 1}
                 </span>
+                {(() => {
+                  const pic = getAvatarPic(p);
+                  if (pic) {
+                    return (
+                      <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                        <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.65rem', fontWeight: 800 }}>
+                      {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
+                    </div>
+                  );
+                })()}
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <span>{p.name}</span>
                   {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
@@ -283,8 +349,23 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
               <tbody>
                 {sortedPlayers.map(p => (
                   <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: p.id === winner?.id ? 'rgba(251,191,36,0.02)' : 'transparent' }}>
-                    <td style={{ textAlign: 'left', padding: '12px 14px', fontSize: '0.9rem', fontWeight: p.id === winner?.id ? 800 : 500 }}>
-                      {p.name}{' '}
+                    <td style={{ textAlign: 'left', padding: '12px 14px', fontSize: '0.9rem', fontWeight: p.id === winner?.id ? 800 : 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      {(() => {
+                        const pic = getAvatarPic(p);
+                        if (pic) {
+                          return (
+                            <div className="scoreboard-avatar-wrap" style={{ width: '18px', height: '18px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                              <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="scoreboard-avatar-wrap" style={{ width: '18px', height: '18px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.55rem', fontWeight: 800 }}>
+                            {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
+                          </div>
+                        );
+                      })()}
+                      <span>{p.name}</span>
                       {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
                       {p.isAi && <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}> [BOT]</span>}
                     </td>

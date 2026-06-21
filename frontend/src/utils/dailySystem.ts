@@ -3,7 +3,7 @@ import { savePersistentItem } from './persistentStorage';
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 export type MissionType = 'wins' | 'correctTicks' | 'gamesPlayed' | 'top2Finishes' | 'lowScoreWin';
-export type RewardType = 'coins' | 'avatar' | 'cardBack' | 'premium' | 'bonus';
+export type RewardType = 'coins' | 'avatar' | 'cardBack' | 'premium' | 'bonus' | 'avatarPic';
 
 export interface DailyMission {
   id: string;
@@ -35,6 +35,7 @@ export interface DailyState {
   lastProcessedGameId?: string;   // Guard against double-counting a game
   unlockedCardBacks: string[];
   unlockedAvatars: string[];
+  unlockedAvatarPics: string[];
   selectedCardBack: string;
   selectedAvatar: string;
 }
@@ -76,10 +77,10 @@ export const DAILY_REWARDS: DailyReward[] = [
   },
   {
     day: 5,
-    icon: '⚡',
-    label: 'XP Boost',
-    description: 'Score multiplier for 3 upcoming games',
-    type: 'bonus',
+    icon: '🐲',
+    label: 'Dragon Avatar',
+    description: 'Unlocks the legendary Dragon profile avatar!',
+    type: 'avatarPic',
     coinValue: 150,
   },
   {
@@ -92,9 +93,9 @@ export const DAILY_REWARDS: DailyReward[] = [
   },
   {
     day: 7,
-    icon: '🎁',
+    icon: '👽',
     label: 'Premium Pack',
-    description: 'Special card back + 500 bonus coins!',
+    description: 'Alien avatar + Golden card back + 500 coins!',
     type: 'premium',
     coinValue: 500,
   },
@@ -256,6 +257,7 @@ function createDefault(): DailyState {
     coins: 0,
     unlockedCardBacks: ['classic'],
     unlockedAvatars: ['none'],
+    unlockedAvatarPics: ['none', 'cat', 'fox', 'monkey', 'panda', 'robot', 'unicorn'],
     selectedCardBack: 'classic',
     selectedAvatar: 'none',
   };
@@ -272,6 +274,9 @@ function loadState(): DailyState {
       }
       if (!state.unlockedAvatars || state.unlockedAvatars.length === 0) {
         state.unlockedAvatars = ['none'];
+      }
+      if (!state.unlockedAvatarPics || state.unlockedAvatarPics.length === 0) {
+        state.unlockedAvatarPics = ['none', 'cat', 'fox', 'monkey', 'panda', 'robot', 'unicorn'];
       }
       if (!state.selectedCardBack) state.selectedCardBack = 'classic';
       if (!state.selectedAvatar) state.selectedAvatar = 'none';
@@ -344,6 +349,7 @@ export function claimDailyReward(): DailyState {
 
   const nextUnlockedCardBacks = [...state.unlockedCardBacks];
   const nextUnlockedAvatars = [...state.unlockedAvatars];
+  const nextUnlockedAvatarPics = [...(state.unlockedAvatarPics || ['none', 'cat', 'fox', 'monkey', 'panda', 'robot', 'unicorn'])];
 
   if (reward.type === 'avatar') {
     if (!nextUnlockedAvatars.includes('neon_frame')) {
@@ -353,9 +359,16 @@ export function claimDailyReward(): DailyState {
     if (!nextUnlockedCardBacks.includes('holographic')) {
       nextUnlockedCardBacks.push('holographic');
     }
+  } else if (reward.type === 'avatarPic') {
+    if (!nextUnlockedAvatarPics.includes('dragon')) {
+      nextUnlockedAvatarPics.push('dragon');
+    }
   } else if (reward.type === 'premium') {
     if (!nextUnlockedCardBacks.includes('gold')) {
       nextUnlockedCardBacks.push('gold');
+    }
+    if (!nextUnlockedAvatarPics.includes('alien')) {
+      nextUnlockedAvatarPics.push('alien');
     }
   }
 
@@ -365,6 +378,7 @@ export function claimDailyReward(): DailyState {
     coins: state.coins + reward.coinValue,
     unlockedCardBacks: nextUnlockedCardBacks,
     unlockedAvatars: nextUnlockedAvatars,
+    unlockedAvatarPics: nextUnlockedAvatarPics,
   };
   saveState(state);
   return state;

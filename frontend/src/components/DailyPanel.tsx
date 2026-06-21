@@ -48,6 +48,7 @@ export const DailyPanel: React.FC<DailyPanelProps> = ({ onBack, onStateChange })
       case 'premium': return 'linear-gradient(135deg, #fbbf24 0%, #f97316 100%)';
       case 'cardBack': return 'linear-gradient(135deg, #22d3ee 0%, #3b82f6 100%)';
       case 'avatar': return 'linear-gradient(135deg, #a78bfa 0%, #ec4899 100%)';
+      case 'avatarPic': return 'linear-gradient(135deg, #f472b6 0%, #db2777 100%)';
       case 'bonus': return 'linear-gradient(135deg, #34d399 0%, #059669 100%)';
       default: return 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
     }

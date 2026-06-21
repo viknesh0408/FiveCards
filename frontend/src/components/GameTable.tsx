@@ -558,9 +558,40 @@ export const GameTable: React.FC<GameTableProps> = ({
   };
 
   const showSelfAvatar = status === 'WAITING_FOR_PLAYERS' || isMyTurn || !activePlayer;
-  const displayCrest = showSelfAvatar
-    ? (self?.name || localStorage.getItem('tickPlayerName') || 'P')[0].toUpperCase()
-    : (activePlayer?.name || 'P')[0].toUpperCase();
+
+  const getAvatarPic = (player: any): string | null => {
+    if (player.id === currentPlayerId) {
+      const pic = localStorage.getItem('selected_avatar_pic');
+      return pic && pic !== 'none' ? pic : null;
+    }
+    if (player.isAi) {
+      const name = player.name || '';
+      const numMatch = name.match(/\d+/);
+      const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
+      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
+    }
+    return null;
+  };
+
+  const getActiveDisplayAvatar = (): React.ReactNode => {
+    const activeDisplayPlayer = showSelfAvatar ? self : activePlayer;
+    if (activeDisplayPlayer) {
+      const avatarPic = getAvatarPic(activeDisplayPlayer);
+      if (avatarPic) {
+        return <img src={`/avatars/${avatarPic}.png`} alt="Avatar" className="mm-avatar-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+      }
+      return showSelfAvatar 
+        ? (self?.name || localStorage.getItem('tickPlayerName') || 'P')[0].toUpperCase()
+        : (activePlayer?.name || 'P')[0].toUpperCase();
+    } else {
+      const localPic = localStorage.getItem('selected_avatar_pic');
+      if (localPic && localPic !== 'none') {
+        return <img src={`/avatars/${localPic}.png`} alt="Avatar" className="mm-avatar-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />;
+      }
+      return (localStorage.getItem('tickPlayerName') || 'P')[0].toUpperCase();
+    }
+  };
 
   return (
     <div className="game-table-container">
@@ -686,8 +717,15 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)' }}>
-                        {getInitials(opp.name)}
+                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {(() => {
+                          const avatarPic = getAvatarPic(opp);
+                          return avatarPic ? (
+                            <img src={`/avatars/${avatarPic}.png`} alt="Avatar" className="mm-avatar-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            getInitials(opp.name)
+                          );
+                        })()}
                       </div>
                       {isOpponentTurn && (
                         <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
@@ -725,8 +763,15 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)' }}>
-                        {getInitials(opp.name)}
+                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {(() => {
+                          const avatarPic = getAvatarPic(opp);
+                          return avatarPic ? (
+                            <img src={`/avatars/${avatarPic}.png`} alt="Avatar" className="mm-avatar-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            getInitials(opp.name)
+                          );
+                        })()}
                       </div>
                       {isOpponentTurn && (
                         <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
@@ -902,8 +947,8 @@ export const GameTable: React.FC<GameTableProps> = ({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <div className={`player-hud-avatar-ring avatar-frame-${showSelfAvatar ? selectedAvatar : 'none'}`}>
               {showSelfAvatar && selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.7)', top: '-11px', zIndex: 10 }}>👑</span>}
-              <span className="player-hud-avatar-crest">
-                {displayCrest}
+              <span className="player-hud-avatar-crest" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {getActiveDisplayAvatar()}
               </span>
             </div>
             <div className="hand-instructions-text">

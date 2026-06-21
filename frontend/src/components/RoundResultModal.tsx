@@ -75,6 +75,21 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 
   if (!currentRound) return null;
 
+  const getAvatarPic = (player: any): string | null => {
+    if (player.id === currentPlayerId) {
+      const pic = localStorage.getItem('selected_avatar_pic');
+      return pic && pic !== 'none' ? pic : null;
+    }
+    if (player.isAi) {
+      const name = player.name || '';
+      const numMatch = name.match(/\d+/);
+      const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
+      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
+    }
+    return null;
+  };
+
   // Find who called tick
   const tickPlayer = players.find(p => p.id === currentRound.tickPlayerId);
   const tickPlayerName = tickPlayer ? tickPlayer.name : '';
@@ -124,6 +139,21 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               >
                 <div className="result-player-info">
                   <span className="result-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    {(() => {
+                      const pic = getAvatarPic(p);
+                      if (pic) {
+                        return (
+                          <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                            <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                        );
+                      }
+                      return (
+                        <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.65rem', fontWeight: 800 }}>
+                          {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
+                        </div>
+                      );
+                    })()}
                     <span>{p.name}</span>
                     {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
                     {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}

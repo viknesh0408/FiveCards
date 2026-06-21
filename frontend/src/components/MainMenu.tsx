@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
-import { getLocalStats, resetLocalStats } from '../utils/statsSystem';
+import { getLocalStats, resetLocalStats, saveLocalStats } from '../utils/statsSystem';
 import type { PlayerStats } from '../utils/statsSystem';
 import { DailyPanel } from './DailyPanel';
 import { ShopPanel } from './ShopPanel';
-import { hasUnclaimedDaily, getDailyState } from '../utils/dailySystem';
+import { hasUnclaimedDaily, getDailyState, equipShopItem } from '../utils/dailySystem';
+import { soundEffects } from '../utils/soundEffects';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -21,7 +22,44 @@ export interface OfflineSettings {
   maxRounds: number;
 }
 
-type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop' | 'rules';
+type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop' | 'rules' | 'edit-profile';
+
+interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+}
+
+const CARD_BACKS: ShopItem[] = [
+  { id: 'classic', name: 'Classic Red', description: 'The timeless standard layout', price: 0 },
+  { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 2500 },
+  { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 3750 },
+  { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 3000 },
+  { id: 'gold', name: 'Golden Royal', description: 'Prestigious golden filigree and ornate details', price: 10000 },
+  { id: 'obsidian', name: 'Dark Obsidian', description: 'Stealth charcoal texture with purple neon pulses', price: 12000 },
+];
+
+const AVATAR_FRAMES: ShopItem[] = [
+  { id: 'none', name: 'Default Frame', description: 'Simple, clean border profile ring', price: 0 },
+  { id: 'neon_frame', name: 'Neon Cyber', description: 'Electrifying cyan and hot pink glowing ring', price: 2000 },
+  { id: 'frost', name: 'Ice Frost', description: 'Frosted blue crystals and cold sparkle glow', price: 3000 },
+  { id: 'fire', name: 'Fire Flame', description: 'Energetic warm orange-red dancing fire ring', price: 4000 },
+  { id: 'gold_aura', name: 'Golden Aura', description: 'Continuous rotate of brilliant royal gold rays', price: 10000 },
+  { id: 'royal', name: 'Royal Crown', description: 'Majestic golden crest crowned with a royal tiara', price: 15000 },
+];
+
+const CARTOON_AVATARS = [
+  { id: 'none', name: 'None (Initials)' },
+  { id: 'cat', name: 'Cat' },
+  { id: 'fox', name: 'Fox' },
+  { id: 'monkey', name: 'Monkey' },
+  { id: 'panda', name: 'Panda' },
+  { id: 'robot', name: 'Robot' },
+  { id: 'unicorn', name: 'Unicorn' },
+  { id: 'dragon', name: 'Dragon (Streak Day 5)' },
+  { id: 'alien', name: 'Alien (Streak Day 7)' },
+];
 
 // Toggle Switch Component
 const Toggle: React.FC<{ checked: boolean; onChange: (v: boolean) => void; id: string }> = ({ checked, onChange, id }) => (
@@ -49,6 +87,9 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 }) => {
   const [view, setView] = useState<View>('main');
   const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('tickPlayerName') || '');
+  const [tempPlayerName, setTempPlayerName] = useState<string>('');
+  const [tempAvatar, setTempAvatar] = useState<string>('none');
+  const [tempCardBack, setTempCardBack] = useState<string>('classic');
   const [aiCount, setAiCount] = useState<number>(3);
   const [maxRounds, setMaxRounds] = useState<number>(10);
   const [roomId, setRoomId] = useState<string>('');
@@ -58,6 +99,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [animIn, setAnimIn] = useState(true);
   const [hasDailyNotif, setHasDailyNotif] = useState<boolean>(() => hasUnclaimedDaily());
   const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
+  const [selectedAvatarPic, setSelectedAvatarPic] = useState<string>(() => localStorage.getItem('selected_avatar_pic') || 'none');
+  const [tempAvatarPic, setTempAvatarPic] = useState<string>('none');
   const [coins, setCoins] = useState<number>(() => getDailyState().coins);
 
   const [stats, setStats] = useState<PlayerStats>(() => getLocalStats());
@@ -66,6 +109,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const refreshMainMenuState = () => {
     setHasDailyNotif(hasUnclaimedDaily());
     setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+    setSelectedAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
     setCoins(getDailyState().coins);
   };
 
@@ -74,9 +118,17 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     setTimeout(() => {
       setView(v);
       setAnimIn(true);
+      if (v === 'edit-profile') {
+        const ds = getDailyState();
+        setTempPlayerName(localStorage.getItem('tickPlayerName') || 'Player');
+        setTempAvatar(ds.selectedAvatar || 'none');
+        setTempCardBack(ds.selectedCardBack || 'classic');
+        setTempAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
+      }
       if (v === 'main') {
         setHasDailyNotif(hasUnclaimedDaily());
         setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+        setSelectedAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
       }
       if (v === 'online-create') {
         if (maxRounds !== 3 && maxRounds !== 10 && maxRounds !== 30) {
@@ -89,6 +141,29 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         }
       }
     }, 180);
+  };
+
+  const handleSaveProfile = async () => {
+    const trimmed = tempPlayerName.trim();
+    if (!trimmed) return;
+
+    setPlayerName(trimmed);
+    await savePersistentItem('tickPlayerName', trimmed);
+    localStorage.setItem('tickPlayerName', trimmed);
+
+    const updatedStats = { ...stats, name: trimmed };
+    saveLocalStats(updatedStats);
+    setStats(updatedStats);
+
+    equipShopItem('avatar', tempAvatar);
+    equipShopItem('cardBack', tempCardBack);
+
+    setSelectedAvatar(tempAvatar);
+    localStorage.setItem('selected_avatar_pic', tempAvatarPic);
+    setSelectedAvatarPic(tempAvatarPic);
+
+    soundEffects.playWin();
+    navigate('main');
   };
 
   const handleStartOffline = () => {
@@ -118,14 +193,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   return (
-    <div className={`mm-root mm-view-${view} ${(view === 'main' || view === 'settings' || view === 'rules' || view === 'daily' || view === 'shop') ? 'mm-no-scroll' : ''}`}>
+    <div className={`mm-root mm-view-${view} ${(view === 'main' || view === 'settings' || view === 'rules' || view === 'daily' || view === 'shop' || view === 'edit-profile') ? 'mm-no-scroll' : ''}`}>
       {/* Animated background orbs */}
       <div className="mm-orb mm-orb-1" />
       <div className="mm-orb mm-orb-2" />
       <div className="mm-orb mm-orb-3" />
 
       {/* Global Top-Right Coins Display */}
-      {view !== 'daily' && view !== 'shop' && view !== 'settings' && view !== 'stats' && view !== 'rules' && !(view === 'main' && activeTab === 'me') && (
+      {view !== 'daily' && view !== 'shop' && view !== 'settings' && view !== 'stats' && view !== 'rules' && view !== 'edit-profile' && !(view === 'main' && activeTab === 'me') && (
         <div className="mm-global-coins">
           <div className="daily-coins-pill" style={{ background: 'rgba(251,191,36,0.08)' }}>
             <span>🪙</span>
@@ -148,14 +223,28 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 {/* Profile Initials/Avatar */}
                 <div className={`mm-avatar-ring avatar-frame-${selectedAvatar}`}>
                   {selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(1.3)', top: '-14px', zIndex: 10 }}>👑</span>}
-                  <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900 }}>
-                    {(playerName || stats.name || 'P')[0].toUpperCase()}
+                  <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {selectedAvatarPic && selectedAvatarPic !== 'none' ? (
+                      <img src={`/avatars/${selectedAvatarPic}.png`} alt="Avatar" className="mm-avatar-img" />
+                    ) : (
+                      (playerName || stats.name || 'P')[0].toUpperCase()
+                    )}
                   </span>
                   {stats.winStreakCurrent >= 2 && <span className="mm-avatar-streak">🔥</span>}
                 </div>
 
                 {/* Player info */}
-                <div className="mm-profile-name">{playerName || stats.name || 'Player'}</div>
+                <div className="mm-profile-name-container" style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', margin: '4px 0 12px 0' }}>
+                  <div className="mm-profile-name" style={{ margin: 0 }}>{playerName || stats.name || 'Player'}</div>
+                  <button 
+                    className="mm-profile-edit-btn" 
+                    onClick={() => navigate('edit-profile')} 
+                    title="Edit Profile"
+                    style={{ background: 'none', border: 'none', color: 'var(--color-cyan)', cursor: 'pointer', fontSize: '1rem', padding: '4px', display: 'flex', alignItems: 'center', transition: 'transform 0.15s ease' }}
+                  >
+                    ✏️
+                  </button>
+                </div>
                 <div className="mm-profile-mmr" style={{ marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Local Competitor
                 </div>
@@ -194,6 +283,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
                 {/* Me Menu List */}
                 <div className="mm-me-menu-list">
+                  <button 
+                    className="mm-me-menu-item" 
+                    onClick={() => navigate('edit-profile')}
+                  >
+                    <span className="mm-me-menu-icon">✏️</span>
+                    <span className="mm-me-menu-label">Edit Profile</span>
+                    <span className="mm-me-menu-arrow">›</span>
+                  </button>
+
                   <button 
                     className="mm-me-menu-item" 
                     onClick={() => navigate('stats')}
@@ -672,6 +770,163 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             onBack={() => navigate('main')}
             onStateChange={refreshMainMenuState}
           />
+        )}
+
+        {/* ── EDIT PROFILE VIEW ──────────────────────────────── */}
+        {view === 'edit-profile' && (
+          <div className="mm-form-panel glass-panel" style={{ width: 'min(500px, 96vw)', maxHeight: 'calc(100vh - 70px)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
+            <div className="mm-form-header" style={{ marginBottom: '16px' }}>
+              <span className="mm-form-icon">✏️</span>
+              <h2 className="mm-form-title">Edit Profile</h2>
+              <p className="mm-form-desc">Customize your profile card & card themes</p>
+            </div>
+
+            <div className="mm-edit-profile-scroll" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {/* Initials & Frame Live Preview */}
+              <div className="mm-edit-profile-preview" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', margin: '10px 0' }}>
+                <div className={`mm-avatar-ring avatar-frame-${tempAvatar}`} style={{ width: '70px', height: '70px', borderWidth: '3px' }}>
+                  {tempAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(1.4)', top: '-15px', zIndex: 10 }}>👑</span>}
+                  <span className="mm-avatar-crest" style={{ fontSize: '1.6rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {tempAvatarPic && tempAvatarPic !== 'none' ? (
+                      <img src={`/avatars/${tempAvatarPic}.png`} alt="Avatar" className="mm-avatar-img" />
+                    ) : (
+                      (tempPlayerName || 'P')[0].toUpperCase()
+                    )}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Crest Preview</div>
+              </div>
+
+              {/* Player Name Input */}
+              <div className="mm-field">
+                <label className="mm-field-label">Player Name</label>
+                <input
+                  className="mm-input"
+                  type="text"
+                  value={tempPlayerName}
+                  onChange={e => setTempPlayerName(e.target.value)}
+                  placeholder="Enter player name"
+                  maxLength={18}
+                />
+              </div>
+
+              {/* Profile Picture Grid */}
+              <div className="mm-field">
+                <label className="mm-field-label">Profile Picture</label>
+                <div className="profile-edit-grid">
+                  {CARTOON_AVATARS.map((item) => {
+                    const unlockedPics = getDailyState().unlockedAvatarPics || ['none', 'cat', 'fox', 'monkey', 'panda', 'robot', 'unicorn'];
+                    const isUnlocked = unlockedPics.includes(item.id);
+                    const isSelected = tempAvatarPic === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`profile-edit-item ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
+                        onClick={() => {
+                          if (isUnlocked) {
+                            setTempAvatarPic(item.id);
+                            soundEffects.playClick();
+                          }
+                        }}
+                      >
+                        <div className="preview-circle-pic" style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', border: isSelected ? '2px solid var(--color-cyan)' : '2px solid transparent', position: 'relative' }}>
+                          {item.id !== 'none' ? (
+                            <img src={`/avatars/${item.id}.png`} alt={item.name} className="mm-avatar-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ) : (
+                            <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>{(tempPlayerName || 'P')[0].toUpperCase()}</span>
+                          )}
+                          {!isUnlocked && (
+                            <span className="lock-icon" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '1.2rem', textShadow: '0 0 4px rgba(0,0,0,0.8)', zIndex: 5 }}>🔒</span>
+                          )}
+                        </div>
+                        <span className="item-label">{item.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Avatar Frames Grid */}
+              <div className="mm-field">
+                <label className="mm-field-label">Avatar Frames</label>
+                <div className="profile-edit-grid">
+                  {AVATAR_FRAMES.map((item) => {
+                    const isUnlocked = getDailyState().unlockedAvatars.includes(item.id);
+                    const isSelected = tempAvatar === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`profile-edit-item ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
+                        onClick={() => {
+                          if (isUnlocked) {
+                            setTempAvatar(item.id);
+                            soundEffects.playClick();
+                          }
+                        }}
+                      >
+                        <div className={`preview-circle avatar-frame-${item.id}`}>
+                          {item.id === 'royal' && <span className="shop-royal-crown" style={{ fontSize: '0.65rem', top: '-7px' }}>👑</span>}
+                          <span style={{ fontSize: '0.7rem', fontWeight: 800 }}>{(tempPlayerName || 'P')[0].toUpperCase()}</span>
+                        </div>
+                        <span className="item-label">{item.name}</span>
+                        {!isUnlocked && <span className="lock-icon">🔒</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Card Backs Grid */}
+              <div className="mm-field">
+                <label className="mm-field-label">Card Backs</label>
+                <div className="profile-edit-grid">
+                  {CARD_BACKS.map((item) => {
+                    const isUnlocked = getDailyState().unlockedCardBacks.includes(item.id);
+                    const isSelected = tempCardBack === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`profile-edit-item ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
+                        onClick={() => {
+                          if (isUnlocked) {
+                            setTempCardBack(item.id);
+                            soundEffects.playClick();
+                          }
+                        }}
+                      >
+                        <div className={`preview-card-back card-back-${item.id}`}>
+                          <div className="card-back-pattern">
+                            <span style={{ fontSize: '0.55rem', fontWeight: 900 }}>5T</span>
+                          </div>
+                        </div>
+                        <span className="item-label">{item.name}</span>
+                        {!isUnlocked && <span className="lock-icon">🔒</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button 
+                className="btn-secondary" 
+                style={{ flex: 1, margin: 0, padding: '12px 0' }} 
+                onClick={() => navigate('main')}
+              >
+                Cancel
+              </button>
+              <button 
+                className="btn-primary" 
+                style={{ flex: 1, margin: 0, padding: '12px 0' }} 
+                onClick={handleSaveProfile}
+                disabled={!tempPlayerName.trim()}
+              >
+                Save Profile
+              </button>
+            </div>
+          </div>
         )}
 
       </div>

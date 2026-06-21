@@ -272,6 +272,14 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  const handleNetworkError = (error: any, defaultMessage: string) => {
+    if (!navigator.onLine || error instanceof TypeError) {
+      alert('No internet connection');
+    } else {
+      alert(defaultMessage);
+    }
+  };
+
   const handleStartOffline = async (settings: OfflineSettings) => {
     if (!navigator.onLine) {
       alert('No internet connection');
@@ -316,7 +324,7 @@ export const App: React.FC = () => {
       setScreen('table');
     } catch (e) {
       console.error('Failed to start offline game', e);
-      alert('Error initializing offline game.');
+      handleNetworkError(e, 'Error initializing offline game.');
     }
   };
 
@@ -349,7 +357,7 @@ export const App: React.FC = () => {
       setScreen('table');
     } catch (e) {
       console.error('Failed to create online game', e);
-      alert('Error creating room. Is the backend running?');
+      handleNetworkError(e, 'Error creating room. Is the backend running?');
     }
   };
 
@@ -381,7 +389,7 @@ export const App: React.FC = () => {
       setScreen('table');
     } catch (e) {
       console.error('Failed to join online game', e);
-      alert('Error joining room. Check the code and try again.');
+      handleNetworkError(e, 'Error joining room. Check the code and try again.');
     }
   };
 

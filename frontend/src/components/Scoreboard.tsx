@@ -14,6 +14,21 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
   // Sort players by total score ascending (best score first)
   const sortedPlayers = [...players].sort((a, b) => a.totalScore - b.totalScore);
 
+  const getAvatarPic = (player: any): string | null => {
+    if (player.id === currentPlayerId) {
+      const pic = localStorage.getItem('selected_avatar_pic');
+      return pic && pic !== 'none' ? pic : null;
+    }
+    if (player.isAi) {
+      const name = player.name || '';
+      const numMatch = name.match(/\d+/);
+      const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
+      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
+    }
+    return null;
+  };
+
   return (
     <div className="side-scoreboard glass-panel">
       <h3 className="scoreboard-title" style={{ gap: '10px' }}>
@@ -43,6 +58,21 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', width: '16px', flexShrink: 0 }}>
                   #{index + 1}
                 </span>
+                {(() => {
+                  const pic = getAvatarPic(p);
+                  if (pic) {
+                    return (
+                      <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                        <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      </div>
+                    );
+                  }
+                  return (
+                    <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.65rem', fontWeight: 800 }}>
+                      {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
+                    </div>
+                  );
+                })()}
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: isSelf ? '#ffffff' : 'rgba(255,255,255,0.8)', display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
                   {isLeader && <span style={{ marginRight: '2px', filter: 'drop-shadow(0 0 4px var(--color-gold-glow))' }}>👑</span>}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>

@@ -78,6 +78,16 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         setHasDailyNotif(hasUnclaimedDaily());
         setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
       }
+      if (v === 'online-create') {
+        if (maxRounds !== 3 && maxRounds !== 10 && maxRounds !== 30) {
+          setMaxRounds(10);
+        }
+      }
+      if (v === 'offline') {
+        if (maxRounds !== 3 && maxRounds !== 5 && maxRounds !== 10 && maxRounds !== 20) {
+          setMaxRounds(10);
+        }
+      }
     }, 180);
   };
 
@@ -385,7 +395,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
             <div className="mm-form-body">
               <PickerRow label="Rounds">
-                {([3, 5, 10, 20] as const).map(r => (
+                {([3, 10, 30] as const).map(r => (
                   <button
                     key={r}
                     className={`mm-chip ${maxRounds === r ? 'active' : ''}`}

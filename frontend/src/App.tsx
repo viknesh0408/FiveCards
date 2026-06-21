@@ -212,6 +212,11 @@ export const App: React.FC = () => {
       }
       setPlayerId(id);
 
+      if (!navigator.onLine) {
+        alert('No internet connection');
+        return;
+      }
+
       const activeGameId = localStorage.getItem('activeGameId');
       if (activeGameId) {
         try {
@@ -268,6 +273,10 @@ export const App: React.FC = () => {
   }, []);
 
   const handleStartOffline = async (settings: OfflineSettings) => {
+    if (!navigator.onLine) {
+      alert('No internet connection');
+      return;
+    }
     try {
       // 1. Create a game session
       const createRes = await fetch(`${apiBase}/api/game/create?maxRounds=${settings.maxRounds}&isMultiplayer=false`, {
@@ -312,6 +321,10 @@ export const App: React.FC = () => {
   };
 
   const handleCreateOnline = async (name: string, maxRounds: number) => {
+    if (!navigator.onLine) {
+      alert('No internet connection');
+      return;
+    }
     try {
       // 1. Create a game session
       const createRes = await fetch(`${apiBase}/api/game/create?maxRounds=${maxRounds}&isMultiplayer=true`, {
@@ -341,6 +354,10 @@ export const App: React.FC = () => {
   };
 
   const handleJoinOnline = async (gameId: string, name: string) => {
+    if (!navigator.onLine) {
+      alert('No internet connection');
+      return;
+    }
     try {
       // Save name locally
       const stats = getLocalStats();

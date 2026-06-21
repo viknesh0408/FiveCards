@@ -557,6 +557,11 @@ export const GameTable: React.FC<GameTableProps> = ({
     alert('Room code copied to clipboard!');
   };
 
+  const showSelfAvatar = status === 'WAITING_FOR_PLAYERS' || isMyTurn || !activePlayer;
+  const displayCrest = showSelfAvatar
+    ? (self?.name || localStorage.getItem('tickPlayerName') || 'P')[0].toUpperCase()
+    : (activePlayer?.name || 'P')[0].toUpperCase();
+
   return (
     <div className="game-table-container">
       {/* HUD Header */}
@@ -895,10 +900,10 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* Helper instructions & Turn Timer */}
         <div className="hand-instructions-wrapper">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className={`player-hud-avatar-ring avatar-frame-${selectedAvatar}`}>
-              {selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.7)', top: '-11px', zIndex: 10 }}>👑</span>}
+            <div className={`player-hud-avatar-ring avatar-frame-${showSelfAvatar ? selectedAvatar : 'none'}`}>
+              {showSelfAvatar && selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.7)', top: '-11px', zIndex: 10 }}>👑</span>}
               <span className="player-hud-avatar-crest">
-                {(self?.name || localStorage.getItem('tickPlayerName') || 'P')[0].toUpperCase()}
+                {displayCrest}
               </span>
             </div>
             <div className="hand-instructions-text">

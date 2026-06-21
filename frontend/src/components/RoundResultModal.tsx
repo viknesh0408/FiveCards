@@ -63,7 +63,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
         if (isCorrect) {
           const currentStreak = parseInt(localStorage.getItem('consecutive_correct_ticks') || '0') + 1;
           localStorage.setItem('consecutive_correct_ticks', currentStreak.toString());
-          if (currentStreak >= 3) {
+          if (currentStreak === 3) {
             setShowStreakCelebration(true);
           }
         } else {

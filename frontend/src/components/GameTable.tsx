@@ -553,10 +553,10 @@ export const GameTable: React.FC<GameTableProps> = ({
     const topDiscard = currentRound.discardPile[currentRound.discardPile.length - 1];
     return self.hand.some(c => 
       (c.rank && topDiscard.rank && c.rank === topDiscard.rank) ||
-      (c.joker && !c.rank && topDiscard.joker && !topDiscard.rank)
+      (c.joker && topDiscard.joker)
     );
   };
-  const isDiscardMatch = hasMatch();
+  const isDiscardMatch = hasMatch() && (!isMyTurn || !hasDiscardedThisTurn);
 
   const handleCardClick = (card: any) => {
     if (!isMyTurn || hasDiscardedThisTurn) return;
@@ -1097,7 +1097,8 @@ export const GameTable: React.FC<GameTableProps> = ({
                           card={currentRound.discardPile[currentRound.discardPile.length - 1]} 
                           className={[
                             `rot-${currentRound.discardPile.length % 6}`,
-                            isDiscardMatch ? 'joker-glow' : ''
+                            isDiscardMatch ? 'joker-glow' : '',
+                            lastDiscarderId === currentPlayerId ? 'dropped-card-glow' : ''
                           ].join(' ').trim()} 
                         />
                       </div>

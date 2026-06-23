@@ -66,7 +66,7 @@ export const Card: React.FC<CardProps> = ({
 
   return (
     <div
-      className={`game-card ${suitClass} ${isJoker ? (isPrintedJoker ? 'joker joker-glow' : 'joker') : ''} ${selected ? 'selected' : ''} ${className}`}
+      className={`game-card ${suitClass} ${isJoker ? 'joker joker-glow' : ''} ${selected ? 'selected' : ''} ${className}`}
       onClick={onClick}
       draggable={draggable}
       onDragStart={onDragStart}

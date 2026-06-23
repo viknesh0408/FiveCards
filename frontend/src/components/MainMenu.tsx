@@ -193,7 +193,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   return (
-    <div className={`mm-root mm-view-${view} ${(view === 'main' || view === 'settings' || view === 'rules' || view === 'daily' || view === 'shop' || view === 'edit-profile') ? 'mm-no-scroll' : ''}`}>
+    <div className={`mm-root mm-view-${view} mm-no-scroll`}>
       {/* Animated background orbs */}
       <div className="mm-orb mm-orb-1" />
       <div className="mm-orb mm-orb-2" />

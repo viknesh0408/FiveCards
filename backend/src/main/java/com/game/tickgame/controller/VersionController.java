@@ -13,8 +13,8 @@ public class VersionController {
     @GetMapping
     public Map<String, String> getVersion() {
         return Map.of(
-                "version", "1.0.22",
-                "apkUrl", "https://drive.google.com/uc?export=download&id=15CB54FuR0tbUBiPHtj9QqkQ4BVqqORVt"
+                "version", "1.0.24",
+                "apkUrl", "https://drive.google.com/uc?export=download&id=124JX6TOa7bbQmpOcQIgukjgA3nVd4C3S"
         );
     }
 }

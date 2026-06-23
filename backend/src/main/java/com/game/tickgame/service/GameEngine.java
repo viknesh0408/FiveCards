@@ -257,8 +257,8 @@ public class GameEngine {
         round.setHasDiscardedThisTurn(true);
         round.setCardsDiscardedThisTurn(1);
 
-        // Check if matching the rank of previous top card of discard pile
-        if (previousTopCard != null && handCard.getRank() == previousTopCard.getRank()) {
+        // Check if matching the rank of previous top card of discard pile (or both are Jokers)
+        if (previousTopCard != null && (handCard.getRank() == previousTopCard.getRank() || (handCard.isJoker() && previousTopCard.isJoker()))) {
             round.setNeedsToDraw(false);
         } else {
             round.setNeedsToDraw(true);
@@ -339,8 +339,8 @@ public class GameEngine {
         round.setHasDiscardedThisTurn(true);
         round.setCardsDiscardedThisTurn(resolvedCards.size());
 
-        // Check rank-match rule: if any discarded card matches the previous top card rank, no draw needed
-        if (previousTopCard != null && previousTopCard.getRank() == targetRank) {
+        // Check rank-match rule: if any discarded card matches the previous top card rank (or both are Jokers), no draw needed
+        if (previousTopCard != null && (previousTopCard.getRank() == targetRank || (previousTopCard.isJoker() && cardsToDiscard.get(0).isJoker()))) {
             round.setNeedsToDraw(false);
         } else {
             round.setNeedsToDraw(true);

@@ -1434,6 +1434,17 @@ body {
   }
 }
 
+@keyframes pulse-glow-purple {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(192, 132, 252, 0.45), var(--card-shadow);
+    border-color: rgba(192, 132, 252, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 25px var(--color-purple), var(--card-shadow);
+    border-color: rgba(192, 132, 252, 0.95);
+  }
+}
+
 .pulse-button {
   animation: pulse-glow 2s infinite;
 }
@@ -1455,7 +1466,11 @@ body {
 }
 
 .joker-glow {
-  animation: pulse-gold 2.5s infinite;
+  animation: pulse-gold 2.5s infinite !important;
+}
+
+.dropped-card-glow {
+  animation: pulse-glow-purple 2.5s infinite !important;
 }
 
 .card-pile.glow-cyan .game-card,
@@ -3698,6 +3713,44 @@ body {
     padding: 6px 12px !important;
     font-size: 0.75rem !important;
     border-radius: 6px !important;
+  }
+}
+
+@media (max-width: 580px) {
+  .turn-pill {
+    display: none !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .game-hud-header {
+    height: 40px !important;
+    padding: 2px 4px !important;
+  }
+  .game-table-container::before {
+    top: 52px !important; /* 40px HUD Header + 12px spacing */
+  }
+  .hud-section {
+    gap: 3px !important;
+  }
+  .hud-pill {
+    font-size: 0.65rem !important;
+    padding: 3px 5px !important;
+    height: 26px !important;
+  }
+  .hud-btn-voice,
+  .emoji-trigger-btn,
+  .hud-btn-leave,
+  .hud-btn-scores {
+    width: 30px !important;
+    height: 30px !important;
+  }
+  .hud-btn-leave svg,
+  .hud-btn-scores svg,
+  .hud-btn-voice svg,
+  .emoji-trigger-btn svg {
+    width: 13px !important;
+    height: 13px !important;
   }
 }
 

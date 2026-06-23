@@ -40,7 +40,9 @@ public class GameController {
     public ResponseEntity<?> joinPlayer(
             @PathVariable String gameId,
             @RequestParam String playerId,
-            @RequestParam String name) {
+            @RequestParam String name,
+            @RequestParam(required = false, defaultValue = "none") String avatar,
+            @RequestParam(required = false, defaultValue = "none") String avatarPic) {
         
         try {
             Game game = gameEngine.getGame(gameId);
@@ -52,7 +54,7 @@ public class GameController {
                 }
             }
 
-            Player player = gameEngine.addPlayer(gameId, playerId, name, false, null);
+            Player player = gameEngine.addPlayer(gameId, playerId, name, false, null, avatar, avatarPic);
             gamePersistenceService.saveGame(game);
             
             return ResponseEntity.ok(SanitizedGame.fromGame(game, playerId));
@@ -77,7 +79,7 @@ public class GameController {
             }
 
             String aiId = "AI_" + UUID.randomUUID().toString().substring(0, 6);
-            gameEngine.addPlayer(gameId, aiId, name, true, aiLevel);
+            gameEngine.addPlayer(gameId, aiId, name, true, aiLevel, "none", "none");
             gamePersistenceService.saveGame(game);
             
             return ResponseEntity.ok(SanitizedGame.fromGame(game, null));

@@ -40,6 +40,8 @@ public class SanitizedGame {
         private int totalScore;
         private boolean isReady;
         private boolean declaredTick;
+        private String avatar;
+        private String avatarPic;
 
         @com.fasterxml.jackson.annotation.JsonProperty("isAi")
         public boolean isAi() {
@@ -93,6 +95,8 @@ public class SanitizedGame {
             sp.setReady(p.isReady());
             sp.setDeclaredTick(p.isDeclaredTick());
             sp.setCardCount(p.getHand() != null ? p.getHand().size() : 0);
+            sp.setAvatar(p.getAvatar());
+            sp.setAvatarPic(p.getAvatarPic());
 
             // Hide cards unless it's this player, or the round is finished and we show all hands
             if (revealAll || p.getId().equals(playerId)) {

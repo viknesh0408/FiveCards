@@ -15,6 +15,9 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
   const sortedPlayers = [...players].sort((a, b) => a.totalScore - b.totalScore);
 
   const getAvatarPic = (player: any): string | null => {
+    if (player.avatarPic && player.avatarPic !== 'none') {
+      return player.avatarPic;
+    }
     if (player.id === currentPlayerId) {
       const pic = localStorage.getItem('selected_avatar_pic');
       return pic && pic !== 'none' ? pic : null;

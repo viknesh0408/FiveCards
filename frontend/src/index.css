@@ -3400,7 +3400,7 @@ body {
   .hud-btn-leave {
     padding: 6px 10px;
     border-radius: 10px;
-    height: 34px;
+    height: 36px;
     gap: 4px;
   }
   
@@ -3411,7 +3411,7 @@ body {
   .hud-btn-scores {
     padding: 6px 10px;
     border-radius: 10px;
-    height: 34px;
+    height: 36px;
     gap: 4px;
   }
   
@@ -3423,7 +3423,7 @@ body {
     padding: 6px 8px;
     font-size: 0.76rem;
     border-radius: 10px;
-    height: 34px;
+    height: 30px;
     gap: 5px;
   }
   
@@ -3508,14 +3508,14 @@ body {
   
   .hud-btn-voice,
   .emoji-trigger-btn {
-    width: 32px !important;
-    height: 32px !important;
+    width: 36px !important;
+    height: 36px !important;
   }
   
   .hud-btn-leave,
   .hud-btn-scores {
-    width: 32px !important;
-    height: 32px !important;
+    width: 36px !important;
+    height: 36px !important;
     padding: 0 !important;
     display: flex !important;
     align-items: center !important;
@@ -3526,12 +3526,12 @@ body {
   .hud-btn-scores svg,
   .hud-btn-voice svg,
   .emoji-trigger-btn svg {
-    width: 15px !important;
-    height: 15px !important;
+    width: 16px !important;
+    height: 16px !important;
   }
   
   .emoji-picker-options {
-    top: 40px !important; /* Align options dropdown under smaller header */
+    top: 48px !important; /* Align options dropdown under smaller header */
     padding: 6px 10px !important;
     gap: 8px !important;
   }
@@ -5815,7 +5815,7 @@ body.battery-saver .hud-btn-voice.speaking {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 72px;
     background: rgba(4, 12, 8, 0.95);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -5835,18 +5835,23 @@ body.battery-saver .hud-btn-voice.speaking {
     border: none;
     color: var(--color-text-muted);
     font-family: var(--font-family);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition-smooth);
     flex: 1;
     height: 100%;
-    gap: 3px;
+    gap: 4px;
   }
 
   .mm-tab-btn .mm-tab-icon {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
     transition: var(--transition-bounce);
+  }
+
+  .mm-tab-btn .mm-tab-icon svg {
+    width: 25px !important;
+    height: 25px !important;
   }
 
   .mm-tab-btn.active {
@@ -5855,13 +5860,13 @@ body.battery-saver .hud-btn-voice.speaking {
   }
 
   .mm-tab-btn.active .mm-tab-icon {
-    transform: scale(1.15) translateY(-2px);
+    transform: scale(1.18) translateY(-3px);
     color: #fff;
   }
 
   /* Main screen updates with footer space */
   .mm-scene {
-    padding-bottom: 84px !important; /* Make room for the footer tab bar */
+    padding-bottom: 92px !important; /* Make room for the footer tab bar */
   }
 
   /* Visibility of panels depending on active tab */
@@ -7265,6 +7270,92 @@ body.battery-saver .hud-btn-voice.speaking {
   height: 100%;
   object-fit: cover;
 }
+
+
+
+/* ─── Voice Chat ──────────────────────────────────────────────────────────── */
+
+/* Mic button — default (voice off) */
+.hud-btn-voice {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(148, 163, 184, 0.3);
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  flex-shrink: 0;
+}
+.hud-btn-voice:hover {
+  border-color: rgba(148, 163, 184, 0.6);
+  color: var(--color-text);
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* Mic button — voice active, unmuted */
+.hud-btn-voice.voice-active {
+  border-color: var(--color-green);
+  color: var(--color-green);
+  background: rgba(52, 211, 153, 0.12);
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.35), inset 0 0 8px rgba(52, 211, 153, 0.08);
+  animation: voice-btn-pulse 2.2s ease-in-out infinite;
+}
+
+/* Mic button — muted */
+.hud-btn-voice.voice-muted {
+  border-color: var(--color-red);
+  color: var(--color-red);
+  background: rgba(248, 113, 113, 0.1);
+  box-shadow: 0 0 10px rgba(248, 113, 113, 0.3);
+}
+
+@keyframes voice-btn-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(52, 211, 153, 0.35), inset 0 0 8px rgba(52, 211, 153, 0.08); }
+  50%       { box-shadow: 0 0 20px rgba(52, 211, 153, 0.55), inset 0 0 12px rgba(52, 211, 153, 0.15); }
+}
+
+/* Speaking glow on opponent avatar card */
+.opponent-avatar-card.voice-speaking {
+  border-color: var(--color-green) !important;
+  box-shadow: 0 0 0 2px var(--color-green), 0 0 16px rgba(52, 211, 153, 0.5) !important;
+  animation: voice-speaking-ring 0.9s ease-in-out infinite;
+}
+
+@keyframes voice-speaking-ring {
+  0%, 100% { box-shadow: 0 0 0 2px var(--color-green), 0 0 16px rgba(52, 211, 153, 0.5); }
+  50%       { box-shadow: 0 0 0 3px var(--color-green), 0 0 24px rgba(52, 211, 153, 0.75); }
+}
+
+/* Small mic indicator below opponent name when speaking */
+.avatar-speaking-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.6rem;
+  color: var(--color-green);
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  animation: speaking-fade 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes speaking-fade {
+  from { opacity: 0.6; }
+  to   { opacity: 1; }
+}
+
+@media (max-width: 768px) {
+  .hud-btn-voice {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 
 
 

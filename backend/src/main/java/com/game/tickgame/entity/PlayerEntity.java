@@ -50,6 +50,12 @@ public class PlayerEntity {
     @Column(name = "timeout_count")
     private int timeoutCount;
 
+    @Column(name = "avatar")
+    private String avatar = "none";
+
+    @Column(name = "avatar_pic")
+    private String avatarPic = "none";
+
     public PlayerEntity(String id, String gameId, String name, boolean isAi, String aiLevel, int totalScore, int roundScore, boolean isReady, boolean declaredTick, List<Card> hand) {
         this.id = id;
         this.gameId = gameId;
@@ -62,5 +68,7 @@ public class PlayerEntity {
         this.declaredTick = declaredTick;
         this.hand = hand;
         this.timeoutCount = 0;
+        this.avatar = "none";
+        this.avatarPic = "none";
     }
 }

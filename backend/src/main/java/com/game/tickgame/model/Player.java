@@ -22,6 +22,9 @@ public class Player {
     private boolean declaredTick;
     private int timeoutCount;
 
+    private String avatar = "none";
+    private String avatarPic = "none";
+
     public Player(String id, String name, boolean isAi, AiLevel aiLevel, List<Card> hand, int roundScore, int totalScore, boolean isReady, boolean declaredTick) {
         this.id = id;
         this.name = name;
@@ -33,6 +36,8 @@ public class Player {
         this.isReady = isReady;
         this.declaredTick = declaredTick;
         this.timeoutCount = 0;
+        this.avatar = "none";
+        this.avatarPic = "none";
     }
 
     public int getHandValue() {

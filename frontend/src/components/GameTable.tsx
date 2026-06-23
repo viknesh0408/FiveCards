@@ -3,6 +3,10 @@ import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { Card } from './Card';
 import { Scoreboard } from './Scoreboard';
+import { Share } from '@capacitor/share';
+import { Clipboard } from '@capacitor/clipboard';
+import { useVoiceChat } from '../hooks/useVoiceChat';
+import type { Client } from '@stomp/stompjs';
 
 interface GameTableProps {
   gameState: SanitizedGame;
@@ -16,6 +20,9 @@ interface GameTableProps {
   onReady: () => void;
   latestReaction: { playerId: string; emoji: string; id: string } | null;
   onSendReaction: (emoji: string) => void;
+  // Voice chat
+  stompClientRef: React.MutableRefObject<Client | null>;
+  connected: boolean;
 }
 
 export const GameTable: React.FC<GameTableProps> = ({
@@ -30,6 +37,8 @@ export const GameTable: React.FC<GameTableProps> = ({
   onReady,
   latestReaction,
   onSendReaction,
+  stompClientRef,
+  connected,
 }) => {
   const [displayedGameState, setDisplayedGameState] = useState<SanitizedGame>(gameState);
   const { gameId, players, currentRound, status } = displayedGameState;
@@ -46,6 +55,41 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
   const [tutorialActive, setTutorialActive] = useState<boolean>(false);
   const [tutorialStep, setTutorialStep] = useState<number>(0);
+  const [copiedToastText, setCopiedToastText] = useState<string | null>(null);
+
+  // ── Voice chat ──────────────────────────────────────────────────────────
+  const humanPlayerIds = gameState.players
+    .filter((p) => !p.isAi)
+    .map((p) => p.id);
+
+  const {
+    isVoiceEnabled,
+    isMuted,
+    isSpeakerMuted,
+    speakingStates,
+    toggleMute,
+    toggleVoice,
+    toggleSpeakerMute,
+    hasPermission,
+  } = useVoiceChat({
+    gameId: gameState.gameId,
+    currentPlayerId,
+    humanPlayerIds,
+    stompClientRef,
+    connected,
+  });
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showToast = (message: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setCopiedToastText(message);
+    toastTimeoutRef.current = setTimeout(() => {
+      setCopiedToastText(null);
+      toastTimeoutRef.current = null;
+    }, 2000);
+  };
 
   const selectedBack = localStorage.getItem('selected_card_back') || 'classic';
   const selectedAvatar = localStorage.getItem('selected_avatar') || 'none';
@@ -552,14 +596,121 @@ export const GameTable: React.FC<GameTableProps> = ({
 
 
 
-  const copyRoomCode = () => {
-    navigator.clipboard.writeText(gameId);
-    alert('Room code copied to clipboard!');
+  const shareRoomCode = async () => {
+    const isNative = !!(window as any).Capacitor;
+    const shareText = `Join my game room on 5 Cards! Room Code: ${gameId}`;
+    const shareUrl = window.location.origin;
+
+    if (isNative) {
+      try {
+        const canShare = await Share.canShare();
+        if (canShare.value) {
+          await Share.share({
+            title: 'Join my 5 Cards Game!',
+            text: shareText,
+            url: shareUrl,
+            dialogTitle: 'Share Room Code'
+          });
+          return;
+        }
+      } catch (err) {
+        console.log('Capacitor native share failed:', err);
+      }
+      
+      // Fallback to Clipboard for native app
+      try {
+        await Clipboard.write({
+          string: gameId
+        });
+        showToast("Room code copied to clipboard!");
+        return;
+      } catch (err) {
+        console.error('Capacitor native copy failed:', err);
+      }
+    }
+
+    // Web / Browser platform logic
+    const shareData = {
+      title: 'Join my 5 Cards Game!',
+      text: shareText,
+      url: shareUrl
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (err) {
+        console.log('Web share failed or was cancelled:', err);
+        // If user cancelled, don't fallback to clipboard copy
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+      }
+    }
+
+    // Modern clipboard API check or fallback text copy (e.g. non-secure HTTP context)
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(gameId);
+        showToast("Room code copied to clipboard!");
+      } else {
+        fallbackWebCopy();
+      }
+    } catch (err) {
+      console.warn('Modern navigator.clipboard failed, attempting text area fallback:', err);
+      fallbackWebCopy();
+    }
+  };
+
+  const fallbackWebCopy = () => {
+    try {
+      const textArea = document.createElement("textarea");
+      textArea.value = gameId;
+      textArea.style.position = "fixed";
+      textArea.style.top = "0";
+      textArea.style.left = "0";
+      textArea.style.width = "2em";
+      textArea.style.height = "2em";
+      textArea.style.padding = "0";
+      textArea.style.border = "none";
+      textArea.style.outline = "none";
+      textArea.style.boxShadow = "none";
+      textArea.style.background = "transparent";
+      
+      document.body.appendChild(textArea);
+      textArea.focus();
+      
+      // Select text with high compatibility for mobile browsers & iOS Safari
+      const range = document.createRange();
+      range.selectNodeContents(textArea);
+      const selection = window.getSelection();
+      if (selection) {
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
+      textArea.setSelectionRange(0, 999999);
+      
+      const successful = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      
+      if (successful) {
+        showToast("Room code copied to clipboard!");
+      } else {
+        showToast(`Room code: ${gameId}`);
+      }
+    } catch (err) {
+      console.error('Fallback copy failed:', err);
+      showToast(`Room code: ${gameId}`);
+    }
   };
 
   const showSelfAvatar = status === 'WAITING_FOR_PLAYERS' || isMyTurn || !activePlayer;
 
   const getAvatarPic = (player: any): string | null => {
+    if (player.avatarPic && player.avatarPic !== 'none') {
+      return player.avatarPic;
+    }
     if (player.id === currentPlayerId) {
       const pic = localStorage.getItem('selected_avatar_pic');
       return pic && pic !== 'none' ? pic : null;
@@ -613,7 +764,7 @@ export const GameTable: React.FC<GameTableProps> = ({
             <span className="btn-text">Leave</span>
           </button>
           
-          <div className="hud-pill room-pill" onClick={copyRoomCode} title="Click to copy Room Code">
+          <div className="hud-pill room-pill" onClick={shareRoomCode} title="Click to share Room Code">
             <svg className="hud-svg-icon key-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3" />
             </svg>
@@ -686,6 +837,99 @@ export const GameTable: React.FC<GameTableProps> = ({
             )}
           </div>
 
+          {/* Voice Chat Buttons (Speaker & Mic) */}
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {/* Speaker Button */}
+            <button
+              className={`hud-btn-voice ${isVoiceEnabled ? (isSpeakerMuted ? 'voice-muted' : 'voice-active') : ''}`}
+              onClick={() => {
+                if (!isVoiceEnabled) {
+                  toggleVoice();
+                } else {
+                  toggleSpeakerMute();
+                }
+              }}
+              onContextMenu={(e) => { e.preventDefault(); if (isVoiceEnabled) toggleVoice(); }}
+              title={
+                !isVoiceEnabled
+                  ? 'Enable Voice Chat'
+                  : isSpeakerMuted
+                  ? 'Unmute Speaker (Hear players)'
+                  : 'Mute Speaker (hold to disable voice)'
+              }
+            >
+              {isVoiceEnabled && !isSpeakerMuted ? (
+                // Speaker on — green
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                </svg>
+              ) : isVoiceEnabled && isSpeakerMuted ? (
+                // Speaker muted — red slash
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              ) : (
+                // Speaker off — greyed out
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                </svg>
+              )}
+            </button>
+
+            {/* Microphone Button */}
+            <button
+              className={`hud-btn-voice ${isVoiceEnabled ? (isMuted ? 'voice-muted' : 'voice-active') : ''}`}
+              onClick={() => {
+                if (!isVoiceEnabled) {
+                  toggleVoice();
+                } else {
+                  toggleMute();
+                }
+              }}
+              onContextMenu={(e) => { e.preventDefault(); if (isVoiceEnabled) toggleVoice(); }}
+              title={
+                !isVoiceEnabled
+                  ? 'Enable Voice Chat'
+                  : isMuted
+                  ? 'Unmute Microphone'
+                  : 'Mute Microphone (hold to disable voice)'
+              }
+            >
+              {isVoiceEnabled && !isMuted ? (
+                // Mic on — green
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              ) : isVoiceEnabled && isMuted ? (
+                // Mic muted — red slash
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              ) : (
+                // Mic off — greyed out
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                  <line x1="12" y1="19" x2="12" y2="23" />
+                  <line x1="8" y1="23" x2="16" y2="23" />
+                </svg>
+              )}
+              {hasPermission === false && (
+                <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '10px', height: '10px', background: 'var(--color-red)', borderRadius: '50%', border: '2px solid var(--bg-dark)' }} />
+              )}
+            </button>
+          </div>
+
           <button 
             className={`hud-btn-scores ${showScoreboard ? 'active' : ''}`}
             onClick={() => setShowScoreboard(!showScoreboard)}
@@ -714,10 +958,11 @@ export const GameTable: React.FC<GameTableProps> = ({
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
               return (
                 <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
+                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${speakingStates[opp.id] && isVoiceEnabled ? 'voice-speaking' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {opp.avatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.55)', top: '-11px', zIndex: 10 }}>👑</span>}
+                      <div className={`avatar-circle avatar-frame-${opp.avatar || 'none'}`} style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {(() => {
                           const avatarPic = getAvatarPic(opp);
                           return avatarPic ? (
@@ -760,10 +1005,11 @@ export const GameTable: React.FC<GameTableProps> = ({
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
               return (
                 <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''}`}>
+                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${speakingStates[opp.id] && isVoiceEnabled ? 'voice-speaking' : ''}`}>
                     <div className="avatar-wrapper">
                       <div className="turn-ring" />
-                      <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {opp.avatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.55)', top: '-11px', zIndex: 10 }}>👑</span>}
+                      <div className={`avatar-circle avatar-frame-${opp.avatar || 'none'}`} style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         {(() => {
                           const avatarPic = getAvatarPic(opp);
                           return avatarPic ? (
@@ -892,8 +1138,42 @@ export const GameTable: React.FC<GameTableProps> = ({
           {status === 'WAITING_FOR_PLAYERS' && (
             <div className="center-stacks glass-panel" style={{ flexDirection: 'column', width: '380px', padding: '32px' }}>
               <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Waiting for Players</h3>
-              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '20px' }}>
-                Minimum 2 players. Share code <strong className="text-gold" style={{ fontSize: '1rem' }}>{gameId}</strong> to join.
+              <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <span>Minimum 2 players. Room Code:</span>
+                <strong className="text-gold" style={{ fontSize: '1.05rem', letterSpacing: '0.5px', marginLeft: '6px' }}>{gameId}</strong>
+                <button 
+                  onClick={shareRoomCode} 
+                  title="Share Room Code"
+                  style={{
+                    background: 'rgba(34, 211, 238, 0.1)',
+                    border: '1px solid rgba(34, 211, 238, 0.3)',
+                    borderRadius: '8px',
+                    width: '32px',
+                    height: '32px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--color-cyan)',
+                    cursor: 'pointer',
+                    transition: 'var(--transition-smooth)',
+                    marginLeft: '8px',
+                    verticalAlign: 'middle'
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(34, 211, 238, 0.2)';
+                    e.currentTarget.style.borderColor = 'var(--color-cyan)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(34, 211, 238, 0.1)';
+                    e.currentTarget.style.borderColor = 'rgba(34, 211, 238, 0.3)';
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block' }}>
+                    <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                    <polyline points="16 6 12 2 8 6" />
+                    <line x1="12" y1="2" x2="12" y2="15" />
+                  </svg>
+                </button>
               </p>
               <div style={{ width: '100%', textAlign: 'left' }}>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontWeight: 800 }}>Joined:</span>
@@ -945,8 +1225,10 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* Helper instructions & Turn Timer */}
         <div className="hand-instructions-wrapper">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className={`player-hud-avatar-ring avatar-frame-${showSelfAvatar ? selectedAvatar : 'none'}`}>
-              {showSelfAvatar && selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.7)', top: '-11px', zIndex: 10 }}>👑</span>}
+            <div className={`player-hud-avatar-ring avatar-frame-${showSelfAvatar ? selectedAvatar : (activePlayer?.avatar || 'none')}`}>
+              {((showSelfAvatar && selectedAvatar === 'royal') || (!showSelfAvatar && activePlayer?.avatar === 'royal')) && (
+                <span className="shop-royal-crown" style={{ transform: 'scale(0.7)', top: '-11px', zIndex: 10 }}>👑</span>
+              )}
               <span className="player-hud-avatar-crest" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {getActiveDisplayAvatar()}
               </span>
@@ -1162,6 +1444,35 @@ export const GameTable: React.FC<GameTableProps> = ({
             </div>
           </div>
         </>
+      )}
+
+      {/* Toast Notification for Clipboard Copy */}
+      {copiedToastText && (
+        <div 
+          className="glass-panel"
+          style={{
+            position: 'fixed',
+            bottom: '100px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 24px',
+            borderColor: 'var(--color-cyan)',
+            color: 'var(--color-cyan)',
+            fontWeight: 800,
+            fontSize: '0.9rem',
+            zIndex: 9999,
+            boxShadow: '0 0 15px var(--color-cyan-glow)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            pointerEvents: 'none'
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          {copiedToastText}
+        </div>
       )}
 
     </div>

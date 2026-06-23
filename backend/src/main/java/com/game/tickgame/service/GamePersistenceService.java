@@ -63,6 +63,8 @@ public class GamePersistenceService {
                         p.getHand() != null ? new ArrayList<>(p.getHand()) : new ArrayList<>()
                 );
                 pe.setTimeoutCount(p.getTimeoutCount());
+                pe.setAvatar(p.getAvatar());
+                pe.setAvatarPic(p.getAvatarPic());
                 return pe;
             }).collect(Collectors.toList());
         }
@@ -146,6 +148,8 @@ public class GamePersistenceService {
                     pe.isDeclaredTick()
             );
             p.setTimeoutCount(pe.getTimeoutCount());
+            p.setAvatar(pe.getAvatar());
+            p.setAvatarPic(pe.getAvatarPic());
             return p;
         }).collect(Collectors.toList());
 

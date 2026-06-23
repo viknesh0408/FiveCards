@@ -42,7 +42,7 @@ public class GameEngine {
         activeGames.remove(gameId);
     }
 
-    public Player addPlayer(String gameId, String playerId, String name, boolean isAi, AiLevel aiLevel) {
+    public Player addPlayer(String gameId, String playerId, String name, boolean isAi, AiLevel aiLevel, String avatar, String avatarPic) {
         Game game = activeGames.get(gameId);
         if (game == null) {
             throw new IllegalArgumentException("Game not found: " + gameId);
@@ -71,6 +71,8 @@ public class GameEngine {
         player.setTotalScore(0);
         player.setReady(isAi); // AI is always ready
         player.setHand(new ArrayList<>());
+        player.setAvatar(avatar != null ? avatar : "none");
+        player.setAvatarPic(avatarPic != null ? avatarPic : "none");
 
         if (game.getPlayers().isEmpty()) {
             game.setHostId(playerId);

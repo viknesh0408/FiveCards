@@ -13,6 +13,8 @@ export interface SanitizedPlayer {
   totalScore: number;
   ready: boolean;
   declaredTick: boolean;
+  avatar: string | null;
+  avatarPic: string | null;
 }
 
 export interface SanitizedRound {
@@ -150,7 +152,11 @@ export const useWebSocket = () => {
 
         // 1. Subscribe to public state channel
         client.subscribe(`/topic/game/${gameId}/state`, (message) => {
-          const updatedGame = JSON.parse(message.body) as SanitizedGame;
+          const rawGame = JSON.parse(message.body);
+          const updatedGame: SanitizedGame = {
+            ...rawGame,
+            isMultiplayer: rawGame.isMultiplayer !== undefined ? rawGame.isMultiplayer : !!rawGame.multiplayer
+          };
           setGameState(prev => {
             if (!prev) return updatedGame;
             const updatedPlayers = updatedGame.players.map(p => {
@@ -181,7 +187,11 @@ export const useWebSocket = () => {
             setTimeout(() => setError(null), 4000);
           } else {
             // This is a private state update (contains own cards)
-            const updatedGame = payload as SanitizedGame;
+            const rawGame = payload;
+            const updatedGame: SanitizedGame = {
+              ...rawGame,
+              isMultiplayer: rawGame.isMultiplayer !== undefined ? rawGame.isMultiplayer : !!rawGame.multiplayer
+            };
             setGameState(prev => {
               if (!prev) return updatedGame;
               const updatedPlayers = updatedGame.players.map(p => {
@@ -332,5 +342,9 @@ export const useWebSocket = () => {
     latestReaction,
     sendReaction,
     apiBase: API_BASE,
+    // Exposed for voice chat signaling (read-only external use)
+    stompClientRef,
+    playerIdRef,
+    gameIdRef,
   };
 };

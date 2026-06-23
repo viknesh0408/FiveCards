@@ -29,6 +29,7 @@ export const App: React.FC = () => {
   
   const {
     gameState,
+    connected,
     error,
     connect,
     disconnect,
@@ -44,6 +45,7 @@ export const App: React.FC = () => {
     latestReaction,
     sendReaction,
     apiBase,
+    stompClientRef,
   } = useWebSocket();
 
   // Initialize Battery Saver class on launch
@@ -299,7 +301,9 @@ export const App: React.FC = () => {
       saveLocalStats(stats);
 
       // 2. Join the human player
-      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(settings.playerName)}`, {
+      const avatar = localStorage.getItem('selected_avatar') || 'none';
+      const avatarPic = localStorage.getItem('selected_avatar_pic') || 'none';
+      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(settings.playerName)}&avatar=${encodeURIComponent(avatar)}&avatarPic=${encodeURIComponent(avatarPic)}`, {
         method: 'POST',
       });
 
@@ -347,7 +351,9 @@ export const App: React.FC = () => {
       saveLocalStats(stats);
 
       // 2. Join player
-      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}`, {
+      const avatar = localStorage.getItem('selected_avatar') || 'none';
+      const avatarPic = localStorage.getItem('selected_avatar_pic') || 'none';
+      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}&avatarPic=${encodeURIComponent(avatarPic)}`, {
         method: 'POST',
       });
 
@@ -373,7 +379,9 @@ export const App: React.FC = () => {
       saveLocalStats(stats);
 
       // 1. Join player
-      const joinRes = await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}`, {
+      const avatar = localStorage.getItem('selected_avatar') || 'none';
+      const avatarPic = localStorage.getItem('selected_avatar_pic') || 'none';
+      const joinRes = await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(name)}&avatar=${encodeURIComponent(avatar)}&avatarPic=${encodeURIComponent(avatarPic)}`, {
         method: 'POST',
       });
 
@@ -472,6 +480,8 @@ export const App: React.FC = () => {
             onReady={markReady}
             latestReaction={latestReaction}
             onSendReaction={sendReaction}
+            stompClientRef={stompClientRef}
+            connected={connected}
           />
 
           {/* Round Results Screen Overlay */}

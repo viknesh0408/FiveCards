@@ -548,15 +548,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const isCardSelected = (card: any) =>
     selectedClientIds.includes(card.clientId);
 
-  const hasMatch = (): boolean => {
-    if (!self || !self.hand || !currentRound || !currentRound.discardPile || currentRound.discardPile.length === 0) return false;
-    const topDiscard = currentRound.discardPile[currentRound.discardPile.length - 1];
-    return self.hand.some(c => 
-      (c.rank && topDiscard.rank && c.rank === topDiscard.rank) ||
-      (c.joker && topDiscard.joker)
-    );
-  };
-  const isDiscardMatch = hasMatch() && (!isMyTurn || !hasDiscardedThisTurn);
+
 
   const handleCardClick = (card: any) => {
     if (!isMyTurn || hasDiscardedThisTurn) return;
@@ -599,7 +591,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   const shareRoomCode = async () => {
     const isNative = !!(window as any).Capacitor;
     const shareText = `Join my game room on 5 Cards! Room Code: ${gameId}`;
-    const shareUrl = window.location.origin;
 
     if (isNative) {
       try {
@@ -608,7 +599,6 @@ export const GameTable: React.FC<GameTableProps> = ({
           await Share.share({
             title: 'Join my 5 Cards Game!',
             text: shareText,
-            url: shareUrl,
             dialogTitle: 'Share Room Code'
           });
           return;
@@ -632,8 +622,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     // Web / Browser platform logic
     const shareData = {
       title: 'Join my 5 Cards Game!',
-      text: shareText,
-      url: shareUrl
+      text: shareText
     };
 
     if (navigator.share) {
@@ -1057,7 +1046,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   className={`joker-display ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'joker-display' ? 'tutorial-highlight' : ''}`}
                 >
                   <span className="joker-label">Joker Rank</span>
-                  <Card card={currentRound.jokerCard} className="mini-card" />
+                  <Card card={currentRound.jokerCard} className="mini-card joker-glow" />
                   <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', fontWeight: 800 }}>
                     ★ {currentRound.jokerRank}s are Jokers
                   </span>
@@ -1095,11 +1084,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                       >
                         <Card 
                           card={currentRound.discardPile[currentRound.discardPile.length - 1]} 
-                          className={[
-                            `rot-${currentRound.discardPile.length % 6}`,
-                            isDiscardMatch ? 'joker-glow' : '',
-                            lastDiscarderId === currentPlayerId ? 'dropped-card-glow' : ''
-                          ].join(' ').trim()} 
+                          className={`rot-${currentRound.discardPile.length % 6}`} 
                         />
                       </div>
                     </div>
@@ -1256,13 +1241,6 @@ export const GameTable: React.FC<GameTableProps> = ({
             </div>
           )}
           {orderedHand.map((c, idx) => {
-            const topDiscard = currentRound?.discardPile && currentRound.discardPile.length > 0 
-              ? currentRound.discardPile[currentRound.discardPile.length - 1] 
-              : null;
-            const isMatch = topDiscard && (
-              (c.rank && topDiscard.rank && c.rank === topDiscard.rank) ||
-              (c.joker && !c.rank && topDiscard.joker && !topDiscard.rank)
-            );
             const selected = isCardSelected(c);
             // Dim cards of a different rank when some cards are already selected
             const firstSelectedCard = orderedHand.find(card => selectedClientIds.includes(card.clientId));
@@ -1273,7 +1251,6 @@ export const GameTable: React.FC<GameTableProps> = ({
                 card={c}
                 selected={selected}
                 className={[
-                  isMatch && !(c.joker && c.rank) ? 'joker-glow' : '',
                   isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedClientIds.length > 0 ? 'card-dimmed' : ''
                 ].join(' ').trim()}
                 onClick={() => handleCardClick(c)}

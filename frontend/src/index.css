@@ -602,7 +602,7 @@ body {
 }
 
 .game-card.joker::before {
-  display: none;
+  display: block;
   content: '★ JOKER';
   position: absolute;
   font-size: 0.55rem;
@@ -614,6 +614,11 @@ body {
   padding: 1px 5px;
   border-radius: 4px;
   letter-spacing: 0.5px;
+  z-index: 10;
+}
+
+.game-card.suit-joker::before {
+  display: none !important;
 }
 
 /* Result page cards: only display the star to save space */
@@ -1434,17 +1439,6 @@ body {
   }
 }
 
-@keyframes pulse-glow-purple {
-  0%, 100% {
-    box-shadow: 0 0 12px rgba(192, 132, 252, 0.45), var(--card-shadow);
-    border-color: rgba(192, 132, 252, 0.45);
-  }
-  50% {
-    box-shadow: 0 0 25px var(--color-purple), var(--card-shadow);
-    border-color: rgba(192, 132, 252, 0.95);
-  }
-}
-
 .pulse-button {
   animation: pulse-glow 2s infinite;
 }
@@ -1465,12 +1459,12 @@ body {
   animation: pulse-red 2s infinite;
 }
 
-.joker-glow {
+.joker-glow,
+.game-card.joker-glow,
+.user-hand-cards .game-card.joker-glow {
   animation: pulse-gold 2.5s infinite !important;
-}
-
-.dropped-card-glow {
-  animation: pulse-glow-purple 2.5s infinite !important;
+  border: 2px solid var(--color-gold) !important;
+  box-shadow: 0 0 15px var(--color-gold-glow) !important;
 }
 
 .card-pile.glow-cyan .game-card,

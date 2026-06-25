@@ -318,6 +318,27 @@ export const App: React.FC = () => {
     }
   }, []);
 
+  // Disable pinch-to-zoom and gesture zooming globally
+  useEffect(() => {
+    const preventPinchZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+    
+    const preventGestureZoom = (e: Event) => {
+      e.preventDefault();
+    };
+
+    document.addEventListener('touchstart', preventPinchZoom, { passive: false });
+    document.addEventListener('gesturestart', preventGestureZoom);
+
+    return () => {
+      document.removeEventListener('touchstart', preventPinchZoom);
+      document.removeEventListener('gesturestart', preventGestureZoom);
+    };
+  }, []);
+
   const handleNetworkError = (error: any, defaultMessage: string) => {
     if (!navigator.onLine || error instanceof TypeError) {
       alert('No internet connection');

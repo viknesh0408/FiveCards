@@ -208,7 +208,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         <div className="podium-container">
           {podium2nd && (
             <div className="podium-stand second">
-                  <div className="podium-avatar-wrap" style={{ width: '38px', height: '38px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium2nd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                  <div className="podium-avatar-wrap" style={{ width: '38px', height: '38px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium2nd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
                     <AvatarImage picId={getAvatarPic(podium2nd)} name={podium2nd.name} />
                   </div>
               <span className="podium-name">{podium2ndName}</span>
@@ -219,7 +219,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium1st && (
             <div className="podium-stand first">
-                  <div className="podium-avatar-wrap" style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium1st.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                  <div className="podium-avatar-wrap" style={{ width: '48px', height: '48px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium1st.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
                     <AvatarImage picId={getAvatarPic(podium1st)} name={podium1st.name} />
                   </div>
               <span className="podium-name" style={{ fontSize: '0.95rem' }}>{podium1stName}</span>
@@ -230,7 +230,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium3rd && (
             <div className="podium-stand third">
-                  <div className="podium-avatar-wrap" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium3rd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                  <div className="podium-avatar-wrap" style={{ width: '34px', height: '34px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium3rd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
                     <AvatarImage picId={getAvatarPic(podium3rd)} name={podium3rd.name} />
                   </div>
               <span className="podium-name">{podium3rdName}</span>

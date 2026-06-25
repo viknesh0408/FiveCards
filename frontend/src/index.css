@@ -1729,7 +1729,7 @@ body {
   justify-content: space-between;
   align-items: flex-start;
   width: 100%;
-  padding: 44px 24px 10px 24px; /* Move player UI down and in to clear border line */
+  padding: calc(44px + env(safe-area-inset-top, 0px)) 24px 10px 24px; /* Move player UI down and in to clear border line */
   flex-shrink: 0;
   background: rgba(4, 8, 20, 0.45);
   border-bottom: 1px solid rgba(255,255,255,0.04);
@@ -5268,7 +5268,7 @@ body.battery-saver .hud-btn-voice.speaking {
    MOBILE RESPONSIVE  (≤ 700px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  .mm-scene { padding: 12px; overflow-x: hidden; overflow-y: auto; align-items: flex-start; }
+  .mm-scene { padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px; overflow-x: hidden; overflow-y: auto; align-items: flex-start; }
 
   .daily-root {
     height: calc(100vh - 40px - 64px - env(safe-area-inset-bottom, 0px));
@@ -8014,14 +8014,14 @@ body.battery-saver .hud-btn-voice.speaking {
 /* Coins styling for Main Menu */
 .mm-global-coins {
   position: absolute;
-  top: 20px;
+  top: calc(20px + env(safe-area-inset-top, 0px));
   right: 20px;
   z-index: 500;
   pointer-events: auto;
 }
 @media (max-width: 700px) {
   .mm-global-coins {
-    top: 14px;
+    top: calc(14px + env(safe-area-inset-top, 0px));
     right: 14px;
   }
 }
@@ -8029,14 +8029,14 @@ body.battery-saver .hud-btn-voice.speaking {
 /* Global Top-Left Settings button and positioning */
 .mm-global-settings {
   position: absolute;
-  top: 20px;
+  top: calc(20px + env(safe-area-inset-top, 0px));
   left: 20px;
   z-index: 500;
   pointer-events: auto;
 }
 @media (max-width: 700px) {
   .mm-global-settings {
-    top: 14px;
+    top: calc(14px + env(safe-area-inset-top, 0px));
     left: 14px;
   }
 }
@@ -8436,7 +8436,7 @@ body.battery-saver .hud-btn-voice.speaking {
 @media (max-width: 700px) {
   .mm-view-daily .mm-scene,
   .mm-view-shop .mm-scene {
-    padding: 12px 12px 92px 12px !important; /* Make room for the mobile footer tab bar */
+    padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 92px 12px !important; /* Make room for the mobile footer tab bar */
   }
 }
 

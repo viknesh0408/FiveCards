@@ -7,6 +7,7 @@ import { DailyPanel } from './DailyPanel';
 import { ShopPanel } from './ShopPanel';
 import { hasUnclaimedDaily, getDailyState, equipShopItem } from '../utils/dailySystem';
 import { soundEffects } from '../utils/soundEffects';
+import { AvatarImage } from './AvatarImage';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -36,6 +37,7 @@ const CARD_BACKS: ShopItem[] = [
   { id: 'classic', name: 'Classic Red', description: 'The timeless standard layout', price: 0 },
   { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 1000 },
   { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 1500 },
+  { id: 'wood', name: 'Classic Wood', description: 'Ornate polished mahogany wood pattern', price: 2000 },
   { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 2000 },
   { id: 'amethyst', name: 'Amethyst Geode', description: 'Deep purple crystalline texture with shimmering light', price: 2500 },
   { id: 'ruby', name: 'Ruby Heart', description: 'Crimson red metallic plate with glowing heartbeat line', price: 3000 },
@@ -80,6 +82,17 @@ const CARTOON_AVATARS = [
   { id: 'unicorn', name: 'Unicorn (Week 5 · Day 5)' },
   { id: 'dragon', name: 'Dragon (Week 6 · Day 5)' },
   { id: 'alien', name: 'Alien (Week 7 · Day 5)' },
+  // Shop animated pictures
+  { id: 'neon_matrix', name: 'Matrix Cyber (Shop)' },
+  { id: 'cosmic_vortex', name: 'Cosmic Vortex (Shop)' },
+  { id: 'cyber_skull', name: 'Glitch Skull (Shop)' },
+  { id: 'retro_wave', name: 'Retrowave Sun (Shop)' },
+];
+
+const TABLE_FELTS = [
+  { id: 'emerald_green', name: 'Emerald Green', description: 'Classic casino velvet felt background' },
+  { id: 'royal_blue', name: 'Royal Blue', description: 'Deep prestige royal blue felt background' },
+  { id: 'cyber_purple', name: 'Cyber Purple', description: 'Vibrant neon purple futuristic felt background' },
 ];
 
 // Toggle Switch Component
@@ -124,10 +137,29 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
   const [selectedAvatarPic, setSelectedAvatarPic] = useState<string>(() => localStorage.getItem('selected_avatar_pic') || 'none');
   const [tempAvatarPic, setTempAvatarPic] = useState<string>('none');
+  const [tempTableFelt, setTempTableFelt] = useState<string>('emerald_green');
   const [coins, setCoins] = useState<number>(() => getDailyState().coins);
 
   const [stats, setStats] = useState<PlayerStats>(() => getLocalStats());
   const [activeTab, setActiveTab] = useState<'main' | 'me'>('main');
+
+  const getPlayerTier = (wins: number) => {
+    if (wins >= 100) {
+      return { title: '👑 Five Cards Legend', color: 'var(--color-gold)', glow: '0 0 8px var(--color-gold-glow)' };
+    } else if (wins >= 50) {
+      return { title: '💎 Grandmaster', color: '#c084fc', glow: '0 0 8px rgba(192, 132, 252, 0.5)' };
+    } else if (wins >= 25) {
+      return { title: '🏆 Master Tactician', color: 'var(--color-cyan)', glow: '0 0 8px var(--color-cyan-glow)' };
+    } else if (wins >= 10) {
+      return { title: '✨ Elite Challenger', color: '#fbbf24', glow: '0 0 8px rgba(251, 191, 36, 0.4)' };
+    } else if (wins >= 3) {
+      return { title: '🛡️ Rising Star', color: '#cbd5e1', glow: 'none' };
+    } else {
+      return { title: '🌱 Rookie Competitor', color: '#94a3b8', glow: 'none' };
+    }
+  };
+
+  const tier = getPlayerTier(stats.winsTotal);
 
   const navigate = React.useCallback((v: View) => {
     setAnimIn(false);
@@ -140,6 +172,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         setTempAvatar(ds.selectedAvatar || 'none');
         setTempCardBack(ds.selectedCardBack || 'classic');
         setTempAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
+        setTempTableFelt(ds.selectedTableFelt || 'emerald_green');
       }
       if (v === 'main') {
         setHasDailyNotif(hasUnclaimedDaily());
@@ -216,6 +249,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
     equipShopItem('avatar', tempAvatar);
     equipShopItem('cardBack', tempCardBack);
+    equipShopItem('tableFelt', tempTableFelt);
 
     setSelectedAvatar(tempAvatar);
     localStorage.setItem('selected_avatar_pic', tempAvatarPic);
@@ -298,11 +332,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <div className={`mm-avatar-ring avatar-frame-${selectedAvatar}`}>
                   {selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(1.3)', top: '-14px', zIndex: 10 }}>👑</span>}
                   <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {selectedAvatarPic && selectedAvatarPic !== 'none' ? (
-                      <img src={`/avatars/${selectedAvatarPic}.png`} alt="Avatar" className="mm-avatar-img" />
-                    ) : (
-                      (playerName || stats.name || 'P')[0].toUpperCase()
-                    )}
+                    <AvatarImage picId={selectedAvatarPic} name={playerName || stats.name || 'Player'} className="mm-avatar-img" />
                   </span>
                   {stats.winStreakCurrent >= 2 && <span className="mm-avatar-streak">🔥</span>}
                 </div>
@@ -319,21 +349,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     ✏️
                   </button>
                 </div>
-                <div className="mm-profile-mmr" style={{ marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Local Competitor
+                <div className="mm-profile-mmr" style={{ marginBottom: '14px', textTransform: 'uppercase', letterSpacing: '0.5px', color: tier.color, textShadow: tier.glow, fontWeight: 800 }}>
+                  {tier.title}
                 </div>
 
-                {/* Recent form */}
-                {stats.recentForm && stats.recentForm.length > 0 && (
-                  <div className="mm-recent-form" style={{ flexDirection: 'column', alignItems: 'center', marginBottom: '16px' }}>
-                    <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Recent Form</div>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      {stats.recentForm.map((r, i) => (
-                        <span key={i} className={`mm-form-dot ${r === 'W' ? 'win' : 'loss'}`} title={r === 'W' ? 'Victory' : 'Defeat'} />
-                      ))}
-                    </div>
-                  </div>
-                )}
+
 
                 {/* Stats row */}
                 <div className="mm-stats-row">
@@ -1042,17 +1062,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               <p className="mm-form-desc">Customize your profile card & card themes</p>
             </div>
 
-            <div className="mm-edit-profile-scroll" style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="mm-edit-profile-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Initials & Frame Live Preview */}
               <div className="mm-edit-profile-preview" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', margin: '10px 0' }}>
                 <div className={`mm-avatar-ring avatar-frame-${tempAvatar}`} style={{ width: '70px', height: '70px', borderWidth: '3px' }}>
                   {tempAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(1.4)', top: '-15px', zIndex: 10 }}>👑</span>}
                   <span className="mm-avatar-crest" style={{ fontSize: '1.6rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {tempAvatarPic && tempAvatarPic !== 'none' ? (
-                      <img src={`/avatars/${tempAvatarPic}.png`} alt="Avatar" className="mm-avatar-img" />
-                    ) : (
-                      (tempPlayerName || 'P')[0].toUpperCase()
-                    )}
+                    <AvatarImage picId={tempAvatarPic} name={tempPlayerName} className="mm-avatar-img" />
                   </span>
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>Crest Preview</div>
@@ -1091,14 +1107,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                         }}
                       >
                         <div className="preview-circle-pic" style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', border: isSelected ? '2px solid var(--color-cyan)' : '2px solid transparent', position: 'relative' }}>
-                          {item.id !== 'none' ? (
-                            <img src={`/avatars/${item.id}.png`} alt={item.name} className="mm-avatar-img" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          ) : (
-                            <span style={{ fontSize: '0.9rem', fontWeight: 800 }}>{(tempPlayerName || 'P')[0].toUpperCase()}</span>
-                          )}
-                          {!isUnlocked && (
-                            <span className="lock-icon" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontSize: '1.2rem', textShadow: '0 0 4px rgba(0,0,0,0.8)', zIndex: 5 }}>🔒</span>
-                          )}
+                          <AvatarImage picId={item.id} name={tempPlayerName} className="mm-avatar-img" />
                         </div>
                         <span className="item-label">{item.name}</span>
                       </div>
@@ -1137,7 +1146,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 </div>
               </div>
 
-              {/* Card Backs Grid */}
+               {/* Card Backs Grid */}
               <div className="mm-field">
                 <label className="mm-field-label">Card Backs</label>
                 <div className="profile-edit-grid">
@@ -1159,6 +1168,49 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                           <div className="card-back-pattern">
                             <span style={{ fontSize: '0.55rem', fontWeight: 900 }}>5T</span>
                           </div>
+                        </div>
+                        <span className="item-label">{item.name}</span>
+                        {!isUnlocked && <span className="lock-icon">🔒</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Table Felts Grid */}
+              <div className="mm-field">
+                <label className="mm-field-label">Table Felts</label>
+                <div className="profile-edit-grid">
+                  {TABLE_FELTS.map((item) => {
+                    const unlockedFelts = getDailyState().unlockedTableFelts || ['emerald_green'];
+                    const isUnlocked = unlockedFelts.includes(item.id);
+                    const isSelected = tempTableFelt === item.id;
+                    return (
+                      <div
+                        key={item.id}
+                        className={`profile-edit-item ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
+                        onClick={() => {
+                          if (isUnlocked) {
+                            setTempTableFelt(item.id);
+                            soundEffects.playClick();
+                          }
+                        }}
+                      >
+                        <div 
+                          className="preview-felt" 
+                          style={{ 
+                            width: '48px', 
+                            height: '32px', 
+                            borderRadius: '6px', 
+                            border: isSelected ? '2px solid var(--color-cyan)' : '2px solid rgba(255,255,255,0.15)',
+                            position: 'relative',
+                            overflow: 'hidden',
+                            background: item.id === 'emerald_green' ? 'radial-gradient(circle at center, #0c2b1e 0%, #030f0a 100%)' :
+                                        item.id === 'royal_blue' ? 'radial-gradient(circle at center, #081d3d 0%, #020712 100%)' :
+                                        'radial-gradient(circle at center, #23083e 0%, #07010f 100%)'
+                          }}
+                        >
+                          <div style={{ position: 'absolute', inset: 0, opacity: 0.05, backgroundImage: 'radial-gradient(#ffffff 25%, transparent 25%), radial-gradient(#ffffff 25%, transparent 25%)', backgroundSize: '4px 4px', backgroundPosition: '0 0, 2px 2px', pointerEvents: 'none' }} />
                         </div>
                         <span className="item-label">{item.name}</span>
                         {!isUnlocked && <span className="lock-icon">🔒</span>}

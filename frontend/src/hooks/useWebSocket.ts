@@ -310,6 +310,10 @@ export const useWebSocket = () => {
     sendAction('END_GAME');
   }, [sendAction]);
 
+  const leaveGame = useCallback(() => {
+    sendAction('LEAVE');
+  }, [sendAction]);
+
   const sendReaction = useCallback((emoji: string) => {
     if (!stompClientRef.current || !connected) {
       console.warn('STOMP client not connected');
@@ -339,6 +343,7 @@ export const useWebSocket = () => {
     startNewGame,
     startNextRound,
     endGame,
+    leaveGame,
     latestReaction,
     sendReaction,
     apiBase: API_BASE,

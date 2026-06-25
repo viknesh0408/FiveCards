@@ -27,8 +27,10 @@ export const App: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showAppLeaveConfirm, setShowAppLeaveConfirm] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  const [reconnectCountdown, setReconnectCountdown] = useState<number>(20);
   
   const menuBackButtonHandlerRef = useRef<(() => boolean) | null>(null);
+  const reconnectTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const {
     gameState,
@@ -49,6 +51,7 @@ export const App: React.FC = () => {
     sendReaction,
     apiBase,
     stompClientRef,
+    leaveGame,
   } = useWebSocket();
 
   // Initialize Battery Saver class on launch
@@ -271,6 +274,34 @@ export const App: React.FC = () => {
     }
   }, [screen, gameState, playerId, disconnect]);
 
+  // Show reconnecting overlay with countdown when WebSocket drops mid-game
+  useEffect(() => {
+    if (screen === 'table' && gameState && !connected) {
+      // Start the 20s countdown (matching backend grace period)
+      setReconnectCountdown(20);
+      if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
+      reconnectTimerRef.current = setInterval(() => {
+        setReconnectCountdown(prev => {
+          if (prev <= 1) {
+            clearInterval(reconnectTimerRef.current!);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      // Connected or left the game – clear the countdown
+      if (reconnectTimerRef.current) {
+        clearInterval(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+      setReconnectCountdown(20);
+    }
+    return () => {
+      if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
+    };
+  }, [connected, screen, gameState]);
+
   // Check for updates on startup (runs once on mount, works only in native mobile app)
   useEffect(() => {
     const isNativeMobileApp = !!(window as any).Capacitor;
@@ -416,7 +447,10 @@ export const App: React.FC = () => {
 
   const handleLeave = () => {
     localStorage.removeItem('activeGameId');
-    disconnect();
+    leaveGame();
+    setTimeout(() => {
+      disconnect();
+    }, 100);
     setScreen('menu');
     setShowAppLeaveConfirm(false);
   };
@@ -484,6 +518,59 @@ export const App: React.FC = () => {
 
       {screen === 'table' && gameState && (
         <>
+          {/* Reconnecting Overlay – shown when WebSocket drops mid-game */}
+          {!connected && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(4, 8, 20, 0.85)',
+              backdropFilter: 'blur(12px)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <div className="glass-panel" style={{
+                padding: '40px 48px', textAlign: 'center', maxWidth: '360px', width: '90%',
+                border: '1px solid rgba(251,191,36,0.3)',
+                boxShadow: '0 0 40px rgba(251,191,36,0.1)',
+              }}>
+                {/* Spinner */}
+                <div style={{
+                  width: '56px', height: '56px', margin: '0 auto 24px',
+                  border: '4px solid rgba(255,255,255,0.08)',
+                  borderTop: '4px solid #fbbf24',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite',
+                }} />
+                <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fbbf24', marginBottom: '8px' }}>
+                  Reconnecting...
+                </h2>
+                <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '20px', lineHeight: 1.5 }}>
+                  Connection lost. Attempting to rejoin your game.
+                </p>
+                {/* Countdown bar */}
+                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden', marginBottom: '8px', height: '6px' }}>
+                  <div style={{
+                    height: '100%',
+                    width: `${(reconnectCountdown / 20) * 100}%`,
+                    background: reconnectCountdown > 8 ? '#22d3ee' : '#f87171',
+                    borderRadius: '8px',
+                    transition: 'width 1s linear, background 0.3s',
+                  }} />
+                </div>
+                <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', marginBottom: '24px' }}>
+                  {reconnectCountdown > 0
+                    ? `Your spot is held for ${reconnectCountdown}s`
+                    : 'Connection timed out — your slot may be released'}
+                </p>
+                <button
+                  id="reconnect-leave-btn"
+                  className="btn-secondary"
+                  style={{ width: '100%', padding: '12px', fontSize: '0.9rem' }}
+                  onClick={handleLeave}
+                >
+                  Leave Game
+                </button>
+              </div>
+            </div>
+          )}
           <GameTable
             gameState={gameState}
             currentPlayerId={playerId}

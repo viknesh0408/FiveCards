@@ -1,5 +1,6 @@
 import React from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
+import { AvatarImage } from './AvatarImage';
 
 interface ScoreboardProps {
   gameState: SanitizedGame;
@@ -61,21 +62,9 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', width: '16px', flexShrink: 0 }}>
                   #{index + 1}
                 </span>
-                {(() => {
-                  const pic = getAvatarPic(p);
-                  if (pic) {
-                    return (
-                      <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
-                        <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.65rem', fontWeight: 800 }}>
-                      {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
-                    </div>
-                  );
-                })()}
+                <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                  <AvatarImage picId={getAvatarPic(p)} name={p.name} />
+                </div>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: isSelf ? '#ffffff' : 'rgba(255,255,255,0.8)', display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>
                   {isLeader && <span style={{ marginRight: '2px', filter: 'drop-shadow(0 0 4px var(--color-gold-glow))' }}>👑</span>}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>

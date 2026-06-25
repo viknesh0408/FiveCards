@@ -185,6 +185,10 @@ public class GameWebSocketController {
                     case "END_GAME":
                         gameEngine.endGame(gameId);
                         break;
+
+                    case "LEAVE":
+                        handlePlayerLeave(gameId, playerId);
+                        break;
                 }
 
                 // Broadcast state updates
@@ -607,7 +611,7 @@ public class GameWebSocketController {
                             System.out.println("[DISCONNECT] Player " + playerId + " successfully reconnected during grace period.");
                         }
                     }
-                }, 8, TimeUnit.SECONDS);
+                }, 20, TimeUnit.SECONDS);
             }
         }
     }

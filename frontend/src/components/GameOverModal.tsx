@@ -3,6 +3,7 @@ import type { SanitizedGame } from '../hooks/useWebSocket';
 import { processGameEndStats, saveMatchToHistory } from '../utils/statsSystem';
 import type { PlayerStats } from '../utils/statsSystem';
 import { recordGameResult } from '../utils/dailySystem';
+import { AvatarImage } from './AvatarImage';
 
 interface GameOverModalProps {
   gameState: SanitizedGame;
@@ -23,6 +24,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   const [statsResults, setStatsResults] = useState<PlayerStats | null>(null);
 
   const { players, winnerId } = gameState;
+  const hasPlayerLeft = !!(gameState.isMultiplayer || (gameState as any).multiplayer) && players.length <= 1;
 
   const getAvatarPic = (player: any): string | null => {
     if (player.id === currentPlayerId) {
@@ -185,10 +187,10 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       <div className="modal-overlay">
         {renderConfetti()}
 
-      <div className="modal-content glass-panel" style={{ width: '600px', zIndex: 20 }}>
-        <h1 className="menu-title text-gold" style={{ fontSize: '2.8rem' }}>🏆 GAME OVER 🏆</h1>
+      <div className="modal-content glass-panel game-over-modal-content" style={{ zIndex: 20 }}>
+        <h1 className="menu-title text-gold game-over-modal-title">🏆 GAME OVER 🏆</h1>
 
-        <p className="modal-subtitle" style={{ fontSize: '1.25rem', marginTop: '8px', color: 'rgba(255,255,255,0.9)' }}>
+        <p className="modal-subtitle game-over-modal-subtitle" style={{ color: 'rgba(255,255,255,0.9)' }}>
           {isDraw ? (
             <>It's a <strong className="text-gold" style={{ fontSize: '1.45rem' }}>DRAW</strong>! {drawPlayersNames} tied with <strong className="text-gold" style={{ fontSize: '1.45rem' }}>{minScore}</strong> points!</>
           ) : (
@@ -196,22 +198,19 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
         </p>
 
+        {hasPlayerLeft && (
+          <div className="glass-panel" style={{ margin: '16px auto', padding: '12px 24px', borderColor: 'var(--color-red)', color: 'var(--color-red)', fontWeight: 800, textShadow: '0 0 5px var(--color-red-glow)', display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.05)' }}>
+            <span>⚠️</span> Opponent left the match. Match ended.
+          </div>
+        )}
+
         {/* 3D Podium */}
         <div className="podium-container">
           {podium2nd && (
             <div className="podium-stand second">
-              {(() => {
-                const pic = getAvatarPic(podium2nd);
-                return (
-                  <div className="podium-avatar-wrap" style={{ width: '38px', height: '38px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium2nd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)', fontSize: '0.85rem', fontWeight: 800 }}>
-                    {pic ? (
-                      <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      (podium2nd.name || 'P')[0].toUpperCase()
-                    )}
+                  <div className="podium-avatar-wrap" style={{ width: '38px', height: '38px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium2nd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                    <AvatarImage picId={getAvatarPic(podium2nd)} name={podium2nd.name} />
                   </div>
-                );
-              })()}
               <span className="podium-name">{podium2ndName}</span>
               <span className="podium-crown">🥈</span>
               <span className="podium-number">2</span>
@@ -220,18 +219,9 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium1st && (
             <div className="podium-stand first">
-              {(() => {
-                const pic = getAvatarPic(podium1st);
-                return (
-                  <div className="podium-avatar-wrap" style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium1st.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)', fontSize: '1rem', fontWeight: 800 }}>
-                    {pic ? (
-                      <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      (podium1st.name || 'P')[0].toUpperCase()
-                    )}
+                  <div className="podium-avatar-wrap" style={{ width: '48px', height: '48px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium1st.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                    <AvatarImage picId={getAvatarPic(podium1st)} name={podium1st.name} />
                   </div>
-                );
-              })()}
               <span className="podium-name" style={{ fontSize: '0.95rem' }}>{podium1stName}</span>
               <span className="podium-crown" style={{ fontSize: '2.2rem', top: '-42px' }}>👑</span>
               <span className="podium-number" style={{ color: 'var(--color-gold)' }}>1</span>
@@ -240,18 +230,9 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium3rd && (
             <div className="podium-stand third">
-              {(() => {
-                const pic = getAvatarPic(podium3rd);
-                return (
-                  <div className="podium-avatar-wrap" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium3rd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)', fontSize: '0.8rem', fontWeight: 800 }}>
-                    {pic ? (
-                      <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      (podium3rd.name || 'P')[0].toUpperCase()
-                    )}
+                  <div className="podium-avatar-wrap" style={{ width: '34px', height: '34px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium3rd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                    <AvatarImage picId={getAvatarPic(podium3rd)} name={podium3rd.name} />
                   </div>
-                );
-              })()}
               <span className="podium-name">{podium3rdName}</span>
               <span className="podium-crown">🥉</span>
               <span className="podium-number">3</span>
@@ -262,27 +243,27 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
         {/* ── Progression Recap Panel ── */}
         {statsResults && (
-          <div className="progression-recap-panel glass-panel" style={{ padding: '24px' }}>
-            <h3 className="recap-section-title" style={{ color: 'var(--color-cyan)', fontSize: '1.2rem', marginBottom: '16px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div className="progression-recap-panel glass-panel">
+            <h3 className="recap-section-title" style={{ color: 'var(--color-cyan)' }}>
               Achievements &amp; Stats Update
             </h3>
 
-            <div className="recap-stats-row" style={{ display: 'flex', gap: '14px', flexWrap: 'wrap' }}>
+            <div className="recap-stats-row">
               {/* Placement Card */}
-              <div className="recap-stat-card" style={{ flex: 1, minWidth: '130px', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', textAlign: 'center' }}>
-                <span className="recap-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Placement</span>
-                <span className="recap-stat-big" style={{ display: 'block', fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-gold)' }}>
+              <div className="recap-stat-card">
+                <span className="recap-stat-label">Placement</span>
+                <span className="recap-stat-big" style={{ color: 'var(--color-gold)' }}>
                   #{sortedPlayers.findIndex(p => p.id === currentPlayerId) + 1} / {players.length}
                 </span>
-                <span className="recap-stat-sub" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                <span className="recap-stat-sub">
                   {players.find(p => p.id === currentPlayerId)?.totalScore} total pts
                 </span>
               </div>
 
               {/* Declares Accuracy */}
-              <div className="recap-stat-card" style={{ flex: 1, minWidth: '130px', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', textAlign: 'center' }}>
-                <span className="recap-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Declares (Tick)</span>
-                <span className="recap-stat-big" style={{ display: 'block', fontSize: '1.8rem', fontWeight: 900, color: 'var(--color-cyan)' }}>
+              <div className="recap-stat-card">
+                <span className="recap-stat-label">Declares (Tick)</span>
+                <span className="recap-stat-big" style={{ color: 'var(--color-cyan)' }}>
                   {(() => {
                     let decCorrect = 0;
                     let decWrong = 0;
@@ -298,18 +279,18 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                     return `${decCorrect}W - ${decWrong}L`;
                   })()}
                 </span>
-                <span className="recap-stat-sub" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                <span className="recap-stat-sub">
                   Correct vs Wrong
                 </span>
               </div>
 
               {/* Win Streak Card */}
-              <div className="recap-stat-card" style={{ flex: 1, minWidth: '130px', padding: '16px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', textAlign: 'center' }}>
-                <span className="recap-stat-label" style={{ display: 'block', fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Streak</span>
-                <span className="recap-stat-big" style={{ display: 'block', fontSize: '1.8rem', fontWeight: 900, color: '#f97316' }}>
+              <div className="recap-stat-card">
+                <span className="recap-stat-label">Streak</span>
+                <span className="recap-stat-big" style={{ color: '#f97316' }}>
                   🔥 {statsResults.winStreakCurrent}
                 </span>
-                <span className="recap-stat-sub" style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                <span className="recap-stat-sub">
                   Best Streak: {statsResults.winStreakBest}
                 </span>
               </div>
@@ -318,13 +299,12 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         )}
 
         {/* Full Lobby Leaderboard */}
-        <div className="results-grid" style={{ marginTop: '32px' }}>
+        <div className="results-grid">
           <h3 className="scoreboard-title" style={{ border: 'none', marginBottom: '8px' }}>Lobby Leaderboard</h3>
           {sortedPlayers.map((p, idx) => (
             <div
               key={p.id}
               className={`player-result-row ${p.id === winnerId ? 'winner-row' : ''}`}
-              style={{ padding: '14px 20px', margin: '6px 0' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
                 <span className="result-placement-badge" style={{
@@ -333,21 +313,9 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 }}>
                   {idx + 1}
                 </span>
-                {(() => {
-                  const pic = getAvatarPic(p);
-                  if (pic) {
-                    return (
-                      <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
-                        <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    );
-                  }
-                  return (
-                    <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.65rem', fontWeight: 800 }}>
-                      {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
-                    </div>
-                  );
-                })()}
+                <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                  <AvatarImage picId={getAvatarPic(p)} name={p.name} />
+                </div>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <span>{p.name}</span>
                   {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
@@ -361,39 +329,27 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
         {/* Round Breakdown table */}
         {gameState.rounds && gameState.rounds.length > 0 && (
-          <div style={{ marginTop: '32px', overflowX: 'auto', width: '100%', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', padding: '20px', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <div className="round-breakdown-container">
             <h3 style={{ fontSize: '1.25rem', color: 'var(--color-cyan)', textShadow: '0 0 10px var(--color-cyan-glow)', marginBottom: '16px', textAlign: 'left', fontWeight: 700 }}>
               Round Breakdown
             </h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '450px' }}>
+            <table className="breakdown-table">
               <thead>
                 <tr style={{ borderBottom: '2px solid rgba(255,255,255,0.08)' }}>
-                  <th style={{ textAlign: 'left', padding: '10px 14px', color: 'var(--color-gold)', fontSize: '0.9rem', fontWeight: 800 }}>Player</th>
+                  <th style={{ textAlign: 'left', color: 'var(--color-gold)', fontWeight: 800 }}>Player</th>
                   {gameState.rounds.map((r, i) => (
-                    <th key={i} style={{ padding: '10px', color: 'var(--color-gold)', fontSize: '0.9rem', fontWeight: 800 }}>R{r.roundNumber}</th>
+                    <th key={i} style={{ color: 'var(--color-gold)', fontWeight: 800 }}>R{r.roundNumber}</th>
                   ))}
-                  <th style={{ padding: '10px 14px', color: 'var(--color-cyan)', textAlign: 'right', fontSize: '0.9rem', fontWeight: 800 }}>Total</th>
+                  <th style={{ color: 'var(--color-cyan)', textAlign: 'right', fontWeight: 800 }}>Total</th>
                 </tr>
               </thead>
               <tbody>
                 {sortedPlayers.map(p => (
                   <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: p.id === winner?.id ? 'rgba(251,191,36,0.02)' : 'transparent' }}>
-                    <td style={{ textAlign: 'left', padding: '12px 14px', fontSize: '0.9rem', fontWeight: p.id === winner?.id ? 800 : 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {(() => {
-                        const pic = getAvatarPic(p);
-                        if (pic) {
-                          return (
-                            <div className="scoreboard-avatar-wrap" style={{ width: '18px', height: '18px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
-                              <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="scoreboard-avatar-wrap" style={{ width: '18px', height: '18px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.55rem', fontWeight: 800 }}>
-                            {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
-                          </div>
-                        );
-                      })()}
+                    <td style={{ textAlign: 'left', fontWeight: p.id === winner?.id ? 800 : 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div className="scoreboard-avatar-wrap" style={{ width: '18px', height: '18px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                        <AvatarImage picId={getAvatarPic(p)} name={p.name} />
+                      </div>
                       <span>{p.name}</span>
                       {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
                       {p.isAi && <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}> [BOT]</span>}
@@ -401,12 +357,12 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                       {gameState.rounds.map((r, i) => {
                         const score = r.playerScores ? r.playerScores[p.id] : undefined;
                         return (
-                          <td key={i} style={{ padding: '12px', fontSize: '0.9rem', color: score === 0 ? 'var(--color-green)' : 'var(--color-text)' }}>
+                          <td key={i} style={{ color: score === 0 ? 'var(--color-green)' : 'var(--color-text)' }}>
                             {score !== undefined ? score : '-'}
                           </td>
                         );
                       })}
-                      <td style={{ padding: '12px 14px', textAlign: 'right', fontWeight: 800, fontSize: '0.95rem', color: p.id === winner?.id ? 'var(--color-gold)' : 'var(--color-text)' }}>
+                      <td style={{ textAlign: 'right', fontWeight: 800, color: p.id === winner?.id ? 'var(--color-gold)' : 'var(--color-text)' }}>
                         {p.totalScore}
                       </td>
                     </tr>
@@ -416,9 +372,23 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           </div>
         )}
 
-        <div className="menu-options" style={{ marginTop: '32px', display: 'flex', flexDirection: 'row', gap: '16px', justifyContent: 'center' }}>
-          <button className="btn-primary" onClick={onPlayAgain} style={{ flex: 1 }}>Play Again 🔄</button>
-          <button className="btn-secondary" onClick={() => setShowLeaveConfirm(true)} style={{ flex: 1 }}>Main Menu</button>
+        <div className="game-over-buttons">
+          <button 
+            className="btn-primary" 
+            onClick={onPlayAgain} 
+            disabled={hasPlayerLeft}
+          >
+            Play Again 🔄
+          </button>
+          {hasPlayerLeft ? (
+            <button className="btn-secondary" onClick={onMainMenu}>
+              Exit Match
+            </button>
+          ) : (
+            <button className="btn-secondary" onClick={() => setShowLeaveConfirm(true)}>
+              Main Menu
+            </button>
+          )}
         </div>
       </div>
 

@@ -69,32 +69,29 @@ public class GamePersistenceService {
             }).collect(Collectors.toList());
         }
 
-        List<RoundEntity> roundEntities = new ArrayList<>();
-        if (game.getRounds() != null) {
-            for (Round r : game.getRounds()) {
-                roundEntities.add(createRoundEntity(game.getGameId(), r));
-            }
-        }
-
         RoundEntity currentRoundEntity = null;
         if (game.getCurrentRound() != null) {
             currentRoundEntity = createRoundEntity(game.getGameId(), game.getCurrentRound());
         }
 
+        // Clean up old rounds in database if we are starting a fresh game or lobby reset
+        boolean shouldDeleteOldRounds = game.getCurrentRoundNumber() <= 1 && (game.getRounds() == null || game.getRounds().isEmpty());
+
         // 2. Delegate the actual I/O writes asynchronously to save thread
-        saveEntitiesAsync(gameEntity, playerEntities, roundEntities, currentRoundEntity);
+        saveEntitiesAsync(gameEntity, playerEntities, currentRoundEntity, shouldDeleteOldRounds);
     }
 
     @Async
     @Transactional
-    public void saveEntitiesAsync(GameEntity gameEntity, List<PlayerEntity> playerEntities, List<RoundEntity> roundEntities, RoundEntity currentRoundEntity) {
+    public void saveEntitiesAsync(GameEntity gameEntity, List<PlayerEntity> playerEntities, RoundEntity currentRoundEntity, boolean shouldDeleteOldRounds) {
         try {
+            if (shouldDeleteOldRounds) {
+                roundRepository.deleteByGameId(gameEntity.getGameId());
+            }
+            
             gameRepository.save(gameEntity);
             if (playerEntities != null && !playerEntities.isEmpty()) {
                 playerRepository.saveAll(playerEntities);
-            }
-            if (roundEntities != null && !roundEntities.isEmpty()) {
-                roundRepository.saveAll(roundEntities);
             }
             if (currentRoundEntity != null) {
                 roundRepository.save(currentRoundEntity);

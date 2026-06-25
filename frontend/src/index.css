@@ -786,21 +786,22 @@ body {
 
 /* Active Turn indicator glow with breathing animation */
 .opponent-avatar-card.active-turn {
-  border-color: rgba(34, 211, 238, 0.65) !important;
-  background: linear-gradient(135deg, rgba(34, 211, 238, 0.1) 0%, rgba(3, 10, 7, 0.95) 100%) !important;
+  border-color: rgba(34, 211, 238, 0.7) !important;
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.12) 0%, rgba(3, 10, 7, 0.95) 100%) !important;
   z-index: 10;
-  animation: active-turn-pulse 2.5s infinite ease-in-out;
+  animation: active-turn-pulse 2s infinite ease-in-out;
+  transform: scale(1.03);
 }
 
 @keyframes active-turn-pulse {
   0% {
-    box-shadow: 0 0 12px rgba(34, 211, 238, 0.35), inset 0 0 8px rgba(34, 211, 238, 0.1);
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.4), 0 0 30px rgba(34, 211, 238, 0.15), inset 0 0 10px rgba(34, 211, 238, 0.12);
   }
   50% {
-    box-shadow: 0 0 24px rgba(34, 211, 238, 0.65), inset 0 0 14px rgba(34, 211, 238, 0.2);
+    box-shadow: 0 0 28px rgba(34, 211, 238, 0.8), 0 0 55px rgba(34, 211, 238, 0.3), inset 0 0 18px rgba(34, 211, 238, 0.25);
   }
   100% {
-    box-shadow: 0 0 12px rgba(34, 211, 238, 0.35), inset 0 0 8px rgba(34, 211, 238, 0.1);
+    box-shadow: 0 0 14px rgba(34, 211, 238, 0.4), 0 0 30px rgba(34, 211, 238, 0.15), inset 0 0 10px rgba(34, 211, 238, 0.12);
   }
 }
 
@@ -812,21 +813,43 @@ body {
   justify-content: center;
 }
 
+/* Dual-orbital turn ring: outer slow + inner fast */
 .turn-ring {
   position: absolute;
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  border: 2px solid transparent;
+  border: 2.5px solid transparent;
   border-top-color: var(--color-cyan);
-  border-bottom-color: rgba(34, 211, 238, 0.25);
-  animation: rotate-spin 2s linear infinite;
+  border-right-color: rgba(34, 211, 238, 0.45);
+  border-bottom-color: transparent;
+  animation: orbit-outer 1.6s linear infinite;
   display: none;
-  filter: drop-shadow(0 0 5px var(--color-cyan));
+  filter: drop-shadow(0 0 6px var(--color-cyan));
+}
+
+.turn-ring::after {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: rgba(34, 211, 238, 0.6);
+  border-bottom-color: rgba(34, 211, 238, 0.2);
+  animation: orbit-inner 0.9s linear infinite reverse;
 }
 
 .opponent-avatar-card.active-turn .turn-ring {
   display: block;
+}
+
+@keyframes orbit-outer {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes orbit-inner {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 @keyframes rotate-spin {
@@ -5973,9 +5996,14 @@ body.battery-saver .hud-btn-voice.speaking {
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    padding: 16px 8px !important;
-    overflow-y: visible !important;
-    margin-top: 20px !important;
+    padding: 16px 8px 40px 8px !important;
+    overflow-y: auto !important;
+    max-height: calc(100dvh - 100px) !important;
+    scrollbar-width: none !important;
+    margin-top: 10px !important;
+  }
+  .mm-profile-panel.mobile-visible::-webkit-scrollbar {
+    display: none !important;
   }
 
   .mm-actions-panel.mobile-visible {
@@ -6005,45 +6033,20 @@ body.battery-saver .hud-btn-voice.speaking {
   }
 }
 
-/* ── CARD ANIMATION STYLES ── */
+/* ═══════════════════════════════════════════════════════════════════════════
+   CARD MICRO-ANIMATION SYSTEM
+   ═══════════════════════════════════════════════════════════════════════════ */
 
+/* ── 1. DRAW INTO HAND — spring bounce from below ── */
 @keyframes card-appear-hand {
-  0% {
-    opacity: 0;
-    transform: translateY(35px) scale(0.88);
-  }
-}
-
-@keyframes card-appear-discard-bottom {
-  0% {
-    opacity: 0;
-    transform: translateY(160px) rotate(0deg) scale(0.85);
-  }
-}
-
-@keyframes card-appear-discard-left {
-  0% {
-    opacity: 0;
-    transform: translate(-150px, -60px) rotate(-25deg) scale(0.85);
-  }
-}
-
-@keyframes card-appear-discard-right {
-  0% {
-    opacity: 0;
-    transform: translate(150px, -60px) rotate(25deg) scale(0.85);
-  }
-}
-
-@keyframes card-appear-discard-center {
-  0% {
-    opacity: 0;
-    transform: scale(0.8);
-  }
+  0%   { opacity: 0; transform: translateY(50px) scale(0.82) rotate(-4deg); }
+  60%  { opacity: 1; transform: translateY(-6px) scale(1.04) rotate(1deg); }
+  80%  { transform: translateY(2px) scale(0.99) rotate(0deg); }
+  100% { opacity: 1; transform: translateY(0) scale(1) rotate(0deg); }
 }
 
 .user-hand-cards .game-card {
-  animation: card-appear-hand 0.15s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-hand 0.32s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
 }
 
 .user-hand-cards.no-pick-transition .game-card {
@@ -6054,23 +6057,88 @@ body.battery-saver .hud-btn-voice.speaking {
   animation: none !important;
 }
 
+
+/* ── 2. DISCARD — arc sweep with direction-aware origin ── */
+@keyframes card-appear-discard-bottom {
+  0%  { opacity: 0; transform: translateY(180px) rotate(-6deg) scale(0.8); }
+  55% { opacity: 1; transform: translateY(-10px) rotate(2deg) scale(1.06); }
+  75% { transform: translateY(3px) rotate(-1deg) scale(0.98); }
+  100%{ opacity: 1; transform: translateY(0) rotate(0deg) scale(1); }
+}
+
+@keyframes card-appear-discard-left {
+  0%  { opacity: 0; transform: translate(-180px, -70px) rotate(-28deg) scale(0.78); }
+  55% { opacity: 1; transform: translate(8px, 4px) rotate(3deg) scale(1.06); }
+  75% { transform: translate(-2px, -1px) rotate(-1deg) scale(0.99); }
+  100%{ opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes card-appear-discard-right {
+  0%  { opacity: 0; transform: translate(180px, -70px) rotate(28deg) scale(0.78); }
+  55% { opacity: 1; transform: translate(-8px, 4px) rotate(-3deg) scale(1.06); }
+  75% { transform: translate(2px, -1px) rotate(1deg) scale(0.99); }
+  100%{ opacity: 1; transform: translate(0, 0) rotate(0deg) scale(1); }
+}
+
+@keyframes card-appear-discard-center {
+  0%  { opacity: 0; transform: scale(0.7) rotate(-5deg); }
+  55% { opacity: 1; transform: scale(1.07) rotate(2deg); }
+  80% { transform: scale(0.98) rotate(-1deg); }
+  100%{ opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
 .top-discard-card.discard-from-bottom .game-card {
-  animation: card-appear-discard-bottom 0.2s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-bottom 0.38s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
-
 .top-discard-card.discard-from-left .game-card {
-  animation: card-appear-discard-left 0.22s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-left 0.38s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
-
 .top-discard-card.discard-from-right .game-card {
-  animation: card-appear-discard-right 0.22s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-right 0.38s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
-
 .top-discard-card.discard-from-center .game-card {
-  animation: card-appear-discard-center 0.18s cubic-bezier(0.25, 1, 0.5, 1) backwards;
+  animation: card-appear-discard-center 0.28s cubic-bezier(0.25, 1, 0.5, 1) backwards;
 }
 
 
+/* ── 3. ROUND-END CARD FLIP REVEAL ── */
+.card-flip-reveal {
+  perspective: 600px;
+  display: inline-block;
+}
+
+.card-flip-reveal .game-card {
+  animation: card-flip-in 0.5s cubic-bezier(0.34, 1.4, 0.64, 1) both;
+  transform-style: preserve-3d;
+  transform-origin: center bottom;
+  will-change: transform, opacity;
+}
+
+@keyframes card-flip-in {
+  0%   { opacity: 0; transform: rotateY(-90deg) scale(0.85); }
+  50%  { opacity: 1; transform: rotateY(8deg)  scale(1.05); }
+  75%  { transform: rotateY(-4deg) scale(0.98); }
+  100% { opacity: 1; transform: rotateY(0deg)  scale(1); }
+}
+
+/* ── 4. OWN AVATAR GLOW + FLOAT WHEN IT IS MY TURN ── */
+.player-hud-avatar-ring.my-turn-active {
+  animation: avatar-self-float 2s ease-in-out infinite, avatar-self-glow 2s ease-in-out infinite;
+}
+
+@keyframes avatar-self-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-4px); }
+}
+
+@keyframes avatar-self-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(34, 211, 238, 0.35), 0 0 18px rgba(34, 211, 238, 0.15);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(34, 211, 238, 0.75), 0 0 36px rgba(34, 211, 238, 0.35), inset 0 0 8px rgba(34, 211, 238, 0.2);
+  }
+}
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -7273,8 +7341,282 @@ body.battery-saver .hud-btn-voice.speaking {
   text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(251, 191, 36, 0.6) !important;
 }
 
+/* 17. Classic Wood */
+.card-back-wood {
+  background: linear-gradient(135deg, #5c3a21 0%, #2b1a0e 100%) !important;
+  border: 2px solid #d4af37 !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(212, 175, 55, 0.3) !important;
+}
+.card-back-wood .card-back-pattern {
+  border-color: rgba(212, 175, 55, 0.25) !important;
+  background-image: 
+    repeating-linear-gradient(90deg, rgba(139, 90, 43, 0.15) 0px, rgba(139, 90, 43, 0.15) 4px, transparent 4px, transparent 20px),
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.1) 0px, rgba(0, 0, 0, 0.1) 2px, transparent 2px, transparent 15px) !important;
+  background-color: transparent !important;
+}
+.card-back-wood .card-back-logo {
+  color: #d4af37 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.6), 0 0 10px rgba(212, 175, 55, 0.8) !important;
+}
+
+
+/* ── Table Felts ───────────────────────────────────────── */
+.game-table-container.felt-emerald_green {
+  background: radial-gradient(circle at center, #0c2b1e 0%, #030f0a 100%) !important;
+}
+.game-table-container.felt-royal_blue {
+  background: radial-gradient(circle at center, #081d3d 0%, #020712 100%) !important;
+}
+.game-table-container.felt-cyber_purple {
+  background: radial-gradient(circle at center, #23083e 0%, #07010f 100%) !important;
+}
+
+/* Subtle felt texture overlay for premium feel */
+.game-table-container.felt-royal_blue::after,
+.game-table-container.felt-cyber_purple::after,
+.game-table-container.felt-emerald_green::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.035;
+  pointer-events: none;
+  z-index: 0;
+  background-image: radial-gradient(#ffffff 25%, transparent 25%),
+                    radial-gradient(#ffffff 25%, transparent 25%);
+  background-size: 4px 4px;
+  background-position: 0 0, 2px 2px;
+}
+
+
+/* ── Animated Avatars ─────────────────────────────────── */
+.anim-avatar {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+/* 1. Neon Matrix Avatar */
+.matrix-avatar .matrix-bg {
+  width: 100%;
+  height: 100%;
+  background: #020803;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.matrix-avatar .matrix-rain-line {
+  position: absolute;
+  top: -50px;
+  width: 2px;
+  background: linear-gradient(180deg, transparent, #22c55e, #86efac);
+  animation: matrix-fall linear infinite;
+  opacity: 0.45;
+}
+.matrix-avatar .line-1 { left: 20%; height: 40px; animation-duration: 1.2s; animation-delay: 0.2s; }
+.matrix-avatar .line-2 { left: 55%; height: 50px; animation-duration: 1.5s; animation-delay: 0.7s; }
+.matrix-avatar .line-3 { left: 80%; height: 35px; animation-duration: 0.9s; animation-delay: 0s; }
+.matrix-avatar .matrix-face {
+  font-size: 1.6rem;
+  z-index: 2;
+  text-shadow: 0 0 8px #22c55e;
+  animation: matrix-face-glow 2s ease-in-out infinite alternate;
+}
+@keyframes matrix-fall {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(140px); }
+}
+@keyframes matrix-face-glow {
+  0% { filter: drop-shadow(0 0 1px #22c55e) brightness(1); }
+  100% { filter: drop-shadow(0 0 6px #22c55e) brightness(1.3); }
+}
+
+/* 2. Cosmic Vortex Avatar */
+.cosmic-avatar .cosmic-bg {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, #25103f 0%, #030008 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cosmic-avatar .cosmic-vortex-core {
+  position: absolute;
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(217,70,239,0.3) 0%, rgba(99,102,241,0.1) 60%, transparent 80%);
+  animation: vortex-spin 6s linear infinite;
+}
+.cosmic-avatar .cosmic-stars {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(#fff 1px, transparent 1px),
+    radial-gradient(#fff 1px, transparent 1px);
+  background-size: 10px 10px;
+  background-position: 0 0, 5px 5px;
+  opacity: 0.3;
+  animation: stars-twinkle 3s ease infinite;
+}
+.cosmic-avatar .cosmic-galaxy {
+  font-size: 1.8rem;
+  z-index: 2;
+  animation: float-galaxy 4s ease-in-out infinite alternate;
+}
+@keyframes vortex-spin {
+  0% { transform: rotate(0deg) scale(0.9); }
+  50% { transform: rotate(180deg) scale(1.1); }
+  100% { transform: rotate(360deg) scale(0.9); }
+}
+@keyframes stars-twinkle {
+  0%, 100% { opacity: 0.2; }
+  50% { opacity: 0.5; }
+}
+@keyframes float-galaxy {
+  0% { transform: translateY(0) rotate(0); }
+  100% { transform: translateY(-4px) rotate(15deg); }
+}
+
+/* 3. Cyber Skull Avatar */
+.cyber-avatar .cyber-bg {
+  width: 100%;
+  height: 100%;
+  background: #09090e;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.cyber-avatar .cyber-glitch-layer {
+  position: absolute;
+  font-size: 1.7rem;
+  opacity: 0.7;
+  display: none;
+}
+.cyber-avatar .cyber-glitch-layer.text-cyan {
+  color: #00f3ff;
+  left: calc(50% - 13px);
+  top: calc(50% - 17px);
+  animation: cyber-jitter-1 0.4s steps(2) infinite;
+}
+.cyber-avatar .cyber-glitch-layer.text-magenta {
+  color: #ff007f;
+  left: calc(50% - 11px);
+  top: calc(50% - 15px);
+  animation: cyber-jitter-2 0.3s steps(2) infinite;
+}
+.cyber-avatar .cyber-glitch-skull {
+  font-size: 1.7rem;
+  color: #ffffff;
+  z-index: 2;
+  text-shadow: 0 0 8px rgba(255,255,255,0.6);
+  animation: cyber-base-float 2s ease-in-out infinite alternate;
+}
+.cyber-avatar:hover .cyber-glitch-layer {
+  display: block;
+}
+@keyframes cyber-base-float {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-2px) scale(1.03); }
+}
+@keyframes cyber-jitter-1 {
+  0% { transform: translate(-2px, 1px); }
+  50% { transform: translate(1px, -1px); }
+  100% { transform: translate(-1px, 2px); }
+}
+@keyframes cyber-jitter-2 {
+  0% { transform: translate(1px, -2px); }
+  50% { transform: translate(-2px, 2px); }
+  100% { transform: translate(2px, -1px); }
+}
+
+/* 4. Retrowave Sun Avatar */
+.retro-avatar .retro-bg {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #1b0a2a 0%, #030107 100%);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.retro-avatar .retro-sun {
+  position: absolute;
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(180deg, #f1c40f 0%, #e74c3c 100%);
+  border-radius: 50%;
+  top: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 0 15px rgba(231,76,60,0.65);
+  mask-image: repeating-linear-gradient(0deg, black 0px, black 3px, transparent 3px, transparent 6px);
+  -webkit-mask-image: repeating-linear-gradient(0deg, black 0px, black 3px, transparent 3px, transparent 6px);
+}
+.retro-avatar .retro-horizon {
+  position: absolute;
+  bottom: 30%;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: #ff007f;
+  box-shadow: 0 0 8px #ff007f;
+  z-index: 2;
+}
+.retro-avatar .retro-grid {
+  width: 100%;
+  height: 30%;
+  background: 
+    linear-gradient(rgba(255, 0, 127, 0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 0, 127, 0.25) 1px, transparent 1px);
+  background-size: 8px 8px;
+  transform: perspective(10px) rotateX(15deg);
+  transform-origin: top;
+  z-index: 1;
+  animation: retro-grid-scroll 1.5s linear infinite;
+}
+.retro-avatar .retro-car {
+  position: absolute;
+  font-size: 0.95rem;
+  bottom: 4%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  filter: drop-shadow(0 0 4px #00f3ff);
+  animation: car-bounce 0.15s linear infinite alternate;
+}
+@keyframes retro-grid-scroll {
+  0% { background-position-y: 0px; }
+  100% { background-position-y: 8px; }
+}
+@keyframes car-bounce {
+  0% { bottom: 3.5%; }
+  100% { bottom: 4.5%; }
+}
+
 
 /* ── Cosmetics Shop Layout ───────────────────────────── */
+
+.shop-section-title-divider {
+  width: 100%;
+  text-align: left;
+  font-size: 1.15rem;
+  color: var(--color-cyan);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  text-shadow: 0 0 8px var(--color-cyan-glow);
+}
 
 .shop-tab-bar {
   display: flex;
@@ -7716,7 +8058,7 @@ body.battery-saver .hud-btn-voice.speaking {
 
 .profile-edit-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-top: 8px;
 }
@@ -7734,6 +8076,7 @@ body.battery-saver .hud-btn-voice.speaking {
   transition: all 0.22s cubic-bezier(0.25, 0.8, 0.25, 1);
   min-height: 94px;
   justify-content: center;
+  min-width: 0;
 }
 
 .profile-edit-item:hover:not(.locked) {
@@ -8093,6 +8436,335 @@ body.battery-saver .hud-btn-voice.speaking {
     min-height: 0 !important;
     overflow-y: auto !important;
     padding-right: 4px;
+  }
+}
+
+/* ── EDIT PROFILE MOBILE RESPONSIVENESS OVERRIDES ── */
+@media (max-width: 480px) {
+  .profile-edit-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  .profile-edit-item {
+    padding: 8px 4px !important;
+    min-height: 80px !important;
+  }
+  .profile-edit-item .item-label {
+    font-size: 0.58rem !important;
+  }
+  .profile-edit-item .preview-circle-pic {
+    width: 38px !important;
+    height: 38px !important;
+  }
+  .profile-edit-item .preview-circle {
+    width: 28px !important;
+    height: 28px !important;
+  }
+  .mm-edit-profile-preview {
+    margin: 6px 0 !important;
+  }
+  .mm-edit-profile-scroll {
+    gap: 14px !important;
+  }
+}
+
+@media (max-width: 375px) {
+  .profile-edit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  .profile-edit-item {
+    padding: 10px 6px !important;
+    min-height: 86px !important;
+  }
+  .profile-edit-item .item-label {
+    font-size: 0.65rem !important;
+  }
+  .profile-edit-item .preview-circle-pic {
+    width: 42px !important;
+    height: 42px !important;
+  }
+  .profile-edit-item .preview-circle {
+    width: 32px !important;
+    height: 32px !important;
+  }
+}
+
+/* ── GAME OVER MODAL RESPONSIVENESS OVERRIDES (360x740 & small screens) ── */
+.game-over-modal-content {
+  width: 600px;
+  max-width: 95vw;
+}
+
+.game-over-modal-title {
+  font-size: 2.8rem;
+}
+
+.game-over-modal-subtitle {
+  font-size: 1.25rem;
+  margin-top: 8px;
+}
+
+.progression-recap-panel {
+  padding: 24px;
+}
+
+.recap-stats-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.recap-stat-card {
+  flex: 1;
+  min-width: 130px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  text-align: center;
+}
+
+.recap-stat-label {
+  display: block;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.recap-stat-big {
+  display: block;
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+.recap-stat-sub {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.round-breakdown-container {
+  margin-top: 32px;
+  overflow-x: auto;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.breakdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 450px;
+}
+
+.breakdown-table th {
+  padding: 10px 14px;
+  color: var(--color-gold);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.breakdown-table td {
+  padding: 12px 14px;
+  font-size: 0.9rem;
+}
+
+.game-over-buttons {
+  margin-top: 32px;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .game-over-modal-content {
+    padding: 16px 12px !important;
+    max-height: 95vh !important;
+  }
+
+  .game-over-modal-title {
+    font-size: 1.8rem !important;
+  }
+
+  .game-over-modal-subtitle {
+    font-size: 0.95rem !important;
+    margin-top: 6px !important;
+  }
+
+  /* 3D Podium Scale Down on Mobile */
+  .podium-container {
+    height: 120px !important;
+    margin: 45px 0 20px 0 !important;
+    gap: 10px !important;
+  }
+  .podium-stand {
+    width: 80px !important;
+    border-radius: 8px 8px 0 0 !important;
+  }
+  .podium-stand.first { height: 90px !important; }
+  .podium-stand.second { height: 70px !important; }
+  .podium-stand.third { height: 50px !important; }
+  .podium-name { top: -42px !important; font-size: 0.72rem !important; width: 85px !important; }
+  .podium-crown { top: -22px !important; font-size: 1.1rem !important; }
+  .podium-number { font-size: 1.4rem !important; margin-top: 4px !important; }
+  .podium-score { font-size: 0.7rem !important; margin-bottom: 4px !important; }
+
+  .progression-recap-panel {
+    padding: 12px !important;
+  }
+
+  .recap-stats-row {
+    gap: 8px !important;
+  }
+
+  .recap-stat-card {
+    min-width: 90px !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .recap-stat-label {
+    font-size: 0.62rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .recap-stat-big {
+    font-size: 1.25rem !important;
+  }
+
+  .recap-stat-sub {
+    font-size: 0.62rem !important;
+  }
+
+  .results-grid {
+    margin-top: 20px !important;
+  }
+
+  .player-result-row {
+    padding: 8px 12px !important;
+  }
+
+  .round-breakdown-container {
+    margin-top: 20px !important;
+    padding: 10px !important;
+  }
+
+  .breakdown-table th {
+    padding: 6px 8px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .breakdown-table td {
+    padding: 8px 8px !important;
+    font-size: 0.78rem !important;
+  }
+
+  .game-over-buttons {
+    margin-top: 20px !important;
+    gap: 10px !important;
+  }
+
+  .game-over-buttons .btn-primary,
+  .game-over-buttons .btn-secondary {
+    padding: 10px 14px !important;
+    font-size: 0.88rem !important;
+    border-radius: 10px !important;
+  }
+
+  /* Me Profile Panel Section Mobile Optimizations */
+  .mm-mobile-tab-header {
+    margin-bottom: 12px !important;
+  }
+  .mm-avatar-ring {
+    margin-bottom: 8px !important;
+    width: 64px !important;
+    height: 64px !important;
+  }
+  .mm-avatar-img {
+    width: 60px !important;
+    height: 60px !important;
+  }
+  .mm-profile-name-container {
+    margin-bottom: 8px !important;
+  }
+  .mm-profile-name {
+    font-size: 1.25rem !important;
+  }
+  .mm-profile-mmr {
+    font-size: 0.72rem !important;
+    margin-bottom: 10px !important;
+  }
+  .mm-stats-row {
+    margin-top: 8px !important;
+    gap: 6px !important;
+  }
+  .mm-stat-chip {
+    padding: 5px 10px !important;
+    border-radius: 8px !important;
+  }
+  .mm-stat-val {
+    font-size: 0.82rem !important;
+  }
+  .mm-stat-key {
+    font-size: 0.54rem !important;
+  }
+  .mm-me-menu-list {
+    margin-top: 16px !important;
+    gap: 8px !important;
+  }
+  .mm-me-menu-item {
+    padding: 12px 16px !important;
+    border-radius: 12px !important;
+    font-size: 0.95rem !important;
+  }
+  .mm-me-menu-icon {
+    font-size: 1.15rem !important;
+    margin-right: 10px !important;
+  }
+  .mm-me-menu-arrow {
+    font-size: 1.15rem !important;
+  }
+
+  /* Daily Missions Mobile Optimizations */
+  .daily-mission {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+    border-radius: 10px !important;
+  }
+  .dm-label {
+    font-size: 0.8rem !important;
+  }
+  .dm-desc {
+    font-size: 0.65rem !important;
+  }
+  .dm-coin-label {
+    font-size: 0.65rem !important;
+  }
+  .dm-claim-btn {
+    padding: 4px 10px !important;
+    font-size: 0.75rem !important;
+    border-radius: 8px !important;
+  }
+
+  /* Shop Section Title mobile size overrides */
+  .shop-section-title-divider {
+    font-size: 0.95rem !important;
+  }
+}
+
+@media (max-width: 350px) {
+  .game-over-buttons {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+  .game-over-buttons .btn-primary,
+  .game-over-buttons .btn-secondary {
+    width: 100% !important;
   }
 }
 

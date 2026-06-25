@@ -137,8 +137,8 @@ public class SanitizedGame {
                 sr.setRoundNumber(r.getRoundNumber());
                 sr.setJokerCard(r.getJokerCard());
                 sr.setJokerRank(r.getJokerRank());
-                sr.setDrawPileSize(r.getDrawPile() != null ? r.getDrawPile().size() : 0);
-                sr.setDiscardPile(r.getDiscardPile());
+                sr.setDrawPileSize(0); // Optimisation: client does not need draw pile size for historical rounds
+                sr.setDiscardPile(new java.util.ArrayList<>()); // Optimisation: client does not need historical discard piles
                 sr.setCurrentPlayerIndex(r.getCurrentPlayerIndex());
                 sr.setRoundEnded(r.isRoundEnded());
                 sr.setTickPlayerId(r.getTickPlayerId());

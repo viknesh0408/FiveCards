@@ -87,6 +87,7 @@ public class GameEngine {
 
         game.setCurrentRoundNumber(0);
         game.setWinnerId(null);
+        game.getRounds().clear();
         for (Player p : game.getPlayers()) {
             p.setTotalScore(0);
             p.setRoundScore(0);

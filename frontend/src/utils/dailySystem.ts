@@ -39,6 +39,8 @@ export interface DailyState {
   unlockedAvatarPics: string[];
   selectedCardBack: string;
   selectedAvatar: string;
+  unlockedTableFelts?: string[];
+  selectedTableFelt?: string;
 }
 
 // ─── Reward Schedule ───────────────────────────────────────────────────────
@@ -261,6 +263,8 @@ function createDefault(): DailyState {
     unlockedAvatarPics: ['none', 'cat'],
     selectedCardBack: 'classic',
     selectedAvatar: 'none',
+    unlockedTableFelts: ['emerald_green'],
+    selectedTableFelt: 'emerald_green',
   };
 }
 
@@ -283,8 +287,12 @@ function loadState(): DailyState {
       if (state.unlockedAvatarPics && state.unlockedAvatarPics.length === 7 && state.unlockedAvatarPics.includes('fox') && state.unlockedAvatarPics.includes('unicorn')) {
         state.unlockedAvatarPics = ['none', 'cat'];
       }
+      if (!state.unlockedTableFelts || state.unlockedTableFelts.length === 0) {
+        state.unlockedTableFelts = ['emerald_green'];
+      }
       if (!state.selectedCardBack) state.selectedCardBack = 'classic';
       if (!state.selectedAvatar) state.selectedAvatar = 'none';
+      if (!state.selectedTableFelt) state.selectedTableFelt = 'emerald_green';
       return state;
     }
   } catch (_) { /* ignore */ }
@@ -299,6 +307,7 @@ function saveState(state: DailyState): void {
   // Cache active selections for fast components reading (no JSON parsing on hot render paths)
   localStorage.setItem('selected_card_back', state.selectedCardBack);
   localStorage.setItem('selected_avatar', state.selectedAvatar);
+  localStorage.setItem('selected_table_felt', state.selectedTableFelt || 'emerald_green');
 }
 
 // ─── Public API ────────────────────────────────────────────────────────────
@@ -813,16 +822,24 @@ export function getDailyRewardForDay(streakDay: number, state: DailyState): Dail
 }
 
 /** Purchase a shop item. Returns updated state. */
-export function purchaseShopItem(itemType: 'cardBack' | 'avatar', itemId: string, price: number): DailyState {
+export function purchaseShopItem(itemType: 'cardBack' | 'avatar' | 'tableFelt' | 'avatarPic', itemId: string, price: number): DailyState {
   let state = loadState();
   if (state.coins < price) return state;
   
   if (itemType === 'cardBack') {
     if (state.unlockedCardBacks.includes(itemId)) return state;
     state.unlockedCardBacks = [...state.unlockedCardBacks, itemId];
-  } else {
+  } else if (itemType === 'avatar') {
     if (state.unlockedAvatars.includes(itemId)) return state;
     state.unlockedAvatars = [...state.unlockedAvatars, itemId];
+  } else if (itemType === 'avatarPic') {
+    if (!state.unlockedAvatarPics) state.unlockedAvatarPics = ['none', 'cat'];
+    if (state.unlockedAvatarPics.includes(itemId)) return state;
+    state.unlockedAvatarPics = [...state.unlockedAvatarPics, itemId];
+  } else if (itemType === 'tableFelt') {
+    if (!state.unlockedTableFelts) state.unlockedTableFelts = ['emerald_green'];
+    if (state.unlockedTableFelts.includes(itemId)) return state;
+    state.unlockedTableFelts = [...state.unlockedTableFelts, itemId];
   }
   
   state.coins -= price;
@@ -831,15 +848,23 @@ export function purchaseShopItem(itemType: 'cardBack' | 'avatar', itemId: string
 }
 
 /** Equip a purchased shop item. Returns updated state. */
-export function equipShopItem(itemType: 'cardBack' | 'avatar', itemId: string): DailyState {
+export function equipShopItem(itemType: 'cardBack' | 'avatar' | 'tableFelt' | 'avatarPic', itemId: string): DailyState {
   let state = loadState();
   
   if (itemType === 'cardBack') {
     if (!state.unlockedCardBacks.includes(itemId)) return state;
     state.selectedCardBack = itemId;
-  } else {
+  } else if (itemType === 'avatar') {
     if (!state.unlockedAvatars.includes(itemId)) return state;
     state.selectedAvatar = itemId;
+  } else if (itemType === 'avatarPic') {
+    if (!state.unlockedAvatarPics) state.unlockedAvatarPics = ['none', 'cat'];
+    if (!state.unlockedAvatarPics.includes(itemId)) return state;
+    localStorage.setItem('selected_avatar_pic', itemId);
+  } else if (itemType === 'tableFelt') {
+    if (!state.unlockedTableFelts) state.unlockedTableFelts = ['emerald_green'];
+    if (!state.unlockedTableFelts.includes(itemId)) return state;
+    state.selectedTableFelt = itemId;
   }
   
   saveState(state);

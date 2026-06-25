@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { Card } from './Card';
+import { AvatarImage } from './AvatarImage';
 
 const calculateHandValue = (hand?: CardType[] | null): number => {
   if (!hand) return 0;
@@ -142,21 +143,9 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               >
                 <div className="result-player-info">
                   <span className="result-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    {(() => {
-                      const pic = getAvatarPic(p);
-                      if (pic) {
-                        return (
-                          <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
-                            <img src={`/avatars/${pic}.png`} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          </div>
-                        );
-                      }
-                      return (
-                        <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)', fontSize: '0.65rem', fontWeight: 800 }}>
-                          {p.name ? p.name.substring(0, 1).toUpperCase() : 'P'}
-                        </div>
-                      );
-                    })()}
+                    <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                      <AvatarImage picId={getAvatarPic(p)} name={p.name} />
+                    </div>
                     <span>{p.name}</span>
                     {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
                     {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
@@ -180,7 +169,13 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
 
                 <div className="result-cards">
                   {p.hand && p.hand.map((c, idx) => (
-                    <Card key={idx} card={c} className="mini-card" />
+                    <div
+                      key={idx}
+                      className="card-flip-reveal"
+                      style={{ animationDelay: `${idx * 0.07}s` }}
+                    >
+                      <Card card={c} className="mini-card" />
+                    </div>
                   ))}
                 </div>
 

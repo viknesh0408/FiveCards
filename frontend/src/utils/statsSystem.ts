@@ -1,5 +1,20 @@
 import { savePersistentItem } from './persistentStorage';
 
+export interface MatchHistoryEntry {
+  gameId: string;
+  date: string;
+  placement: number;
+  playerScore: number;
+  totalPlayers: number;
+  isMultiplayer: boolean;
+  winnerName: string;
+  winnerScore: number;
+  isWin: boolean;
+  opponents: { name: string; score: number; isAi: boolean }[];
+  roundsCount: number;
+  roundScores?: number[];
+}
+
 export interface PlayerStats {
   name: string;
   gamesPlayedTotal: number;
@@ -203,11 +218,39 @@ export const processGameEndStats = (
   return newStats;
 };
 
+export const getMatchHistory = (): MatchHistoryEntry[] => {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem('tickMatchHistory');
+    return raw ? JSON.parse(raw) : [];
+  } catch (_) {
+    return [];
+  }
+};
+
+export const saveMatchToHistory = (entry: Omit<MatchHistoryEntry, 'date'>) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const history = getMatchHistory();
+    if (history.some(h => h.gameId === entry.gameId)) return;
+    
+    const newEntry: MatchHistoryEntry = {
+      ...entry,
+      date: new Date().toISOString(),
+    };
+    const updated = [newEntry, ...history].slice(0, 50);
+    localStorage.setItem('tickMatchHistory', JSON.stringify(updated));
+  } catch (e) {
+    console.error('Failed to save match to history', e);
+  }
+};
+
 export const resetLocalStats = () => {
   if (typeof window === 'undefined') return;
   const name = localStorage.getItem('tickPlayerName') || 'Player';
   const empty = createEmptyStats(name);
   saveLocalStats(empty);
+  localStorage.removeItem('tickMatchHistory');
   
   // Clean up legacy keys too
   localStorage.removeItem('playerGamesPlayed');

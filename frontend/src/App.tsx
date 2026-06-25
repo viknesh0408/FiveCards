@@ -26,6 +26,9 @@ export const App: React.FC = () => {
   const [update, setUpdate] = useState<any>(null);
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showAppLeaveConfirm, setShowAppLeaveConfirm] = useState<boolean>(false);
+  const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  
+  const menuBackButtonHandlerRef = useRef<(() => boolean) | null>(null);
   
   const {
     gameState,
@@ -65,10 +68,20 @@ export const App: React.FC = () => {
     const listenerPromise = CapacitorApp.addListener('backButton', () => {
       if (showAppLeaveConfirm) {
         setShowAppLeaveConfirm(false);
+      } else if (showExitConfirm) {
+        setShowExitConfirm(false);
+      } else if (showTutorial) {
+        setShowTutorial(false);
+      } else if (isKicked) {
+        setIsKicked(false);
       } else if (screen === 'table') {
         setShowAppLeaveConfirm(true);
-      } else {
-        CapacitorApp.exitApp();
+      } else if (screen === 'menu') {
+        if (menuBackButtonHandlerRef.current) {
+          const handled = menuBackButtonHandlerRef.current();
+          if (handled) return;
+        }
+        setShowExitConfirm(true);
       }
     });
 
@@ -76,7 +89,7 @@ export const App: React.FC = () => {
       listenerPromise.then(handle => handle.remove());
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [screen, showAppLeaveConfirm]);
+  }, [screen, showAppLeaveConfirm, showExitConfirm, showTutorial, isKicked]);
 
   const prevGameRef = useRef<any>(null);
 
@@ -446,6 +459,9 @@ export const App: React.FC = () => {
           onJoinOnline={handleJoinOnline}
           onCreateOnline={handleCreateOnline}
           onShowTutorial={() => setShowTutorial(true)}
+          onRegisterBackButton={(handler) => {
+            menuBackButtonHandlerRef.current = handler;
+          }}
         />
       )}
 
@@ -551,6 +567,37 @@ export const App: React.FC = () => {
                 style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
               >
                 Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Back Button Exit Application Confirmation Modal */}
+      {showExitConfirm && (
+        <div className="modal-overlay" onClick={() => setShowExitConfirm(false)}>
+          <div className="modal-content glass-panel" onClick={e => e.stopPropagation()} style={{ maxWidth: '320px', textAlign: 'center', padding: '24px' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.4rem' }}>Exit Game?</h2>
+            <p style={{ marginBottom: '24px', color: 'var(--color-text-muted)', fontSize: '1rem' }}>
+              Are you sure you want to exit the game?
+            </p>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+              <button
+                className="btn-secondary"
+                onClick={() => setShowExitConfirm(false)}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-danger"
+                onClick={() => {
+                  setShowExitConfirm(false);
+                  CapacitorApp.exitApp();
+                }}
+                style={{ flex: 1, padding: '14px 20px', fontSize: '1rem' }}
+              >
+                Exit
               </button>
             </div>
           </div>

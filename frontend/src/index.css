@@ -35,6 +35,37 @@
   padding: 0;
   -webkit-tap-highlight-color: transparent;
   outline: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+}
+
+/* Custom premium scrollbars for WebKit browsers */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Momentum scrolling for iOS and touch screens */
+.mm-scene,
+.mm-stats-scroll,
+.mm-rules-scroll,
+.mm-root,
+.daily-scroll-body,
+.user-hand-cards {
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
@@ -1430,12 +1461,12 @@ body {
 
 @keyframes pulse-gold {
   0%, 100% {
-    box-shadow: 0 0 12px var(--color-gold-glow), var(--card-shadow);
-    border-color: rgba(251, 191, 36, 0.4);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.5), var(--card-shadow);
+    border-color: rgba(251, 191, 36, 0.5);
   }
   50% {
-    box-shadow: 0 0 25px var(--color-gold), var(--card-shadow);
-    border-color: rgba(251, 191, 36, 1);
+    box-shadow: 0 0 8px #ffffff, 0 0 20px var(--color-gold), 0 0 30px rgba(251, 191, 36, 0.8), var(--card-shadow);
+    border-color: rgba(251, 191, 36, 0.95);
   }
 }
 
@@ -1462,14 +1493,16 @@ body {
 .joker-glow,
 .game-card.joker-glow,
 .user-hand-cards .game-card.joker-glow {
-  animation: pulse-gold 2.5s infinite !important;
-  border: 2px solid var(--color-gold) !important;
-  box-shadow: 0 0 15px var(--color-gold-glow) !important;
+  animation: pulse-gold 2s infinite ease-in-out !important;
+  border: 2px solid rgba(251, 191, 36, 0.4);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.5), var(--card-shadow);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important; /* Disable box-shadow transition conflict */
 }
 
 .card-pile.glow-cyan .game-card,
 .card-pile.glow-cyan .card-back {
   animation: pulse-glow-cyan 2s infinite;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease !important; /* Disable box-shadow transition conflict */
 }
 
 @keyframes pulse-glow-cyan {
@@ -1802,7 +1835,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 5px;
-  padding: 18px 10px 6px;
+  padding: 24px 14px 20px;
   border-radius: 12px;
   flex-wrap: nowrap;
   overflow-x: auto;
@@ -1889,7 +1922,7 @@ body {
   .hud-stat { font-size: 0.88rem; }
 
   .user-hand-area { padding: 12px 12px 18px; gap: 10px; }
-  .user-hand-cards { gap: 8px; padding: 28px 16px 10px; }
+  .user-hand-cards { gap: 8px; padding: 28px 16px 20px; }
 
   .opponent-mini-hand .card-back {
     width: 26px;
@@ -2131,7 +2164,7 @@ body {
     margin: 0;
   }
 
-  .user-hand-cards { gap: 12px; padding: 38px 24px 14px; border-radius: 20px; }
+  .user-hand-cards { gap: 12px; padding: 38px 24px 22px; border-radius: 20px; }
 
   .avatar-circle { width: 32px; height: 32px; }
   .turn-ring     { width: 40px; height: 40px; }
@@ -2170,7 +2203,7 @@ body {
   }
 
   .user-hand-area  { gap: 14px; padding-bottom: 24px; }
-  .user-hand-cards { gap: 10px; padding: 24px 20px 10px; border-radius: 16px; }
+  .user-hand-cards { gap: 10px; padding: 24px 20px 20px; border-radius: 16px; }
 
   .user-hand-cards .game-card:hover  { transform: translateY(-14px) scale(1.04) rotate(1deg); }
   .user-hand-cards .game-card.selected { transform: translateY(-20px) scale(1.04); }
@@ -4532,7 +4565,8 @@ body.battery-saver .hud-btn-voice.speaking {
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--bg-table);
   font-family: var(--font-family);
 }
@@ -5185,7 +5219,7 @@ body.battery-saver .hud-btn-voice.speaking {
    MOBILE RESPONSIVE  (≤ 700px)
    ═══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  .mm-scene { padding: 12px; overflow-y: auto; align-items: flex-start; }
+  .mm-scene { padding: 12px; overflow-x: hidden; overflow-y: auto; align-items: flex-start; }
 
   .daily-root {
     height: calc(100vh - 40px - 64px - env(safe-area-inset-bottom, 0px));
@@ -6090,7 +6124,7 @@ body.battery-saver .hud-btn-voice.speaking {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-bottom: 24px;
+  padding-bottom: 100px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;   /* hide scrollbar on Firefox */
 }
@@ -6625,77 +6659,275 @@ body.battery-saver .hud-btn-voice.speaking {
 
 /* 1. Neon Frame (cyan/magenta glowing ring) */
 .avatar-frame-neon_frame {
-  border-color: #00f3ff !important;
-  animation: avatar-neon-pulse 2s linear infinite !important;
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #00f3ff, #ff007f, #b000ff, #00f3ff) border-box !important;
+  background-size: 300% 300% !important;
+  animation: neon-gradient-spin 4s linear infinite, avatar-neon-glow 2s ease-in-out infinite alternate !important;
 }
-@keyframes avatar-neon-pulse {
-  0%, 100% {
-    box-shadow: 0 0 10px #00f3ff, inset 0 0 5px #00f3ff;
-    border-color: #00f3ff !important;
+@keyframes neon-gradient-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes avatar-neon-glow {
+  0% {
+    box-shadow: 0 0 6px rgba(0, 243, 255, 0.4), 
+                0 0 12px rgba(255, 0, 127, 0.2), 
+                inset 0 0 4px rgba(0, 243, 255, 0.2);
   }
-  50% {
-    box-shadow: 0 0 18px #ff007f, inset 0 0 8px #ff007f;
-    border-color: #ff007f !important;
+  100% {
+    box-shadow: 0 0 16px rgba(0, 243, 255, 0.8), 
+                0 0 28px rgba(255, 0, 127, 0.6), 
+                inset 0 0 8px rgba(255, 0, 127, 0.3);
   }
 }
 
 /* 2. Fire Frame (red/orange fire ring) */
 .avatar-frame-fire {
-  border-color: #ff4500 !important;
-  animation: avatar-fire-pulse 1.5s ease-in-out infinite !important;
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #ff4500, #ff8c00, #ffcc00, #ff4500) border-box !important;
+  background-size: 200% 200% !important;
+  animation: fire-gradient-wave 2.5s ease infinite, avatar-fire-flicker 0.8s ease-in-out infinite alternate !important;
 }
-@keyframes avatar-fire-pulse {
-  0%, 100% {
-    box-shadow: 0 0 12px #ff4500, 0 0 6px #ff8c00;
-    border-color: #ff4500 !important;
+@keyframes fire-gradient-wave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes avatar-fire-flicker {
+  0% {
+    box-shadow: 0 0 8px rgba(255, 69, 0, 0.5), 
+                0 -4px 10px rgba(255, 140, 0, 0.4), 
+                0 2px 4px rgba(255, 204, 0, 0.3);
   }
   50% {
-    box-shadow: 0 0 22px #ff8c00, 0 0 10px #ffd700;
-    border-color: #ffd700 !important;
+    box-shadow: 0 0 14px rgba(255, 69, 0, 0.7), 
+                0 -8px 18px rgba(255, 140, 0, 0.6), 
+                0 4px 8px rgba(255, 204, 0, 0.5);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 69, 0, 0.6), 
+                0 -6px 14px rgba(255, 140, 0, 0.5), 
+                0 3px 6px rgba(255, 204, 0, 0.4);
   }
 }
 
 /* 3. Frost Frame (crystal blue sparkly ring) */
 .avatar-frame-frost {
-  border-color: #74b9ff !important;
-  animation: avatar-frost-pulse 2.5s ease-in-out infinite !important;
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #74b9ff, #dff9fb, #00d2d3, #74b9ff) border-box !important;
+  background-size: 200% 200% !important;
+  animation: frost-gradient-spin 5s linear infinite, avatar-frost-shimmer 3s ease-in-out infinite alternate !important;
 }
-@keyframes avatar-frost-pulse {
-  0%, 100% {
-    box-shadow: 0 0 10px rgba(116, 185, 255, 0.6), inset 0 0 4px rgba(116, 185, 255, 0.3);
-    border-color: #74b9ff !important;
+@keyframes frost-gradient-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes avatar-frost-shimmer {
+  0% {
+    box-shadow: 0 0 6px rgba(116, 185, 255, 0.4), 
+                0 0 12px rgba(223, 249, 251, 0.2), 
+                inset 0 0 4px rgba(116, 185, 255, 0.2);
+    filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 20px rgba(255, 255, 255, 0.9), inset 0 0 8px rgba(116, 185, 255, 0.5);
-    border-color: #ffffff !important;
+    box-shadow: 0 0 18px rgba(116, 185, 255, 0.8), 
+                0 0 24px rgba(255, 255, 255, 0.8), 
+                inset 0 0 8px rgba(223, 249, 251, 0.5);
+    filter: brightness(1.15);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(116, 185, 255, 0.5), 
+                0 0 16px rgba(223, 249, 251, 0.3), 
+                inset 0 0 5px rgba(116, 185, 255, 0.3);
+    filter: brightness(1.05);
   }
 }
 
 /* 4. Royal Frame (elegant gold border + crown) */
 .avatar-frame-royal {
-  border-color: #d4af37 !important;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.7), inset 0 0 6px rgba(212, 175, 55, 0.4) !important;
-  animation: avatar-royal-glow 4s ease-in-out infinite !important;
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #d4af37, #dc2626, #2563eb, #d4af37) border-box !important;
+  background-size: 250% 250% !important;
+  animation: royal-gradient-spin 3s ease infinite, avatar-royal-glow 2.5s ease-in-out infinite alternate !important;
+}
+@keyframes royal-gradient-spin {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 @keyframes avatar-royal-glow {
-  0%, 100% { filter: drop-shadow(0 0 2px rgba(212,175,55,0.4)); }
-  50% { filter: drop-shadow(0 0 6px rgba(212,175,55,0.9)); }
+  0% {
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5), 
+                0 0 5px rgba(220, 38, 38, 0.3), 
+                inset 0 0 4px rgba(212, 175, 55, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 22px rgba(212, 175, 55, 0.9), 
+                0 0 12px rgba(37, 99, 235, 0.6), 
+                inset 0 0 8px rgba(212, 175, 55, 0.5);
+  }
 }
 
 /* 5. Golden Aura (sweep rotate gold border) */
 .avatar-frame-gold_aura {
-  border-color: #ffe066 !important;
-  animation: avatar-gold-pulse 2s ease-in-out infinite !important;
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #f1c40f 75%, #bf953f 100%) border-box !important;
+  background-size: 300% 300% !important;
+  animation: gold-sweep 4s linear infinite, avatar-gold-glow 2.5s ease-in-out infinite alternate !important;
 }
-@keyframes avatar-gold-pulse {
-  0%, 100% {
-    box-shadow: 0 0 10px #ffd700, inset 0 0 5px #ffd700;
-    border-color: #ffd700 !important;
+@keyframes gold-sweep {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes avatar-gold-glow {
+  0% {
+    box-shadow: 0 0 6px rgba(251, 191, 36, 0.4), 
+                inset 0 0 3px rgba(251, 191, 36, 0.2);
   }
-  50% {
-    box-shadow: 0 0 22px #ffe066, inset 0 0 10px #ffe066;
-    border-color: #ffe066 !important;
+  100% {
+    box-shadow: 0 0 20px rgba(251, 191, 36, 0.85), 
+                0 0 8px rgba(255, 255, 255, 0.4), 
+                inset 0 0 6px rgba(251, 191, 36, 0.4);
   }
+}
+
+/* 6. Amethyst Crystal Frame (purple crystalline glow) */
+.avatar-frame-amethyst_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #a855f7, #6366f1, #d946ef, #a855f7) border-box !important;
+  background-size: 200% 200% !important;
+  animation: neon-gradient-spin 4s linear infinite, avatar-amethyst-glow 2.5s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-amethyst-glow {
+  0% { box-shadow: 0 0 6px rgba(168, 85, 247, 0.4), inset 0 0 4px rgba(168, 85, 247, 0.2); }
+  100% { box-shadow: 0 0 18px rgba(168, 85, 247, 0.8), inset 0 0 8px rgba(217, 70, 239, 0.4); }
+}
+
+/* 7. Ruby Heartbeat Frame (pulsing red glow) */
+.avatar-frame-ruby_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #ef4444, #f43f5e, #b91c1c, #ef4444) border-box !important;
+  background-size: 200% 200% !important;
+  animation: fire-gradient-wave 3s ease infinite, avatar-ruby-pulse 1.2s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-ruby-pulse {
+  0% { box-shadow: 0 0 6px rgba(239, 68, 68, 0.4), inset 0 0 4px rgba(239, 68, 68, 0.2); transform: scale(1); }
+  100% { box-shadow: 0 0 16px rgba(244, 63, 94, 0.95), inset 0 0 8px rgba(185, 28, 28, 0.4); transform: scale(1.02); }
+}
+
+/* 8. Sapphire Wave Frame (flowing blue) */
+.avatar-frame-sapphire_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #0284c7, #0ea5e9, #1d4ed8, #0284c7) border-box !important;
+  background-size: 200% 200% !important;
+  animation: neon-gradient-spin 5s linear infinite, avatar-sapphire-flow 3s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-sapphire-flow {
+  0% { box-shadow: 0 0 8px rgba(14, 165, 233, 0.4), inset 0 0 4px rgba(2, 132, 199, 0.2); }
+  100% { box-shadow: 0 0 20px rgba(29, 78, 216, 0.8), inset 0 0 8px rgba(14, 165, 233, 0.4); }
+}
+
+/* 9. Steampunk Gear Frame (rotating gears style) */
+.avatar-frame-steampunk_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #d97706, #ca8a04, #b45309, #d97706) border-box !important;
+  background-size: 200% 200% !important;
+  animation: fire-gradient-wave 4s ease infinite, avatar-steampunk-gear-glow 3s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-steampunk-gear-glow {
+  0% { box-shadow: 0 0 6px rgba(217, 119, 6, 0.3), inset 0 0 3px rgba(180, 83, 9, 0.2); }
+  100% { box-shadow: 0 0 15px rgba(202, 138, 4, 0.7), inset 0 0 6px rgba(217, 119, 6, 0.4); }
+}
+
+/* 10. Cyberpunk Glitch Frame (neon green/static noise) */
+.avatar-frame-cyberpunk_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #22c55e, #10b981, #a855f7, #22c55e) border-box !important;
+  background-size: 200% 200% !important;
+  animation: neon-gradient-spin 2s linear infinite, avatar-cyberpunk-glitch 0.5s steps(3) infinite !important;
+}
+@keyframes avatar-cyberpunk-glitch {
+  0% { box-shadow: -2px 0 6px rgba(34, 197, 94, 0.5), 2px 0 6px rgba(168, 85, 247, 0.5); }
+  50% { box-shadow: 2px -1px 8px rgba(34, 197, 94, 0.8), -2px 1px 4px rgba(168, 85, 247, 0.3); }
+  100% { box-shadow: -1px 2px 5px rgba(16, 185, 129, 0.6), 1px -2px 7px rgba(168, 85, 247, 0.7); }
+}
+
+/* 11. Rainbow Prism Frame (chromatic cycle) */
+.avatar-frame-prism_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000) border-box !important;
+  background-size: 400% 400% !important;
+  animation: neon-gradient-spin 6s linear infinite, avatar-prism-spark 3s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-prism-spark {
+  0% { box-shadow: 0 0 6px rgba(255,255,255,0.3); filter: hue-rotate(0deg); }
+  100% { box-shadow: 0 0 16px rgba(255,255,255,0.8); filter: hue-rotate(360deg); }
+}
+
+/* 12. Matrix Digital Code Frame (flowing rain) */
+.avatar-frame-matrix_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #020502), var(--bg-card-dark, #020502)) padding-box,
+              linear-gradient(180deg, #15803d, #22c55e, #14532d, #22c55e) border-box !important;
+  background-size: 100% 200% !important;
+  animation: fire-gradient-wave 3s linear infinite, avatar-matrix-glow 2s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-matrix-glow {
+  0% { box-shadow: 0 0 6px rgba(34, 197, 94, 0.4), inset 0 0 3px rgba(20, 83, 45, 0.2); }
+  100% { box-shadow: 0 0 18px rgba(34, 197, 94, 0.85), inset 0 0 6px rgba(34, 197, 94, 0.4); }
+}
+
+/* 13. Lava Volcanic Frame (magma ring) */
+.avatar-frame-lava_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #0d1527), var(--bg-card-dark, #0d1527)) padding-box,
+              linear-gradient(135deg, #b91c1c, #ea580c, #f97316, #b91c1c) border-box !important;
+  background-size: 200% 200% !important;
+  animation: fire-gradient-wave 2s ease infinite, avatar-lava-burn 1.5s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-lava-burn {
+  0% { box-shadow: 0 0 6px rgba(234, 88, 12, 0.5), inset 0 0 4px rgba(185, 28, 28, 0.3); }
+  100% { box-shadow: 0 0 22px rgba(249, 115, 22, 0.9), inset 0 0 10px rgba(234, 88, 12, 0.5); }
+}
+
+/* 14. Cosmic Nebula Frame (purple/blue cosmic dust) */
+.avatar-frame-cosmic_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #08031a), var(--bg-card-dark, #08031a)) padding-box,
+              linear-gradient(135deg, #6366f1, #d946ef, #3b82f6, #6366f1) border-box !important;
+  background-size: 250% 250% !important;
+  animation: neon-gradient-spin 5s ease infinite, avatar-cosmic-shimmer 3s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-cosmic-shimmer {
+  0% { box-shadow: 0 0 8px rgba(99, 102, 241, 0.4), 0 0 4px rgba(217, 70, 239, 0.2); }
+  100% { box-shadow: 0 0 24px rgba(217, 70, 239, 0.7), 0 0 12px rgba(59, 130, 246, 0.5); }
+}
+
+/* 15. Dragon Emperor Frame (crimson scales + gold tips) */
+.avatar-frame-dragon_frame {
+  border-color: transparent !important;
+  background: linear-gradient(var(--bg-card-dark, #1c0505), var(--bg-card-dark, #1c0505)) padding-box,
+              linear-gradient(135deg, #991b1b, #dc2626, #fbbf24, #991b1b) border-box !important;
+  background-size: 200% 200% !important;
+  animation: fire-gradient-wave 3s ease infinite, avatar-dragon-flicker 1s ease-in-out infinite alternate !important;
+}
+@keyframes avatar-dragon-flicker {
+  0% { box-shadow: 0 0 8px rgba(153, 27, 27, 0.5), inset 0 0 4px rgba(251, 191, 36, 0.2); }
+  100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.8), 0 0 8px rgba(251, 191, 36, 0.4), inset 0 0 8px rgba(153, 27, 27, 0.4); }
 }
 
 .avatar-frame-none {
@@ -6712,6 +6944,17 @@ body.battery-saver .hud-btn-voice.speaking {
   z-index: 10;
   pointer-events: none;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  animation: crown-float-bob 2s ease-in-out infinite alternate !important;
+}
+@keyframes crown-float-bob {
+  0% {
+    margin-top: 0px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)) brightness(1);
+  }
+  100% {
+    margin-top: -3.5px;
+    filter: drop-shadow(0 4px 8px rgba(212, 175, 55, 0.65)) brightness(1.25);
+  }
 }
 
 
@@ -6719,88 +6962,315 @@ body.battery-saver .hud-btn-voice.speaking {
 
 /* 1. Classic Red */
 .card-back-classic {
-  background: linear-gradient(135deg, #7c1a22 0%, #a82e37 100%) !important;
-  border: 2px solid #f3c677 !important;
+  background: radial-gradient(circle, #a82e37 0%, #4a0d12 100%) !important;
+  border: 2px solid #ffd700 !important;
+  box-shadow: 0 4px 15px rgba(124, 26, 34, 0.45), inset 0 0 10px rgba(255, 215, 0, 0.25) !important;
+}
+.card-back-classic .card-back-pattern {
+  border: 1px solid rgba(255, 215, 0, 0.3) !important;
+  border-radius: 6px;
+  background: 
+    radial-gradient(rgba(255, 215, 0, 0.08) 15%, transparent 20%) 0 0,
+    radial-gradient(rgba(255, 215, 0, 0.08) 15%, transparent 20%) 6px 6px !important;
+  background-size: 12px 12px !important;
+  background-color: transparent !important;
+}
+.card-back-classic .card-back-logo {
+  color: #ffd700 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(255, 215, 0, 0.7) !important;
 }
 
 /* 2. Neon Cyber */
 .card-back-neon {
-  background: #020712 !important;
+  background: linear-gradient(135deg, #090e1a 0%, #03050c 100%) !important;
   border: 2px solid #00f3ff !important;
-  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.4), inset 0 0 8px rgba(0, 243, 255, 0.2) !important;
 }
 .card-back-neon .card-back-pattern {
+  border-color: rgba(0, 243, 255, 0.3) !important;
   background-image: 
-    linear-gradient(rgba(0, 243, 255, 0.15) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 243, 255, 0.15) 1px, transparent 1px) !important;
-  background-size: 8px 8px !important;
+    linear-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 243, 255, 0.1) 1px, transparent 1px) !important;
+  background-size: 10px 10px !important;
+  background-color: transparent !important;
+  animation: cyber-grid-glow 3s ease-in-out infinite alternate !important;
+}
+@keyframes cyber-grid-glow {
+  0% { opacity: 0.7; }
+  100% { opacity: 1; filter: brightness(1.25); }
 }
 .card-back-neon .card-back-logo {
   color: #ff007f !important;
-  text-shadow: 0 0 8px #ff007f !important;
+  text-shadow: 0 0 12px #ff007f, 0 0 24px rgba(255, 0, 127, 0.6) !important;
 }
 
 /* 3. Golden Royal */
 .card-back-gold {
-  background: radial-gradient(circle at center, #ffd700 0%, #8a6f27 100%) !important;
+  background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #bf953f 100%) !important;
+  background-size: 200% 200% !important;
   border: 2px solid #ffe066 !important;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+  animation: gold-sweep 4s linear infinite !important;
+  box-shadow: 0 0 15px rgba(251, 191, 36, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.3) !important;
 }
 .card-back-gold .card-back-pattern {
+  border-color: rgba(255, 255, 255, 0.4) !important;
   background-image: radial-gradient(rgba(255, 255, 255, 0.3) 15%, transparent 20%) !important;
-  background-size: 12px 12px !important;
+  background-size: 14px 14px !important;
+  background-color: rgba(0, 0, 0, 0.15) !important;
 }
 .card-back-gold .card-back-logo {
   color: #ffffff !important;
-  text-shadow: 0 0 8px #ffffff, 0 0 16px rgba(255, 215, 0, 0.8) !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.3), 0 0 8px #ffffff, 0 0 16px rgba(251, 191, 36, 0.8) !important;
 }
 
 /* 4. Holographic Aura */
 .card-back-holographic {
-  background: linear-gradient(135deg, #ff7eb3 0%, #ff758c 25%, #70a1ff 50%, #2ed573 75%, #eccc68 100%) !important;
-  background-size: 400% 400% !important;
+  background: linear-gradient(135deg, #ff7eb3 0%, #a29bfe 25%, #74b9ff 50%, #55efc4 75%, #ffeaa7 100%) !important;
+  background-size: 300% 300% !important;
   border: 2px solid #ffffff !important;
-  animation: holo-shimmer 6s ease infinite !important;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  animation: holo-shimmer 4s ease infinite !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.3) !important;
 }
-@keyframes holo-shimmer {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+.card-back-holographic .card-back-pattern {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  background: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent) !important;
+  background-size: 20px 20px !important;
+  background-color: transparent !important;
+  opacity: 0.85;
 }
 .card-back-holographic .card-back-logo {
   color: #ffffff !important;
-  text-shadow: 0 0 8px rgba(255, 255, 255, 0.8) !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 10px rgba(255, 255, 255, 0.8) !important;
 }
 
 /* 5. Dark Obsidian */
 .card-back-obsidian {
-  background: linear-gradient(135deg, #120b1c 0%, #030107 100%) !important;
-  border: 2px solid #8e44ad !important;
-  box-shadow: 0 0 10px rgba(142, 68, 173, 0.4);
+  background: linear-gradient(135deg, #181124 0%, #050308 100%) !important;
+  border: 2px solid #c084fc !important;
+  box-shadow: 0 0 15px rgba(192, 132, 252, 0.4), inset 0 0 8px rgba(192, 132, 252, 0.2) !important;
 }
 .card-back-obsidian .card-back-pattern {
-  background-image: repeating-linear-gradient(45deg, rgba(142, 68, 173, 0.05) 0px, rgba(142, 68, 173, 0.05) 2px, transparent 2px, transparent 8px) !important;
+  border-color: rgba(192, 132, 252, 0.3) !important;
+  background-image: repeating-linear-gradient(45deg, rgba(192, 132, 252, 0.04) 0px, rgba(192, 132, 252, 0.04) 2px, transparent 2px, transparent 10px) !important;
+  background-color: transparent !important;
+  animation: obsidian-pulse 3s ease-in-out infinite alternate !important;
+}
+@keyframes obsidian-pulse {
+  0% { opacity: 0.6; }
+  100% { opacity: 1; }
 }
 .card-back-obsidian .card-back-logo {
-  color: #a29bfe !important;
-  text-shadow: 0 0 8px #a29bfe !important;
+  color: #c084fc !important;
+  text-shadow: 0 0 12px #c084fc, 0 0 24px rgba(192, 132, 252, 0.6) !important;
 }
 
 /* 6. Emerald Forest */
 .card-back-emerald {
-  background: linear-gradient(135deg, #0f5132 0%, #051b11 100%) !important;
+  background: radial-gradient(circle, #0a3d24 0%, #03140b 100%) !important;
   border: 2px solid #ffd700 !important;
-  box-shadow: 0 0 10px rgba(15, 81, 50, 0.4);
+  box-shadow: 0 4px 15px rgba(10, 61, 36, 0.5), inset 0 0 10px rgba(255, 215, 0, 0.2) !important;
 }
 .card-back-emerald .card-back-pattern {
-  background-image: linear-gradient(30deg, rgba(255, 215, 0, 0.08) 1px, transparent 1px),
-                    linear-gradient(150deg, rgba(255, 215, 0, 0.08) 1px, transparent 1px) !important;
-  background-size: 14px 24px !important;
+  border-color: rgba(255, 215, 0, 0.3) !important;
+  background-image: 
+    linear-gradient(30deg, rgba(255, 215, 0, 0.06) 12%, transparent 12.5%, transparent 87%, rgba(255, 215, 0, 0.06) 87.5%, rgba(255, 215, 0, 0.06)),
+    linear-gradient(150deg, rgba(255, 215, 0, 0.06) 12%, transparent 12.5%, transparent 87%, rgba(255, 215, 0, 0.06) 87.5%, rgba(255, 215, 0, 0.06)) !important;
+  background-size: 16px 28px !important;
+  background-color: transparent !important;
 }
 .card-back-emerald .card-back-logo {
   color: #ffd700 !important;
-  text-shadow: 0 0 8px #ffd700 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(255, 215, 0, 0.6) !important;
+}
+
+/* 7. Amethyst Geode */
+.card-back-amethyst {
+  background: radial-gradient(circle, #701a75 0%, #1e1b4b 100%) !important;
+  border: 2px solid #d946ef !important;
+  box-shadow: 0 0 15px rgba(217, 70, 239, 0.45), inset 0 0 10px rgba(217, 70, 239, 0.25) !important;
+}
+.card-back-amethyst .card-back-pattern {
+  border-color: rgba(217, 70, 239, 0.3) !important;
+  background-image: 
+    radial-gradient(rgba(217, 70, 239, 0.06) 15%, transparent 20%) 0 0,
+    radial-gradient(rgba(217, 70, 239, 0.06) 15%, transparent 20%) 8px 8px !important;
+  background-size: 16px 16px !important;
+  background-color: transparent !important;
+}
+.card-back-amethyst .card-back-logo {
+  color: #f472b6 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(217, 70, 239, 0.7) !important;
+}
+
+/* 8. Ruby Heart */
+.card-back-ruby {
+  background: radial-gradient(circle, #991b1b 0%, #1c0505 100%) !important;
+  border: 2px solid #ef4444 !important;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.45), inset 0 0 8px rgba(239, 68, 68, 0.2) !important;
+}
+.card-back-ruby .card-back-pattern {
+  border-color: rgba(239, 68, 68, 0.3) !important;
+  background: repeating-linear-gradient(45deg, rgba(239, 68, 68, 0.03) 0px, rgba(239, 68, 68, 0.03) 2px, transparent 2px, transparent 8px) !important;
+  animation: ruby-pulse-shimmer 2s ease-in-out infinite alternate !important;
+}
+@keyframes ruby-pulse-shimmer {
+  0% { opacity: 0.6; filter: brightness(0.9); }
+  100% { opacity: 1; filter: brightness(1.2); }
+}
+.card-back-ruby .card-back-logo {
+  color: #f43f5e !important;
+  text-shadow: 0 0 12px #f43f5e, 0 0 24px rgba(244, 63, 94, 0.6) !important;
+}
+
+/* 9. Ocean Sapphire */
+.card-back-sapphire {
+  background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%) !important;
+  border: 2px solid #3b82f6 !important;
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.4), inset 0 0 8px rgba(59, 130, 246, 0.2) !important;
+}
+.card-back-sapphire .card-back-pattern {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  background-image: 
+    linear-gradient(rgba(59, 130, 246, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(59, 130, 246, 0.08) 1px, transparent 1px) !important;
+  background-size: 15px 15px !important;
+  background-color: transparent !important;
+}
+.card-back-sapphire .card-back-logo {
+  color: #60a5fa !important;
+  text-shadow: 0 0 10px #60a5fa, 0 0 20px rgba(96, 165, 250, 0.6) !important;
+}
+
+/* 10. Steampunk Brass */
+.card-back-steampunk {
+  background: radial-gradient(circle, #78350f 0%, #1c1917 100%) !important;
+  border: 2px solid #ca8a04 !important;
+  box-shadow: 0 4px 15px rgba(120, 53, 15, 0.5), inset 0 0 10px rgba(202, 138, 4, 0.2) !important;
+}
+.card-back-steampunk .card-back-pattern {
+  border-color: rgba(202, 138, 4, 0.3) !important;
+  background-image: 
+    radial-gradient(rgba(202, 138, 4, 0.06) 15%, transparent 20%) 0 0,
+    radial-gradient(rgba(202, 138, 4, 0.06) 15%, transparent 20%) 10px 10px !important;
+  background-size: 20px 20px !important;
+  background-color: transparent !important;
+}
+.card-back-steampunk .card-back-logo {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 8px #fbbf24 !important;
+}
+
+/* 11. Cyberpunk Glitch */
+.card-back-cyberpunk {
+  background: linear-gradient(135deg, #090e1a 0%, #03050c 100%) !important;
+  border: 2px solid #22c55e !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4), inset 0 0 8px rgba(34, 197, 94, 0.2) !important;
+}
+.card-back-cyberpunk .card-back-pattern {
+  border-color: rgba(168, 85, 247, 0.3) !important;
+  background-image: 
+    linear-gradient(rgba(168, 85, 247, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 197, 94, 0.08) 1px, transparent 1px) !important;
+  background-size: 12px 12px !important;
+  background-color: transparent !important;
+  animation: cyber-grid-glow 2s ease-in-out infinite alternate !important;
+}
+.card-back-cyberpunk .card-back-logo {
+  color: #a855f7 !important;
+  text-shadow: 0 0 12px #a855f7, 0 0 24px rgba(168, 85, 247, 0.6) !important;
+}
+
+/* 12. Rainbow Prism */
+.card-back-prism {
+  background: linear-gradient(135deg, #ef4444 0%, #3b82f6 50%, #eab308 100%) !important;
+  background-size: 300% 300% !important;
+  border: 2px solid #ffffff !important;
+  animation: holo-shimmer 5s ease infinite !important;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4), inset 0 0 8px rgba(255, 255, 255, 0.3) !important;
+}
+.card-back-prism .card-back-pattern {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  background: linear-gradient(45deg, rgba(255,255,255,0.12) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.12) 75%, transparent 75%, transparent) !important;
+  background-size: 15px 15px !important;
+  background-color: transparent !important;
+}
+.card-back-prism .card-back-logo {
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 10px rgba(255, 255, 255, 0.8) !important;
+}
+
+/* 13. Matrix Code */
+.card-back-matrix {
+  background: linear-gradient(180deg, #020603 0%, #000000 100%) !important;
+  border: 2px solid #22c55e !important;
+  box-shadow: 0 0 15px rgba(34, 197, 94, 0.4), inset 0 0 8px rgba(34, 197, 94, 0.2) !important;
+}
+.card-back-matrix .card-back-pattern {
+  border-color: rgba(34, 197, 94, 0.2) !important;
+  background-image: repeating-linear-gradient(180deg, rgba(34, 197, 94, 0.05) 0px, rgba(34, 197, 94, 0.05) 1px, transparent 1px, transparent 5px) !important;
+  background-color: transparent !important;
+  animation: obsidian-pulse 3s ease-in-out infinite alternate !important;
+}
+.card-back-matrix .card-back-logo {
+  color: #22c55e !important;
+  text-shadow: 0 0 10px #22c55e, 0 0 20px rgba(34, 197, 94, 0.6) !important;
+}
+
+/* 14. Volcanic Lava */
+.card-back-lava {
+  background: radial-gradient(circle, #7f1d1d 0%, #0f0505 100%) !important;
+  border: 2px solid #ea580c !important;
+  box-shadow: 0 4px 15px rgba(127, 29, 29, 0.6), inset 0 0 10px rgba(234, 88, 12, 0.3) !important;
+}
+.card-back-lava .card-back-pattern {
+  border-color: rgba(234, 88, 12, 0.3) !important;
+  background-image: 
+    radial-gradient(rgba(249, 115, 22, 0.08) 15%, transparent 20%) 0 0,
+    radial-gradient(rgba(234, 88, 12, 0.08) 15%, transparent 20%) 6px 6px !important;
+  background-size: 12px 12px !important;
+  background-color: transparent !important;
+}
+.card-back-lava .card-back-logo {
+  color: #f97316 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(249, 115, 22, 0.7) !important;
+}
+
+/* 15. Cosmic Nebula */
+.card-back-cosmic {
+  background: radial-gradient(circle, #311042 0%, #030008 100%) !important;
+  border: 2px solid #d946ef !important;
+  box-shadow: 0 4px 15px rgba(49, 16, 66, 0.6), inset 0 0 10px rgba(217, 70, 239, 0.25) !important;
+}
+.card-back-cosmic .card-back-pattern {
+  border-color: rgba(59, 130, 246, 0.3) !important;
+  background-image: 
+    radial-gradient(rgba(99, 102, 241, 0.08) 15%, transparent 20%) 0 0,
+    radial-gradient(rgba(217, 70, 239, 0.08) 15%, transparent 20%) 8px 8px !important;
+  background-size: 16px 16px !important;
+  background-color: transparent !important;
+}
+.card-back-cosmic .card-back-logo {
+  color: #c084fc !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 10px rgba(192, 132, 252, 0.7) !important;
+}
+
+/* 16. Dragon Scale */
+.card-back-dragon_scale {
+  background: radial-gradient(circle, #7f1d1d 0%, #1a0505 100%) !important;
+  border: 2px solid #fbbf24 !important;
+  box-shadow: 0 4px 15px rgba(127, 29, 29, 0.7), inset 0 0 10px rgba(251, 191, 36, 0.25) !important;
+}
+.card-back-dragon_scale .card-back-pattern {
+  border-color: rgba(251, 191, 36, 0.3) !important;
+  background-image: 
+    linear-gradient(30deg, rgba(251, 191, 36, 0.06) 12%, transparent 12.5%, transparent 87%, rgba(251, 191, 36, 0.06) 87.5%, rgba(251, 191, 36, 0.06)),
+    linear-gradient(150deg, rgba(153, 27, 27, 0.06) 12%, transparent 12.5%, transparent 87%, rgba(153, 27, 27, 0.06) 87.5%, rgba(153, 27, 27, 0.06)) !important;
+  background-size: 16px 28px !important;
+  background-color: transparent !important;
+}
+.card-back-dragon_scale .card-back-logo {
+  color: #fbbf24 !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5), 0 0 8px rgba(251, 191, 36, 0.6) !important;
 }
 
 
@@ -7161,6 +7631,53 @@ body.battery-saver .hud-btn-voice.speaking {
   }
 }
 
+/* Global Top-Left Settings button and positioning */
+.mm-global-settings {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 500;
+  pointer-events: auto;
+}
+@media (max-width: 700px) {
+  .mm-global-settings {
+    top: 14px;
+    left: 14px;
+  }
+}
+
+.mm-settings-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: var(--transition-bounce);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.mm-settings-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px) rotate(30deg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+.mm-settings-btn:active {
+  transform: translateY(0) rotate(30deg);
+}
+@media (max-width: 700px) {
+  .mm-settings-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 1.1rem;
+  }
+}
+
 /* PC View desktop non-scrollable overrides for Main Menu, Settings, and Stats */
 @media (min-width: 851px) {
   .mm-root {
@@ -7402,6 +7919,184 @@ body.battery-saver .hud-btn-voice.speaking {
     height: 36px;
   }
 }
+
+/* Ensure the scene matches the viewport height exactly and stretches its children when scroll-locked */
+.mm-root.mm-no-scroll .mm-scene {
+  overflow: hidden !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100vh !important;
+  max-height: 100dvh !important;
+}
+
+.mm-view-history .mm-scene {
+  padding: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+}
+
+@media (min-width: 851px) {
+  .mm-view-history .mm-scene {
+    padding: 20px !important;
+    align-items: center !important;
+  }
+}
+
+/* ── MATCH HISTORY SCROLL LOG OVERRIDES ── */
+.mm-history-layout {
+  height: calc(100vh - 80px) !important;
+  max-height: calc(100vh - 80px) !important;
+  width: min(900px, 96vw) !important;
+  margin: auto !important;
+  align-self: center !important;
+  overflow: hidden !important;
+}
+
+.mm-history-layout .mm-stats-scroll {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 14px !important;
+  padding: 10px 4px !important;
+}
+
+.mm-history-card {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  text-align: left !important;
+  flex-shrink: 0 !important;
+  padding: 16px 20px !important;
+  border-radius: 16px !important;
+}
+
+.mm-history-card-stats {
+  display: grid !important;
+  grid-template-columns: repeat(4, 1fr) !important;
+  gap: 16px !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04) !important;
+  padding-bottom: 10px !important;
+}
+
+@media (max-width: 600px) {
+  .mm-history-card-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+}
+
+@media (max-width: 850px) {
+  .mm-history-layout {
+    flex-direction: column !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    width: 100% !important;
+    gap: 12px !important;
+    overflow: hidden !important;
+    align-self: stretch !important;
+    margin: 0 !important;
+  }
+  
+  .mm-history-layout .mm-stats-left {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex-shrink: 0 !important;
+  }
+  
+  .mm-history-layout .mm-stats-right {
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    max-height: none !important;
+    overflow: hidden !important;
+    padding: 20px 16px !important;
+  }
+  
+  .mm-history-layout .mm-stats-scroll {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+    padding: 10px 4px !important;
+  }
+}
+
+/* ── DAILY & SHOP SCROLL OVERRIDES ── */
+.mm-view-daily .mm-scene,
+.mm-view-shop .mm-scene {
+  padding: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+}
+
+@media (max-width: 700px) {
+  .mm-view-daily .mm-scene,
+  .mm-view-shop .mm-scene {
+    padding: 12px 12px 92px 12px !important; /* Make room for the mobile footer tab bar */
+  }
+}
+
+@media (min-width: 851px) {
+  .mm-view-daily .mm-scene,
+  .mm-view-shop .mm-scene {
+    padding: 20px !important;
+    align-items: center !important;
+  }
+}
+
+.daily-root {
+  align-self: stretch !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.daily-card {
+  flex-shrink: 0 !important;
+}
+
+.daily-mission {
+  flex-shrink: 0 !important;
+}
+
+.shop-items-grid {
+  flex-shrink: 0 !important;
+  align-self: stretch !important;
+}
+
+.shop-item-card {
+  flex-shrink: 0 !important;
+}
+
+/* ── DAILY MISSIONS INNER SCROLL OVERRIDES ── */
+@media (min-height: 580px) {
+  .mm-view-daily .daily-scroll-body {
+    overflow-y: hidden !important;
+    padding-bottom: 20px !important;
+  }
+
+  .mm-view-daily .daily-missions-card {
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .mm-view-daily .daily-mission-list {
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    padding-right: 4px;
+  }
+}
+
+
 
 
 

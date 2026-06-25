@@ -4,7 +4,7 @@ import {
   claimDailyReward,
   claimMission,
   getDailyRewardForDay,
-  DAILY_REWARDS,
+  getDailyRewardsForState,
 } from '../utils/dailySystem';
 import type { DailyState, DailyReward } from '../utils/dailySystem';
 
@@ -24,7 +24,7 @@ export const DailyPanel: React.FC<DailyPanelProps> = ({ onBack, onStateChange })
   // Cycle display day (1-7) and cycle number
   const displayDay = ((state.streakDay - 1) % 7) + 1;
   const cycleNum = Math.floor((state.streakDay - 1) / 7) + 1;
-  const todayReward = getDailyRewardForDay(state.streakDay);
+  const todayReward = getDailyRewardForDay(state.streakDay, state);
 
   const handleClaimReward = () => {
     if (state.todayRewardClaimed) return;
@@ -85,7 +85,7 @@ export const DailyPanel: React.FC<DailyPanelProps> = ({ onBack, onStateChange })
 
           {/* 7-day calendar strip */}
           <div className="daily-strip">
-            {DAILY_REWARDS.map((reward, i) => {
+            {getDailyRewardsForState(state).map((reward, i) => {
               const dayNum = i + 1;
               const isToday = dayNum === displayDay;
               const isPast = dayNum < displayDay;
@@ -147,7 +147,7 @@ export const DailyPanel: React.FC<DailyPanelProps> = ({ onBack, onStateChange })
         </div>
 
         {/* ── SECTION 2: Daily Missions ────────────────────── */}
-        <div className="daily-card glass-panel">
+        <div className="daily-card glass-panel daily-missions-card">
           <div className="daily-card-head">
             <span className="daily-card-head-icon">🎯</span>
             <div className="daily-card-head-text">

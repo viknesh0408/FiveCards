@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
-import { processGameEndStats } from '../utils/statsSystem';
+import { processGameEndStats, saveMatchToHistory } from '../utils/statsSystem';
 import type { PlayerStats } from '../utils/statsSystem';
 import { recordGameResult } from '../utils/dailySystem';
 
@@ -72,6 +72,11 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       }
     }
 
+    // Guard against empty rounds payload if web socket state has not fully synced yet
+    if (!gameState.rounds || gameState.rounds.length === 0) {
+      return;
+    }
+
     const myIndex = sortedPlayers.findIndex(p => p.id === currentPlayerId);
     const myPlacement = myIndex !== -1 ? myIndex + 1 : 1;
     const totalPlayersCount = players.length;
@@ -108,6 +113,30 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     );
     setStatsResults(gameStats);
 
+    const opponentsList = players
+      .filter(p => p.id !== currentPlayerId)
+      .map(p => ({
+        name: p.name || 'Bot',
+        score: p.totalScore,
+        isAi: !!p.isAi
+      }));
+
+    const finalWinner = players.find(p => p.id === winnerId) || sortedPlayers[0];
+
+    saveMatchToHistory({
+      gameId: gameState.gameId,
+      placement: myPlacement,
+      playerScore: myPlayer.totalScore,
+      totalPlayers: totalPlayersCount,
+      isMultiplayer: !!(gameState.isMultiplayer || (gameState as any).multiplayer),
+      winnerName: finalWinner ? finalWinner.name || 'Bot' : 'Unknown',
+      winnerScore: finalWinner ? finalWinner.totalScore : 0,
+      isWin: myPlacement === 1,
+      opponents: opponentsList,
+      roundsCount: gameState.rounds ? gameState.rounds.length : 0,
+      roundScores: roundScores,
+    });
+
     // Update daily mission progress for this game
     recordGameResult(
       {
@@ -121,7 +150,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
     localStorage.setItem('processedGameId', gameState.gameId);
     localStorage.setItem('lastGameStats', JSON.stringify(gameStats));
-  }, [gameState?.gameId, currentPlayerId, players]);
+  }, [gameState?.gameId, gameState?.rounds, currentPlayerId, players]);
 
   const drawPlayersNames = drawPlayers.map(p => p.name).join(' & ');
   const winnerName = winner ? winner.name : '';

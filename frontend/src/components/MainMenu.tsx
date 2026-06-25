@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { AiLevel } from '../utils/gameHelpers';
 import { savePersistentItem } from '../utils/persistentStorage';
-import { getLocalStats, resetLocalStats, saveLocalStats } from '../utils/statsSystem';
+import { getLocalStats, resetLocalStats, saveLocalStats, getMatchHistory } from '../utils/statsSystem';
 import type { PlayerStats } from '../utils/statsSystem';
 import { DailyPanel } from './DailyPanel';
 import { ShopPanel } from './ShopPanel';
@@ -13,6 +13,7 @@ interface MainMenuProps {
   onJoinOnline: (roomId: string, name: string) => void;
   onCreateOnline: (name: string, maxRounds: number) => void;
   onShowTutorial?: () => void;
+  onRegisterBackButton?: (handler: (() => boolean) | null) => void;
 }
 
 export interface OfflineSettings {
@@ -22,7 +23,7 @@ export interface OfflineSettings {
   maxRounds: number;
 }
 
-type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop' | 'rules' | 'edit-profile';
+type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop' | 'rules' | 'edit-profile' | 'history';
 
 interface ShopItem {
   id: string;
@@ -33,32 +34,52 @@ interface ShopItem {
 
 const CARD_BACKS: ShopItem[] = [
   { id: 'classic', name: 'Classic Red', description: 'The timeless standard layout', price: 0 },
-  { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 2500 },
-  { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 3750 },
-  { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 3000 },
+  { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 1000 },
+  { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 1500 },
+  { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 2000 },
+  { id: 'amethyst', name: 'Amethyst Geode', description: 'Deep purple crystalline texture with shimmering light', price: 2500 },
+  { id: 'ruby', name: 'Ruby Heart', description: 'Crimson red metallic plate with glowing heartbeat line', price: 3000 },
+  { id: 'sapphire', name: 'Ocean Sapphire', description: 'Royal blue waves with silver accents', price: 3500 },
+  { id: 'steampunk', name: 'Steampunk Brass', description: 'Ornate bronze gears and copper piping style', price: 4000 },
+  { id: 'cyberpunk', name: 'Cyberpunk Glitch', description: 'Glitchy neon green and static lines', price: 5000 },
+  { id: 'prism', name: 'Rainbow Prism', description: 'Shifting light spectrum and geometric shards', price: 6000 },
+  { id: 'matrix', name: 'Matrix Code', description: 'Falling green digital rain code', price: 7000 },
+  { id: 'lava', name: 'Volcanic Lava', description: 'Glowing orange molten magma flows', price: 8000 },
+  { id: 'cosmic', name: 'Cosmic Nebula', description: 'Swirling starry galaxy background', price: 9000 },
   { id: 'gold', name: 'Golden Royal', description: 'Prestigious golden filigree and ornate details', price: 10000 },
   { id: 'obsidian', name: 'Dark Obsidian', description: 'Stealth charcoal texture with purple neon pulses', price: 12000 },
+  { id: 'dragon_scale', name: 'Dragon Scale', description: 'Scaled fire-breathing red reptile armor plate', price: 15000 },
 ];
 
 const AVATAR_FRAMES: ShopItem[] = [
   { id: 'none', name: 'Default Frame', description: 'Simple, clean border profile ring', price: 0 },
-  { id: 'neon_frame', name: 'Neon Cyber', description: 'Electrifying cyan and hot pink glowing ring', price: 2000 },
-  { id: 'frost', name: 'Ice Frost', description: 'Frosted blue crystals and cold sparkle glow', price: 3000 },
-  { id: 'fire', name: 'Fire Flame', description: 'Energetic warm orange-red dancing fire ring', price: 4000 },
+  { id: 'neon_frame', name: 'Neon Cyber', description: 'Electrifying cyan and hot pink glowing ring', price: 1000 },
+  { id: 'frost', name: 'Ice Frost', description: 'Frosted blue crystals and cold sparkle glow', price: 1500 },
+  { id: 'fire', name: 'Fire Flame', description: 'Energetic warm orange-red dancing fire ring', price: 2000 },
+  { id: 'amethyst_frame', name: 'Amethyst Crystal', description: 'Purple crystalline glowing geode ring', price: 2500 },
+  { id: 'ruby_frame', name: 'Ruby Heartbeat', description: 'Pulsing crimson crystal border', price: 3000 },
+  { id: 'sapphire_frame', name: 'Sapphire Wave', description: 'Flowing blue ocean waters', price: 3500 },
+  { id: 'steampunk_frame', name: 'Steampunk Gear', description: 'Rotating brass gears border', price: 4000 },
+  { id: 'cyberpunk_frame', name: 'Glitch Matrix', description: 'Shifting cyan/lime noise glitch border', price: 5000 },
+  { id: 'prism_frame', name: 'Rainbow Prism', description: 'Prismatic color cycle border', price: 6000 },
+  { id: 'matrix_frame', name: 'Digital Code', description: 'Code waterfall flowing around avatar', price: 7000 },
+  { id: 'lava_frame', name: 'Volcanic Lava', description: 'Hot glowing molten lava ring', price: 8000 },
+  { id: 'cosmic_frame', name: 'Cosmic Nebula', description: 'Starry nebula galaxy swirl frame', price: 9000 },
   { id: 'gold_aura', name: 'Golden Aura', description: 'Continuous rotate of brilliant royal gold rays', price: 10000 },
+  { id: 'dragon_frame', name: 'Dragon Emperor', description: 'Crimson scales crowned with dragon claws', price: 12000 },
   { id: 'royal', name: 'Royal Crown', description: 'Majestic golden crest crowned with a royal tiara', price: 15000 },
 ];
 
 const CARTOON_AVATARS = [
   { id: 'none', name: 'None (Initials)' },
   { id: 'cat', name: 'Cat' },
-  { id: 'fox', name: 'Fox' },
-  { id: 'monkey', name: 'Monkey' },
-  { id: 'panda', name: 'Panda' },
-  { id: 'robot', name: 'Robot' },
-  { id: 'unicorn', name: 'Unicorn' },
-  { id: 'dragon', name: 'Dragon (Streak Day 5)' },
-  { id: 'alien', name: 'Alien (Streak Day 7)' },
+  { id: 'fox', name: 'Fox (Week 1 · Day 5)' },
+  { id: 'monkey', name: 'Monkey (Week 2 · Day 5)' },
+  { id: 'panda', name: 'Panda (Week 3 · Day 5)' },
+  { id: 'robot', name: 'Robot (Week 4 · Day 5)' },
+  { id: 'unicorn', name: 'Unicorn (Week 5 · Day 5)' },
+  { id: 'dragon', name: 'Dragon (Week 6 · Day 5)' },
+  { id: 'alien', name: 'Alien (Week 7 · Day 5)' },
 ];
 
 // Toggle Switch Component
@@ -84,6 +105,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onJoinOnline,
   onCreateOnline,
   onShowTutorial,
+  onRegisterBackButton,
 }) => {
   const [view, setView] = useState<View>('main');
   const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('tickPlayerName') || '');
@@ -96,6 +118,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
   const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
+  const [cardGlowEnabled, setCardGlowEnabled] = useState<boolean>(() => localStorage.getItem('cardGlowEnabled') !== 'false');
   const [animIn, setAnimIn] = useState(true);
   const [hasDailyNotif, setHasDailyNotif] = useState<boolean>(() => hasUnclaimedDaily());
   const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
@@ -106,14 +129,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [stats, setStats] = useState<PlayerStats>(() => getLocalStats());
   const [activeTab, setActiveTab] = useState<'main' | 'me'>('main');
 
-  const refreshMainMenuState = () => {
-    setHasDailyNotif(hasUnclaimedDaily());
-    setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
-    setSelectedAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
-    setCoins(getDailyState().coins);
-  };
-
-  const navigate = (v: View) => {
+  const navigate = React.useCallback((v: View) => {
     setAnimIn(false);
     setTimeout(() => {
       setView(v);
@@ -141,7 +157,50 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         }
       }
     }, 180);
+  }, [maxRounds]);
+
+  const refreshMainMenuState = () => {
+    setHasDailyNotif(hasUnclaimedDaily());
+    setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+    setSelectedAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
+    setCoins(getDailyState().coins);
   };
+
+  React.useEffect(() => {
+    if (onRegisterBackButton) {
+      onRegisterBackButton(() => {
+        if (view === 'main') {
+          if (activeTab === 'me') {
+            setActiveTab('main');
+            return true;
+          }
+          return false;
+        } else if (
+          view === 'offline' ||
+          view === 'online-choice' ||
+          view === 'settings' ||
+          view === 'stats' ||
+          view === 'history' ||
+          view === 'daily' ||
+          view === 'shop' ||
+          view === 'rules' ||
+          view === 'edit-profile'
+        ) {
+          navigate('main');
+          return true;
+        } else if (view === 'online-create' || view === 'online-join') {
+          navigate('online-choice');
+          return true;
+        }
+        return false;
+      });
+    }
+    return () => {
+      if (onRegisterBackButton) {
+        onRegisterBackButton(null);
+      }
+    };
+  }, [view, activeTab, navigate, onRegisterBackButton]);
 
   const handleSaveProfile = async () => {
     const trimmed = tempPlayerName.trim();
@@ -187,25 +246,40 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     await savePersistentItem('soundEnabled', soundEnabled ? 'true' : 'false');
     await savePersistentItem('vibrationEnabled', vibrationEnabled ? 'true' : 'false');
     await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
+    await savePersistentItem('cardGlowEnabled', cardGlowEnabled ? 'true' : 'false');
+    localStorage.setItem('cardGlowEnabled', cardGlowEnabled ? 'true' : 'false');
     if (batterySaverEnabled) document.body.classList.add('battery-saver');
     else document.body.classList.remove('battery-saver');
     navigate('main');
   };
 
   return (
-    <div className={`mm-root mm-view-${view} mm-no-scroll`}>
+    <div className={`mm-root mm-view-${view} ${view !== 'stats' && view !== 'rules' ? 'mm-no-scroll' : ''}`}>
       {/* Animated background orbs */}
       <div className="mm-orb mm-orb-1" />
       <div className="mm-orb mm-orb-2" />
       <div className="mm-orb mm-orb-3" />
 
       {/* Global Top-Right Coins Display */}
-      {view !== 'daily' && view !== 'shop' && view !== 'settings' && view !== 'stats' && view !== 'rules' && view !== 'edit-profile' && !(view === 'main' && activeTab === 'me') && (
+      {view !== 'daily' && view !== 'shop' && view !== 'settings' && view !== 'stats' && view !== 'history' && view !== 'rules' && view !== 'edit-profile' && !(view === 'main' && activeTab === 'me') && (
         <div className="mm-global-coins">
           <div className="daily-coins-pill" style={{ background: 'rgba(251,191,36,0.08)' }}>
             <span>🪙</span>
             <span className="daily-coins-val">{coins.toLocaleString()}</span>
           </div>
+        </div>
+      )}
+
+      {/* Global Top-Left Settings Gear Button */}
+      {view === 'main' && activeTab === 'main' && (
+        <div className="mm-global-settings">
+          <button 
+            className="mm-settings-btn" 
+            onClick={() => navigate('settings')}
+            title="Settings"
+          >
+            ⚙️
+          </button>
         </div>
       )}
 
@@ -303,10 +377,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
                   <button 
                     className="mm-me-menu-item" 
-                    onClick={() => navigate('settings')}
+                    onClick={() => navigate('history')}
                   >
-                    <span className="mm-me-menu-icon">⚙️</span>
-                    <span className="mm-me-menu-label">Settings</span>
+                    <span className="mm-me-menu-icon">🕒</span>
+                    <span className="mm-me-menu-label">Match History</span>
                     <span className="mm-me-menu-arrow">›</span>
                   </button>
 
@@ -571,6 +645,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </div>
               <div className="mm-setting-row">
                 <div className="mm-setting-info">
+                  <span className="mm-setting-name">✨ Card Glow Effects</span>
+                  <span className="mm-setting-hint">Glow for Jokers and matches</span>
+                </div>
+                <Toggle id="glw" checked={cardGlowEnabled} onChange={setCardGlowEnabled} />
+              </div>
+              <div className="mm-setting-row">
+                <div className="mm-setting-info">
                   <span className="mm-setting-name">📖 Tutorial</span>
                 </div>
                 <button className="mm-mini-btn" onClick={onShowTutorial}>Show Guide</button>
@@ -756,6 +837,185 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
         )}
 
+        {/* ── HISTORY VIEW ─────────────────────────────────────── */}
+        {view === 'history' && (
+          <div className="mm-stats-layout mm-history-layout">
+            {/* Left Column: Summary */}
+            <div className="mm-form-panel glass-panel mm-stats-left">
+              <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
+              <div className="mm-form-header" style={{ marginBottom: '20px' }}>
+                <span className="mm-form-icon">🕒</span>
+                <h2 className="mm-form-title">History</h2>
+                <p className="mm-form-desc">Recent battle logs</p>
+              </div>
+
+              {/* Stats overview list */}
+              <div className="mm-stats-overview-list">
+                <div className="mm-stats-summary-card">
+                  <span className="mm-stats-summary-val">{stats.gamesPlayedTotal}</span>
+                  <span className="mm-stats-summary-key">Matches Saved</span>
+                </div>
+                <div className="mm-stats-summary-card">
+                  <span className="mm-stats-summary-val" style={{ color: '#22d3ee' }}>
+                    {stats.winsTotal}
+                  </span>
+                  <span className="mm-stats-summary-key">Total Victories</span>
+                </div>
+                <div className="mm-stats-summary-card">
+                  <span className="mm-stats-summary-val" style={{ color: '#34d399' }}>
+                    {stats.gamesPlayedTotal > 0 ? Math.round((stats.winsTotal / stats.gamesPlayedTotal) * 100) : 0}%
+                  </span>
+                  <span className="mm-stats-summary-key">Win Rate</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: List of matches */}
+            <div className="mm-stats-right glass-panel">
+              <h3 className="mm-stats-title">📜 Match History Log</h3>
+              <div className="mm-stats-scroll">
+                {(() => {
+                  const historyList = getMatchHistory();
+                  if (historyList.length === 0) {
+                    return (
+                      <div className="glass-panel" style={{ padding: '30px', textAlign: 'center', background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.1)' }}>
+                        <span style={{ fontSize: '2.5rem', display: 'block', marginBottom: '12px' }}>🃏</span>
+                        <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '6px', color: 'var(--color-text)' }}>No Matches Logged</h4>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', maxWidth: '280px', margin: '0 auto' }}>
+                          Play a game against AI bots or online opponents to see your results tracked here!
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return historyList.map((entry) => {
+                    const matchDate = new Date(entry.date);
+                    const formattedDate = matchDate.toLocaleString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+
+                    return (
+                      <div 
+                        key={entry.gameId} 
+                        className="glass-panel mm-history-card" 
+                        style={{ 
+                          background: entry.isWin ? 'linear-gradient(135deg, rgba(52, 211, 153, 0.04) 0%, rgba(4, 12, 8, 0.4) 100%)' : 'rgba(255, 255, 255, 0.02)',
+                          border: entry.isWin ? '1px solid rgba(52, 211, 153, 0.15)' : '1px solid rgba(255, 255, 255, 0.06)'
+                        }}
+                      >
+                        {/* Header */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span 
+                              style={{ 
+                                padding: '3px 8px', 
+                                borderRadius: '6px', 
+                                fontSize: '0.7rem', 
+                                fontWeight: 800,
+                                textTransform: 'uppercase',
+                                background: entry.isWin ? 'rgba(52, 211, 153, 0.12)' : 'rgba(255, 255, 255, 0.06)',
+                                color: entry.isWin ? 'var(--color-green)' : 'var(--color-text-muted)',
+                                border: entry.isWin ? '1px solid rgba(52, 211, 153, 0.2)' : '1px solid rgba(255,255,255,0.06)'
+                              }}
+                            >
+                              {entry.isWin ? '🏆 Win (#1)' : `#${entry.placement} Place`}
+                            </span>
+                            <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.35)', fontWeight: 600 }}>
+                              {entry.isMultiplayer ? '🌐 Multiplayer' : '🤖 vs Bot'}
+                            </span>
+                          </div>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
+                            {formattedDate}
+                          </span>
+                        </div>
+
+                        {/* Stats Summary */}
+                        <div className="mm-history-card-stats">
+                          <div>
+                            <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Your Score</span>
+                            <strong style={{ fontSize: '1.1rem', color: entry.isWin ? 'var(--color-gold)' : 'var(--color-text)' }}>
+                              {entry.playerScore} pts
+                            </strong>
+                          </div>
+                          <div>
+                            <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Winner</span>
+                            <strong style={{ fontSize: '1.1rem', color: 'var(--color-cyan)' }}>
+                              {entry.isWin ? 'You' : entry.winnerName}
+                            </strong>
+                          </div>
+                          <div>
+                            <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Winner Score</span>
+                            <strong style={{ fontSize: '1.1rem', color: 'var(--color-text)' }}>
+                              {entry.winnerScore} pts
+                            </strong>
+                          </div>
+                          <div>
+                            <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Rounds Played</span>
+                            <strong style={{ fontSize: '1.1rem', color: 'var(--color-text)' }}>
+                              {entry.roundsCount || '-'}
+                            </strong>
+                          </div>
+                        </div>
+
+                        {/* Round-wise Scores */}
+                        {entry.roundScores && entry.roundScores.length > 0 && (
+                          <div style={{ marginBottom: '10px' }}>
+                            <span style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Round-wise Scores</span>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {entry.roundScores.map((score, rIdx) => (
+                                <span 
+                                  key={rIdx} 
+                                  style={{ 
+                                    fontSize: '0.72rem', 
+                                    padding: '3px 8px', 
+                                    borderRadius: '6px', 
+                                    background: score === 0 ? 'rgba(52, 211, 153, 0.1)' : 'rgba(255, 255, 255, 0.03)', 
+                                    border: score === 0 ? '1px solid rgba(52, 211, 153, 0.2)' : '1px solid rgba(255, 255, 255, 0.05)',
+                                    color: score === 0 ? 'var(--color-green)' : 'var(--color-text)'
+                                  }}
+                                >
+                                  R{rIdx + 1}: <strong>{score}</strong>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Opponents/Lobby summary */}
+                        {entry.opponents && entry.opponents.length > 0 && (
+                          <div>
+                            <span style={{ display: 'block', fontSize: '0.65rem', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Lobby Players</span>
+                            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                              {entry.opponents.map((opp, oIdx) => (
+                                <span 
+                                  key={oIdx} 
+                                  style={{ 
+                                    fontSize: '0.72rem', 
+                                    padding: '3px 8px', 
+                                    borderRadius: '6px', 
+                                    background: 'rgba(255,255,255,0.03)', 
+                                    border: '1px solid rgba(255,255,255,0.05)',
+                                    color: 'var(--color-text-muted)'
+                                  }}
+                                >
+                                  {opp.name} {opp.isAi ? '[BOT]' : ''}: <strong>{opp.score} pts</strong>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ── DAILY VIEW ─────────────────────────────────────── */}
         {view === 'daily' && (
           <DailyPanel
@@ -816,7 +1076,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <label className="mm-field-label">Profile Picture</label>
                 <div className="profile-edit-grid">
                   {CARTOON_AVATARS.map((item) => {
-                    const unlockedPics = getDailyState().unlockedAvatarPics || ['none', 'cat', 'fox', 'monkey', 'panda', 'robot', 'unicorn'];
+                    const unlockedPics = getDailyState().unlockedAvatarPics || ['none', 'cat'];
                     const isUnlocked = unlockedPics.includes(item.id);
                     const isSelected = tempAvatarPic === item.id;
                     return (

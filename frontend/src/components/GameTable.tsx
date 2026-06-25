@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
+import { getRankDisplay } from '../utils/gameHelpers';
 import { Card } from './Card';
 import { Scoreboard } from './Scoreboard';
 import { Share } from '@capacitor/share';
@@ -41,7 +42,8 @@ export const GameTable: React.FC<GameTableProps> = ({
   connected,
 }) => {
   const [displayedGameState, setDisplayedGameState] = useState<SanitizedGame>(gameState);
-  const { gameId, players, currentRound, status } = displayedGameState;
+  const { gameId, players, currentRound, status, isMultiplayer } = displayedGameState;
+  const cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';
   const bufferedStateRef = useRef<SanitizedGame>(gameState);
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const [isPickingFromPile, setIsPickingFromPile] = useState<boolean>(false);
@@ -827,97 +829,99 @@ export const GameTable: React.FC<GameTableProps> = ({
           </div>
 
           {/* Voice Chat Buttons (Speaker & Mic) */}
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {/* Speaker Button */}
-            <button
-              className={`hud-btn-voice ${isVoiceEnabled ? (isSpeakerMuted ? 'voice-muted' : 'voice-active') : ''}`}
-              onClick={() => {
-                if (!isVoiceEnabled) {
-                  toggleVoice();
-                } else {
-                  toggleSpeakerMute();
+          {isMultiplayer && (
+            <div style={{ display: 'flex', gap: '8px' }}>
+              {/* Speaker Button */}
+              <button
+                className={`hud-btn-voice ${isVoiceEnabled ? (isSpeakerMuted ? 'voice-muted' : 'voice-active') : ''}`}
+                onClick={() => {
+                  if (!isVoiceEnabled) {
+                    toggleVoice();
+                  } else {
+                    toggleSpeakerMute();
+                  }
+                }}
+                onContextMenu={(e) => { e.preventDefault(); if (isVoiceEnabled) toggleVoice(); }}
+                title={
+                  !isVoiceEnabled
+                    ? 'Enable Voice Chat'
+                    : isSpeakerMuted
+                    ? 'Unmute Speaker (Hear players)'
+                    : 'Mute Speaker (hold to disable voice)'
                 }
-              }}
-              onContextMenu={(e) => { e.preventDefault(); if (isVoiceEnabled) toggleVoice(); }}
-              title={
-                !isVoiceEnabled
-                  ? 'Enable Voice Chat'
-                  : isSpeakerMuted
-                  ? 'Unmute Speaker (Hear players)'
-                  : 'Mute Speaker (hold to disable voice)'
-              }
-            >
-              {isVoiceEnabled && !isSpeakerMuted ? (
-                // Speaker on — green
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
-                </svg>
-              ) : isVoiceEnabled && isSpeakerMuted ? (
-                // Speaker muted — red slash
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                  <line x1="23" y1="9" x2="17" y2="15" />
-                  <line x1="17" y1="9" x2="23" y2="15" />
-                </svg>
-              ) : (
-                // Speaker off — greyed out
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                </svg>
-              )}
-            </button>
+              >
+                {isVoiceEnabled && !isSpeakerMuted ? (
+                  // Speaker on — green
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  </svg>
+                ) : isVoiceEnabled && isSpeakerMuted ? (
+                  // Speaker muted — red slash
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                    <line x1="23" y1="9" x2="17" y2="15" />
+                    <line x1="17" y1="9" x2="23" y2="15" />
+                  </svg>
+                ) : (
+                  // Speaker off — greyed out
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  </svg>
+                )}
+              </button>
 
-            {/* Microphone Button */}
-            <button
-              className={`hud-btn-voice ${isVoiceEnabled ? (isMuted ? 'voice-muted' : 'voice-active') : ''}`}
-              onClick={() => {
-                if (!isVoiceEnabled) {
-                  toggleVoice();
-                } else {
-                  toggleMute();
+              {/* Microphone Button */}
+              <button
+                className={`hud-btn-voice ${isVoiceEnabled ? (isMuted ? 'voice-muted' : 'voice-active') : ''}`}
+                onClick={() => {
+                  if (!isVoiceEnabled) {
+                    toggleVoice();
+                  } else {
+                    toggleMute();
+                  }
+                }}
+                onContextMenu={(e) => { e.preventDefault(); if (isVoiceEnabled) toggleVoice(); }}
+                title={
+                  !isVoiceEnabled
+                    ? 'Enable Voice Chat'
+                    : isMuted
+                    ? 'Unmute Microphone'
+                    : 'Mute Microphone (hold to disable voice)'
                 }
-              }}
-              onContextMenu={(e) => { e.preventDefault(); if (isVoiceEnabled) toggleVoice(); }}
-              title={
-                !isVoiceEnabled
-                  ? 'Enable Voice Chat'
-                  : isMuted
-                  ? 'Unmute Microphone'
-                  : 'Mute Microphone (hold to disable voice)'
-              }
-            >
-              {isVoiceEnabled && !isMuted ? (
-                // Mic on — green
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                  <line x1="12" y1="19" x2="12" y2="23" />
-                  <line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              ) : isVoiceEnabled && isMuted ? (
-                // Mic muted — red slash
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-                  <line x1="12" y1="19" x2="12" y2="23" />
-                  <line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              ) : (
-                // Mic off — greyed out
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-                  <line x1="12" y1="19" x2="12" y2="23" />
-                  <line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              )}
-              {hasPermission === false && (
-                <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '10px', height: '10px', background: 'var(--color-red)', borderRadius: '50%', border: '2px solid var(--bg-dark)' }} />
-              )}
-            </button>
-          </div>
+              >
+                {isVoiceEnabled && !isMuted ? (
+                  // Mic on — green
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                  </svg>
+                ) : isVoiceEnabled && isMuted ? (
+                  // Mic muted — red slash
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                    <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
+                    <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                  </svg>
+                ) : (
+                  // Mic off — greyed out
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                    <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                    <line x1="12" y1="19" x2="12" y2="23" />
+                    <line x1="8" y1="23" x2="16" y2="23" />
+                  </svg>
+                )}
+                {hasPermission === false && (
+                  <span style={{ position: 'absolute', top: '-4px', right: '-4px', width: '10px', height: '10px', background: 'var(--color-red)', borderRadius: '50%', border: '2px solid var(--bg-dark)' }} />
+                )}
+              </button>
+            </div>
+          )}
 
           <button 
             className={`hud-btn-scores ${showScoreboard ? 'active' : ''}`}
@@ -1046,7 +1050,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   className={`joker-display ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'joker-display' ? 'tutorial-highlight' : ''}`}
                 >
                   <span className="joker-label">Joker Rank</span>
-                  <Card card={currentRound.jokerCard} className="mini-card joker-glow" />
+                  <Card card={currentRound.jokerCard} className={`mini-card ${cardGlowEnabled ? 'joker-glow' : ''}`} />
                   <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', fontWeight: 800 }}>
                     ★ {currentRound.jokerRank}s are Jokers
                   </span>
@@ -1245,12 +1249,32 @@ export const GameTable: React.FC<GameTableProps> = ({
             // Dim cards of a different rank when some cards are already selected
             const firstSelectedCard = orderedHand.find(card => selectedClientIds.includes(card.clientId));
             const sameRankAsSelection = !firstSelectedCard || c.rank === firstSelectedCard.rank;
+
+            const topDiscard = currentRound?.discardPile && currentRound.discardPile.length > 0 
+              ? currentRound.discardPile[currentRound.discardPile.length - 1] 
+              : null;
+            const isRankMatch = (r1?: string | null, r2?: string | null) => {
+              if (!r1 || !r2) return false;
+              const str1 = r1.toString().toUpperCase();
+              const str2 = r2.toString().toUpperCase();
+              if (str1 === str2) return true;
+              const disp1 = getRankDisplay(str1) || str1;
+              const disp2 = getRankDisplay(str2) || str2;
+              return disp1 === disp2;
+            };
+
+            const isMatch = !!(topDiscard && (
+              (c.rank && topDiscard.rank && isRankMatch(c.rank, topDiscard.rank)) ||
+              (c.joker && topDiscard.joker)
+            ));
+
             return (
               <Card
                 key={c.clientId}
                 card={c}
                 selected={selected}
                 className={[
+                  isMyTurn && !hasDiscardedThisTurn && isMatch && cardGlowEnabled ? 'joker-glow' : '',
                   isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedClientIds.length > 0 ? 'card-dimmed' : ''
                 ].join(' ').trim()}
                 onClick={() => handleCardClick(c)}

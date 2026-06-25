@@ -63,10 +63,11 @@ export const Card: React.FC<CardProps> = ({
   const isJoker = card.joker;
 
   const isPrintedJoker = isJoker && !card.suit && !card.rank;
+  const cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';
 
   return (
     <div
-      className={`game-card ${suitClass} ${isJoker ? 'joker joker-glow' : ''} ${selected ? 'selected' : ''} ${className}`}
+      className={`game-card ${suitClass} ${isJoker && cardGlowEnabled ? 'joker joker-glow' : isJoker ? 'joker' : ''} ${selected ? 'selected' : ''} ${className}`}
       onClick={onClick}
       draggable={draggable}
       onDragStart={onDragStart}

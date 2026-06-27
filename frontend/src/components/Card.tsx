@@ -16,6 +16,7 @@ interface CardProps {
   onTouchMove?: (e: React.TouchEvent) => void;
   onTouchEnd?: (e: React.TouchEvent) => void;
   dataIndex?: number;
+  jokerRank?: string | null;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -32,6 +33,7 @@ export const Card: React.FC<CardProps> = ({
   onTouchMove,
   onTouchEnd,
   dataIndex,
+  jokerRank,
 }) => {
   if (isBack) {
     const selectedBack = localStorage.getItem('selected_card_back') || 'classic';
@@ -60,7 +62,7 @@ export const Card: React.FC<CardProps> = ({
   const suitSymbol = getSuitSymbol(card.suit);
   const rankDisplay = getRankDisplay(card.rank);
   const suitClass = getSuitClass(card.suit);
-  const isJoker = card.joker;
+  const isJoker = card.joker || (card.rank && jokerRank && card.rank === jokerRank);
 
   const isPrintedJoker = isJoker && !card.suit && !card.rank;
   const cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';

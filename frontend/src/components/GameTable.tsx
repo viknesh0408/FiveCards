@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { SanitizedGame, Spectator } from '../hooks/useWebSocket';
+import type { SanitizedGame, Spectator, ChatMessage } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { getRankDisplay } from '../utils/gameHelpers';
 import { Card } from './Card';
@@ -28,6 +28,8 @@ interface GameTableProps {
   // Voice chat
   stompClientRef: React.MutableRefObject<Client | null>;
   connected: boolean;
+  chatMessages: ChatMessage[];
+  onSendChatMessage: (msg: string) => void;
 }
 
 export const GameTable: React.FC<GameTableProps> = ({
@@ -45,6 +47,8 @@ export const GameTable: React.FC<GameTableProps> = ({
   onSendReaction,
   stompClientRef,
   connected,
+  chatMessages,
+  onSendChatMessage,
 }) => {
   const [displayedGameState, setDisplayedGameState] = useState<SanitizedGame>(gameState);
   const { gameId, players, currentRound, status, isMultiplayer } = displayedGameState;
@@ -65,6 +69,36 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [copiedToastText, setCopiedToastText] = useState<string | null>(null);
   const [revealHands, setRevealHands] = useState<boolean>(true);
   const [showSortToast, setShowSortToast] = useState<boolean>(false);
+
+  const [showChatPanel, setShowChatPanel] = useState<boolean>(false);
+  const [chatInput, setChatInput] = useState<string>('');
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const chatScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (chatMessages.length > 0 && !showChatPanel) {
+      setUnreadCount(prev => prev + 1);
+    }
+  }, [chatMessages, showChatPanel]);
+
+  useEffect(() => {
+    if (showChatPanel) {
+      setUnreadCount(0);
+    }
+  }, [showChatPanel]);
+
+  useEffect(() => {
+    if (showChatPanel && chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages, showChatPanel]);
+
+  const handleSendChat = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+    onSendChatMessage(chatInput);
+    setChatInput('');
+  };
 
   // ── Voice chat ──────────────────────────────────────────────────────────
   const humanPlayerIds = gameState.players
@@ -391,10 +425,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   }, [gameState, displayedGameState]);
 
   const sortHand = useCallback(() => {
-    if (typeof (DeviceMotionEvent as any).requestPermission === 'function') {
-      (DeviceMotionEvent as any).requestPermission().catch(() => {});
-    }
-
     const sorted = [...orderedHand].sort((a, b) => {
       if (a.joker && !b.joker) return -1;
       if (!a.joker && b.joker) return 1;
@@ -447,6 +477,9 @@ export const GameTable: React.FC<GameTableProps> = ({
     const COOLDOWN = 1200;
 
     const handleDeviceMotion = (e: DeviceMotionEvent) => {
+      const shakeEnabled = localStorage.getItem('shakeToSortEnabled') !== 'false';
+      if (!shakeEnabled) return;
+
       const acc = e.acceleration || e.accelerationIncludingGravity;
       if (!acc) return;
 
@@ -923,6 +956,39 @@ export const GameTable: React.FC<GameTableProps> = ({
             )}
           </div>
 
+          {/* Text Chat Toggle Button */}
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <button 
+              className={`emoji-trigger-btn glass-panel ${showChatPanel ? 'active' : ''}`}
+              onClick={() => setShowChatPanel(!showChatPanel)}
+              title="Toggle Chat"
+              style={{
+                background: showChatPanel ? 'rgba(34, 211, 238, 0.15)' : 'rgba(255,255,255,0.03)',
+                border: showChatPanel ? '1px solid var(--color-cyan)' : '1px solid rgba(255,255,255,0.08)',
+                color: showChatPanel ? 'var(--color-cyan)' : 'rgba(255,255,255,0.65)',
+                margin: 0
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+            {/* Unread indicator dot */}
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute', top: '-4px', right: '-4px',
+                width: '14px', height: '14px', borderRadius: '50%',
+                background: 'var(--color-red)', border: '2px solid var(--bg-dark)',
+                fontSize: '8px', fontWeight: 900, color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                zIndex: 5,
+                pointerEvents: 'none'
+              }}>
+                {unreadCount}
+              </span>
+            )}
+          </div>
+
           {/* Voice Chat Buttons (Speaker & Mic) */}
           {isMultiplayer && (
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -1075,7 +1141,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <div className="opponent-mini-hand" style={{ display: 'flex', gap: '2px' }}>
                     {revealHands && opp.hand && opp.hand.length > 0 ? (
                       opp.hand.map((card, cIdx) => (
-                        <Card key={cIdx} card={card} />
+                        <Card key={cIdx} card={card} jokerRank={currentRound?.jokerRank} />
                       ))
                     ) : (
                       Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (
@@ -1123,7 +1189,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   <div className="opponent-mini-hand" style={{ display: 'flex', gap: '2px' }}>
                     {revealHands && opp.hand && opp.hand.length > 0 ? (
                       opp.hand.map((card, cIdx) => (
-                        <Card key={cIdx} card={card} />
+                        <Card key={cIdx} card={card} jokerRank={currentRound?.jokerRank} />
                       ))
                     ) : (
                       Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (
@@ -1147,7 +1213,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   className={`joker-display ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'joker-display' ? 'tutorial-highlight' : ''}`}
                 >
                   <span className="joker-label">Joker Rank</span>
-                  <Card card={currentRound.jokerCard} className={`mini-card ${cardGlowEnabled ? 'joker-glow' : ''}`} />
+                  <Card card={currentRound.jokerCard} className={`mini-card ${cardGlowEnabled ? 'joker-glow' : ''}`} jokerRank={currentRound?.jokerRank} />
                   <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', fontWeight: 800 }}>
                     ★ {currentRound.jokerRank}s are Jokers
                   </span>
@@ -1177,7 +1243,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   {currentRound.discardPile && currentRound.discardPile.length > 0 ? (
                     <div className={`discard-cards-stack ${drawableDiscardCard ? 'has-prev' : ''}`}>
                       {drawableDiscardCard && (
-                        <div className="previous-discard-card"><Card card={drawableDiscardCard} /></div>
+                        <div className="previous-discard-card"><Card card={drawableDiscardCard} jokerRank={currentRound?.jokerRank} /></div>
                       )}
                       <div 
                         className={`top-discard-card ${discardDirectionClass}`}
@@ -1186,6 +1252,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                         <Card 
                           card={currentRound.discardPile[currentRound.discardPile.length - 1]} 
                           className={`rot-${currentRound.discardPile.length % 6}`} 
+                          jokerRank={currentRound?.jokerRank}
                         />
                       </div>
                     </div>
@@ -1363,16 +1430,6 @@ export const GameTable: React.FC<GameTableProps> = ({
           </div>
         ) : (
           <div className={`user-hand-cards ${isPickingFromPile ? 'no-pick-transition' : ''} ${!animateHand ? 'no-appear-animation' : ''} ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'user-hand-cards' ? 'tutorial-highlight' : ''}`} style={{ position: 'relative', overflow: 'visible' }}>
-            {/* Sort Button - Top Left Corner */}
-            {!isSpectator && self && self.hand && self.hand.length > 0 && (
-              <button 
-                className="hand-sort-button"
-                onClick={sortHand}
-                title="Sort Cards"
-              >
-                🔀 Sort
-              </button>
-            )}
             {/* Hand Value Sum - Top Right Corner */}
             {self && (
               <div className="hand-value-badge">
@@ -1413,6 +1470,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                     isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedClientIds.length > 0 ? 'card-dimmed' : ''
                   ].join(' ').trim()}
                   onClick={() => handleCardClick(c)}
+                  jokerRank={currentRound?.jokerRank}
                   draggable={true}
                   onDragStart={(e) => handleDragStart(e, idx)}
                   onDragOver={(e) => handleDragOver(e, idx)}
@@ -1638,6 +1696,131 @@ export const GameTable: React.FC<GameTableProps> = ({
           }}
         >
           🃏 Cards Sorted!
+        </div>
+      )}
+
+      {/* Floating Chat Panel Overlay */}
+      {showChatPanel && (
+        <div className="glass-panel chat-panel-overlay" style={{
+          position: 'fixed',
+          top: '80px',
+          right: '20px',
+          width: 'min(320px, 92vw)',
+          height: 'min(450px, 70vh)',
+          zIndex: 1000,
+          background: 'rgba(4, 8, 20, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
+          borderRadius: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          animation: 'mm-fade 0.22s ease-out both'
+        }}>
+          {/* Header */}
+          <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(255,255,255,0.01)'
+          }}>
+            <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--color-cyan)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span>💬</span> Game Chat
+            </h3>
+            <button 
+              onClick={() => setShowChatPanel(false)}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', fontSize: '1.4rem', cursor: 'pointer', padding: '4px', lineHeight: 1 }}
+            >
+              ×
+            </button>
+          </div>
+
+          {/* Messages list */}
+          <div 
+            ref={chatScrollRef}
+            style={{
+              flex: 1, overflowY: 'auto', padding: '16px',
+              display: 'flex', flexDirection: 'column', gap: '10px'
+            }}
+          >
+            {chatMessages.length === 0 ? (
+              <div style={{ margin: 'auto', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>
+                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>💬</span>
+                No messages yet.<br/>Type below to say hi!
+              </div>
+            ) : (
+              chatMessages.map(msg => {
+                const isMe = msg.playerId === currentPlayerId;
+                return (
+                  <div 
+                    key={msg.id}
+                    style={{
+                      alignSelf: isMe ? 'flex-end' : 'flex-start',
+                      maxWidth: '80%',
+                      display: 'flex', flexDirection: 'column',
+                      alignItems: isMe ? 'flex-end' : 'flex-start'
+                    }}
+                  >
+                    {/* Sender Name */}
+                    <span style={{ fontSize: '0.68rem', color: isMe ? 'var(--color-cyan)' : 'rgba(255,255,255,0.4)', marginBottom: '2px', fontWeight: 700 }}>
+                      {msg.playerName}
+                    </span>
+                    {/* Message Bubble */}
+                    <div style={{
+                      background: isMe ? 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)' : 'rgba(255,255,255,0.04)',
+                      border: isMe ? '1px solid rgba(34, 211, 238, 0.2)' : '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+                      padding: '8px 12px',
+                      fontSize: '0.82rem',
+                      color: '#fff',
+                      wordBreak: 'break-word',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+                    }}>
+                      {msg.message}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Input Box */}
+          <form 
+            onSubmit={handleSendChat}
+            style={{
+              padding: '12px', borderTop: '1px solid rgba(255,255,255,0.06)',
+              background: 'rgba(0,0,0,0.2)', display: 'flex', gap: '8px'
+            }}
+          >
+            <input 
+              type="text"
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              placeholder="Type a message..."
+              maxLength={200}
+              style={{
+                flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '20px', padding: '8px 14px', fontSize: '0.82rem', color: '#fff',
+                outline: 'none', transition: 'all 0.2s'
+              }}
+            />
+            <button 
+              type="submit"
+              disabled={!chatInput.trim()}
+              style={{
+                background: chatInput.trim() ? 'var(--color-cyan)' : 'rgba(255,255,255,0.04)',
+                border: 'none', borderRadius: '50%', width: '32px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: chatInput.trim() ? 'var(--bg-dark)' : 'rgba(255,255,255,0.2)',
+                cursor: chatInput.trim() ? 'pointer' : 'default', transition: 'all 0.2s'
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(45deg)' }}>
+                <line x1="22" y1="2" x2="11" y2="13" />
+                <polygon points="22 2 15 22 11 13 2 9 22 2" />
+              </svg>
+            </button>
+          </form>
         </div>
       )}
 

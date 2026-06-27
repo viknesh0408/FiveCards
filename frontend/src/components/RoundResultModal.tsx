@@ -174,7 +174,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                       className="card-flip-reveal"
                       style={{ animationDelay: `${idx * 0.07}s` }}
                     >
-                      <Card card={c} className="mini-card" />
+                      <Card card={c} className="mini-card" jokerRank={currentRound?.jokerRank} />
                     </div>
                   ))}
                 </div>

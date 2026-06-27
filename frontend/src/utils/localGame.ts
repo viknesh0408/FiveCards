@@ -286,7 +286,7 @@ export const drawCard = (game: LocalGame, playerId: string, fromDiscard: boolean
   }
 
   drawnCard.value = getCardValue(drawnCard, round.jokerRank);
-  currentPlayer.hand.push(drawnCard);
+  currentPlayer.hand = [...currentPlayer.hand, drawnCard];
   round.needsToDraw = false;
   return drawnCard;
 };
@@ -314,10 +314,13 @@ export const discardCard = (game: LocalGame, playerId: string, cardToDiscard: Ca
     throw new Error('Card not in hand');
   }
 
-  const handCard = currentPlayer.hand.splice(foundIndex, 1)[0];
+  const tempHand = [...currentPlayer.hand];
+  const handCard = tempHand.splice(foundIndex, 1)[0];
+  currentPlayer.hand = tempHand;
+
   const previousTopCard = round.discardPile[round.discardPile.length - 1] || null;
 
-  round.discardPile.push(handCard);
+  round.discardPile = [...round.discardPile, handCard];
   round.hasDiscardedThisTurn = true;
   round.cardsDiscardedThisTurn = 1;
 
@@ -372,9 +375,7 @@ export const discardMultipleCards = (game: LocalGame, playerId: string, cardsToD
   currentPlayer.hand = handCopy;
   const previousTopCard = round.discardPile[round.discardPile.length - 1] || null;
 
-  for (const resolved of resolvedCards) {
-    round.discardPile.push(resolved);
-  }
+  round.discardPile = [...round.discardPile, ...resolvedCards];
   round.hasDiscardedThisTurn = true;
   round.cardsDiscardedThisTurn = resolvedCards.length;
 

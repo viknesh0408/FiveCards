@@ -28,10 +28,8 @@ export const App: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showAppLeaveConfirm, setShowAppLeaveConfirm] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
-  const [reconnectCountdown, setReconnectCountdown] = useState<number>(20);
   
   const menuBackButtonHandlerRef = useRef<(() => boolean) | null>(null);
-  const reconnectTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const {
     gameState,
@@ -54,9 +52,13 @@ export const App: React.FC = () => {
     stompClientRef,
     leaveGame,
     isSpectator,
+    reconnectCountdown,
+    isReconnecting,
+    chatMessages,
+    sendChatMessage,
   } = useWebSocket();
 
-  // Initialize Battery Saver class on launch
+  // Initialize Battery Saver class on launch and request motion permission on first interaction
   useEffect(() => {
     const isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
     if (isBatterySaver) {
@@ -64,6 +66,29 @@ export const App: React.FC = () => {
     } else {
       document.body.classList.remove('battery-saver');
     }
+
+    const requestMotionPermission = () => {
+      const DeviceMotion = (window as any).DeviceMotionEvent;
+      if (DeviceMotion && typeof DeviceMotion.requestPermission === 'function') {
+        DeviceMotion.requestPermission()
+          .then((response: string) => {
+            console.log('Motion permission requested, result:', response);
+          })
+          .catch((err: any) => {
+            console.warn('Motion permission request failed:', err);
+          });
+      }
+      document.removeEventListener('click', requestMotionPermission);
+      document.removeEventListener('touchstart', requestMotionPermission);
+    };
+
+    document.addEventListener('click', requestMotionPermission);
+    document.addEventListener('touchstart', requestMotionPermission);
+
+    return () => {
+      document.removeEventListener('click', requestMotionPermission);
+      document.removeEventListener('touchstart', requestMotionPermission);
+    };
   }, []);
 
   // Hardware/navigation back button handling for native mobile devices
@@ -302,33 +327,7 @@ export const App: React.FC = () => {
     }
   }, [screen, gameState, playerId, disconnect, isSpectator]);
 
-  // Show reconnecting overlay with countdown when WebSocket drops mid-game
-  useEffect(() => {
-    if (screen === 'table' && gameState && !connected) {
-      // Start the 20s countdown (matching backend grace period)
-      setReconnectCountdown(20);
-      if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
-      reconnectTimerRef.current = setInterval(() => {
-        setReconnectCountdown(prev => {
-          if (prev <= 1) {
-            clearInterval(reconnectTimerRef.current!);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else {
-      // Connected or left the game – clear the countdown
-      if (reconnectTimerRef.current) {
-        clearInterval(reconnectTimerRef.current);
-        reconnectTimerRef.current = null;
-      }
-      setReconnectCountdown(20);
-    }
-    return () => {
-      if (reconnectTimerRef.current) clearInterval(reconnectTimerRef.current);
-    };
-  }, [connected, screen, gameState]);
+
 
   // Check for updates on startup (runs once on mount, works only in native mobile app)
   useEffect(() => {
@@ -575,7 +574,7 @@ export const App: React.FC = () => {
       {screen === 'table' && gameState && (
         <>
           {/* Reconnecting Overlay – shown when WebSocket drops mid-game */}
-          {!connected && (
+          {isReconnecting && (
             <div style={{
               position: 'fixed', inset: 0, zIndex: 1000,
               background: 'rgba(4, 8, 20, 0.85)',
@@ -601,20 +600,23 @@ export const App: React.FC = () => {
                 <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.9rem', marginBottom: '20px', lineHeight: 1.5 }}>
                   Connection lost. Attempting to rejoin your game.
                 </p>
-                {/* Countdown bar */}
+                {/* Progress bar */}
                 <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: '8px', overflow: 'hidden', marginBottom: '8px', height: '6px' }}>
-                  <div style={{
-                    height: '100%',
-                    width: `${(reconnectCountdown / 20) * 100}%`,
-                    background: reconnectCountdown > 8 ? '#22d3ee' : '#f87171',
-                    borderRadius: '8px',
-                    transition: 'width 1s linear, background 0.3s',
-                  }} />
+                  <div 
+                    className="reconnect-pulse-bar"
+                    style={{
+                      height: '100%',
+                      width: '100%',
+                      background: 'linear-gradient(90deg, #22d3ee, #00fff0, #22d3ee)',
+                      backgroundSize: '200% 100%',
+                      borderRadius: '8px',
+                    }} 
+                  />
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.35)', marginBottom: '24px' }}>
-                  {reconnectCountdown > 0
-                    ? `Your spot is held for ${reconnectCountdown}s`
-                    : 'Connection timed out — your slot may be released'}
+                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)', marginBottom: '24px', fontWeight: 600 }}>
+                  {reconnectCountdown !== null && reconnectCountdown > 0
+                    ? `Next attempt in ${reconnectCountdown}s...`
+                    : 'Attempting connection...'}
                 </p>
                 <button
                   id="reconnect-leave-btn"
@@ -642,6 +644,8 @@ export const App: React.FC = () => {
             onSendReaction={sendReaction}
             stompClientRef={stompClientRef}
             connected={connected}
+            chatMessages={chatMessages}
+            onSendChatMessage={sendChatMessage}
           />
 
           {/* Round Results Screen Overlay */}

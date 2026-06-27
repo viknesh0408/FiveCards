@@ -31,6 +31,14 @@ export interface SanitizedPlayer {
   avatarPic: string | null;
 }
 
+export interface ChatMessage {
+  id: string;
+  playerId: string;
+  playerName: string;
+  message: string;
+  timestamp: number;
+}
+
 export interface SanitizedRound {
   roundNumber: number;
   jokerCard: Card;
@@ -148,7 +156,7 @@ const sanitizeLocalGame = (localGame: LocalGame, playerId: string): SanitizedGam
         name: p.name,
         isAi: p.isAi,
         aiLevel: p.aiLevel,
-        hand: revealCards ? p.hand : [],
+        hand: revealCards ? [...p.hand] : [],
         cardCount: p.hand.length,
         roundScore: p.roundScore,
         totalScore: p.totalScore,
@@ -202,6 +210,12 @@ export const useWebSocket = () => {
   const [latestReaction, setLatestReaction] = useState<{ playerId: string; emoji: string; id: string } | null>(null);
   const [isSpectatorState, setIsSpectatorState] = useState<boolean>(false);
   const [isOffline, setIsOffline] = useState<boolean>(false);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+
+  const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState<boolean>(false);
+  const reconnectAttemptRef = useRef<number>(0);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const stompClientRef = useRef<Client | null>(null);
   const gameIdRef = useRef<string | null>(null);
@@ -209,19 +223,34 @@ export const useWebSocket = () => {
   const localGameRef = useRef<LocalGame | null>(null);
   const aiTurnStartedRef = useRef<string | null>(null);
 
-  const disconnect = useCallback(() => {
+  const connectRef = useRef<any>(null);
+
+  const disconnectSocket = useCallback(() => {
     if (stompClientRef.current) {
       stompClientRef.current.deactivate();
       stompClientRef.current = null;
     }
     setConnected(false);
+  }, []);
+
+  const disconnect = useCallback(() => {
+    disconnectSocket();
+    if (countdownIntervalRef.current) {
+      clearInterval(countdownIntervalRef.current);
+      countdownIntervalRef.current = null;
+    }
+    reconnectAttemptRef.current = 0;
+    setReconnectCountdown(null);
+    setIsReconnecting(false);
+
     setGameState(null);
     setLatestReaction(null);
+    setChatMessages([]);
     setIsSpectatorState(false);
     setIsOffline(false);
     localGameRef.current = null;
     aiTurnStartedRef.current = null;
-  }, []);
+  }, [disconnectSocket]);
 
   const saveAndBroadcastLocalGame = (game: LocalGame) => {
     localGameRef.current = game;
@@ -229,8 +258,53 @@ export const useWebSocket = () => {
     setGameState(sanitizeLocalGame(game, playerIdRef.current!));
   };
 
-  const connect = useCallback((gameId: string, playerId: string, isSpectator = false, isOfflineOption = false) => {
-    disconnect(); // Disconnect existing first
+  const handleDisconnectOrClose = useCallback(() => {
+    // If the client was intentionally deactivated (stompClientRef.current is null), do not reconnect
+    if (!stompClientRef.current) return;
+    if (isOffline) return;
+
+    setIsReconnecting(true);
+    if (countdownIntervalRef.current) return; // Reconnect is already counting down
+
+    const attempt = reconnectAttemptRef.current + 1;
+    reconnectAttemptRef.current = attempt;
+
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s, capped at 30s
+    const delaySec = Math.min(30, Math.pow(2, attempt - 1));
+    setReconnectCountdown(delaySec);
+
+    let remaining = delaySec;
+    countdownIntervalRef.current = setInterval(() => {
+      remaining -= 1;
+      setReconnectCountdown(remaining);
+      if (remaining <= 0) {
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
+        // Trigger actual reconnect attempt via ref
+        if (connectRef.current && gameIdRef.current && playerIdRef.current) {
+          console.log(`[WS] Reconnect attempt #${attempt} triggered.`);
+          connectRef.current(gameIdRef.current, playerIdRef.current, isSpectatorState, isOffline, true);
+        }
+      }
+    }, 1000);
+  }, [isOffline, isSpectatorState]);
+
+  const connect = useCallback((gameId: string, playerId: string, isSpectator = false, isOfflineOption = false, isReconnectAttempt = false) => {
+    connectRef.current = connect;
+
+    if (!isReconnectAttempt) {
+      if (countdownIntervalRef.current) {
+        clearInterval(countdownIntervalRef.current);
+        countdownIntervalRef.current = null;
+      }
+      reconnectAttemptRef.current = 0;
+      setReconnectCountdown(null);
+      setIsReconnecting(false);
+    }
+
+    disconnectSocket(); // Only close current socket connection, don't wipe out reconnect state counters!
 
     gameIdRef.current = gameId;
     playerIdRef.current = playerId;
@@ -269,11 +343,18 @@ export const useWebSocket = () => {
 
     const client = new Client({
       brokerURL: WS_URL,
-      reconnectDelay: 5000,
+      reconnectDelay: 0, // Disable Stomp auto-reconnect delay, we will control it exponentially!
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       onConnect: () => {
         setConnected(true);
+        reconnectAttemptRef.current = 0;
+        setReconnectCountdown(null);
+        setIsReconnecting(false);
+        if (countdownIntervalRef.current) {
+          clearInterval(countdownIntervalRef.current);
+          countdownIntervalRef.current = null;
+        }
 
         // 1. Subscribe to public state channel
         client.subscribe(`/topic/game/${gameId}/state`, (message) => {
@@ -353,6 +434,18 @@ export const useWebSocket = () => {
           });
         });
 
+        // 2.6 Subscribe to chat topic
+        client.subscribe(`/topic/game/${gameId}/chat`, (message) => {
+          const payload = JSON.parse(message.body);
+          setChatMessages(prev => [...prev, {
+            id: payload.id || Math.random().toString(36).substring(2, 9),
+            playerId: payload.playerId,
+            playerName: payload.playerName,
+            message: payload.message,
+            timestamp: payload.timestamp || Date.now(),
+          }].slice(-100));
+        });
+
         // 3. Trigger a REJOIN action
         client.publish({
           destination: `/app/game/${gameId}/action`,
@@ -364,17 +457,24 @@ export const useWebSocket = () => {
       },
       onDisconnect: () => {
         setConnected(false);
+        handleDisconnectOrClose();
+      },
+      onWebSocketClose: () => {
+        setConnected(false);
+        handleDisconnectOrClose();
       },
       onStompError: (frame) => {
         console.error('Broker reported error: ' + frame.headers['message']);
         console.error('Additional details: ' + frame.body);
         setError('WebSocket Connection Error');
+        setConnected(false);
+        handleDisconnectOrClose();
       },
     });
 
     stompClientRef.current = client;
     client.activate();
-  }, [disconnect]);
+  }, [disconnectSocket, handleDisconnectOrClose]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -482,6 +582,10 @@ export const useWebSocket = () => {
       if (game) {
         try {
           drawCardLocal(game, playerIdRef.current!, fromDiscard);
+          const round = game.currentRound;
+          if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
+            endTurnLocal(game, playerIdRef.current!);
+          }
           saveAndBroadcastLocalGame(game);
         } catch (e: any) {
           setError(e.message);
@@ -499,6 +603,10 @@ export const useWebSocket = () => {
       if (game) {
         try {
           discardCardLocal(game, playerIdRef.current!, card);
+          const round = game.currentRound;
+          if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
+            endTurnLocal(game, playerIdRef.current!);
+          }
           saveAndBroadcastLocalGame(game);
         } catch (e: any) {
           setError(e.message);
@@ -516,6 +624,10 @@ export const useWebSocket = () => {
       if (game) {
         try {
           discardMultipleCardsLocal(game, playerIdRef.current!, cards);
+          const round = game.currentRound;
+          if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
+            endTurnLocal(game, playerIdRef.current!);
+          }
           saveAndBroadcastLocalGame(game);
         } catch (e: any) {
           setError(e.message);
@@ -651,6 +763,66 @@ export const useWebSocket = () => {
     });
   }, [connected, isOffline]);
 
+  const sendChatMessage = useCallback((messageText: string) => {
+    const trimmed = messageText.trim();
+    if (!trimmed) return;
+
+    if (isOffline) {
+      const newMsg: ChatMessage = {
+        id: Math.random().toString(36).substring(2, 9),
+        playerId: playerIdRef.current!,
+        playerName: localStorage.getItem('tickPlayerName') || 'Player',
+        message: trimmed,
+        timestamp: Date.now(),
+      };
+      setChatMessages(prev => [...prev, newMsg]);
+
+      // Trigger interactive mock AI chat responses!
+      setTimeout(() => {
+        if (!gameState) return;
+        const aiPlayers = gameState.players.filter(p => p.isAi);
+        if (aiPlayers.length > 0) {
+          const randomAi = aiPlayers[Math.floor(Math.random() * aiPlayers.length)];
+          const aiPhrases = [
+            "Good game!",
+            "Nice move!",
+            "Let's see who wins this round!",
+            "Jokers are wild!",
+            "Declare 5 Cards if you dare!",
+            "Hmm, let me think...",
+            "Are you trying to trick me?",
+            "Good luck!"
+          ];
+          const randomPhrase = aiPhrases[Math.floor(Math.random() * aiPhrases.length)];
+          setChatMessages(prev => [...prev, {
+            id: Math.random().toString(36).substring(2, 9),
+            playerId: randomAi.id,
+            playerName: randomAi.name,
+            message: randomPhrase,
+            timestamp: Date.now(),
+          }]);
+        }
+      }, 1500);
+      return;
+    }
+
+    if (!stompClientRef.current || !connected) {
+      console.warn('STOMP client not connected');
+      return;
+    }
+
+    stompClientRef.current.publish({
+      destination: `/topic/game/${gameIdRef.current}/chat`,
+      body: JSON.stringify({
+        id: Math.random().toString(36).substring(2, 9),
+        playerId: playerIdRef.current,
+        playerName: localStorage.getItem('tickPlayerName') || 'Player',
+        message: trimmed,
+        timestamp: Date.now(),
+      }),
+    });
+  }, [connected, isOffline, gameState]);
+
   return {
     gameState,
     connected,
@@ -675,5 +847,9 @@ export const useWebSocket = () => {
     stompClientRef,
     playerIdRef,
     gameIdRef,
+    reconnectCountdown,
+    isReconnecting,
+    chatMessages,
+    sendChatMessage,
   };
 };

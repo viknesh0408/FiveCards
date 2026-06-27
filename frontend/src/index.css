@@ -5402,8 +5402,8 @@ body.battery-saver .hud-btn-voice.speaking {
   gap: 16px;
   width: min(900px, 96vw);
   /* Desktop: fixed height so both columns can scroll independently */
-  height: calc(100vh - 80px);
-  max-height: calc(100vh - 80px);
+  height: calc(100vh - 120px);
+  max-height: calc(100vh - 120px);
   align-items: stretch;
   overflow: hidden;
 }
@@ -8447,7 +8447,7 @@ body.battery-saver .hud-btn-voice.speaking {
 }
 
 .mm-view-history .mm-scene {
-  padding: 12px !important;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 12px 12px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
@@ -8455,13 +8455,13 @@ body.battery-saver .hud-btn-voice.speaking {
 
 @media (min-width: 851px) {
   .mm-view-history .mm-scene {
-    padding: 20px !important;
+    padding: 40px 20px 20px !important;
     align-items: center !important;
   }
 }
 
 .mm-view-stats .mm-scene {
-  padding: 12px !important;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 12px 12px !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
@@ -8469,15 +8469,15 @@ body.battery-saver .hud-btn-voice.speaking {
 
 @media (min-width: 851px) {
   .mm-view-stats .mm-scene {
-    padding: 20px !important;
+    padding: 40px 20px 20px !important;
     align-items: center !important;
   }
 }
 
 /* ── MATCH HISTORY SCROLL LOG OVERRIDES ── */
 .mm-history-layout {
-  height: calc(100vh - 80px) !important;
-  max-height: calc(100vh - 80px) !important;
+  height: calc(100vh - 120px) !important;
+  max-height: calc(100vh - 120px) !important;
   width: min(900px, 96vw) !important;
   margin: auto !important;
   align-self: center !important;
@@ -9015,6 +9015,14 @@ body.battery-saver .hud-btn-voice.speaking {
 }
 .hand-sort-button:active {
   transform: scale(0.95);
+}
+
+@keyframes pulse-bar-kf {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+.reconnect-pulse-bar {
+  animation: pulse-bar-kf 2s linear infinite;
 }
 
 

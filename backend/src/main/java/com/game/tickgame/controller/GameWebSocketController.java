@@ -220,6 +220,11 @@ public class GameWebSocketController {
         messagingTemplate.convertAndSend("/topic/game/" + gameId + "/reactions", payload);
     }
 
+    @MessageMapping("/game/{gameId}/chat")
+    public void handleChat(@DestinationVariable String gameId, Map<String, String> payload) {
+        messagingTemplate.convertAndSend("/topic/game/" + gameId + "/chat", payload);
+    }
+
     private void broadcastGameState(Game game) {
         // Save state to database for persistence
         gamePersistenceService.saveGame(game);

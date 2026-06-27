@@ -61,7 +61,20 @@ export const getLocalStats = (): PlayerStats => {
   }
   const name = localStorage.getItem('tickPlayerName') || 'Player';
 
-  // Read stats from localStorage
+  // Read atomic stats from localStorage
+  const rawStats = localStorage.getItem('tickPlayerStats');
+  if (rawStats) {
+    try {
+      const parsed = JSON.parse(rawStats);
+      return {
+        ...createEmptyStats(name),
+        ...parsed,
+        name // ensure name is always kept in sync with tickPlayerName
+      };
+    } catch (_) {}
+  }
+
+  // Support legacy migration if new values are not set
   const gamesPlayedTotalVal = localStorage.getItem('stats_gamesPlayedTotal');
   const gamesPlayedOfflineVal = localStorage.getItem('stats_gamesPlayedOffline');
   const gamesPlayedOnlineVal = localStorage.getItem('stats_gamesPlayedOnline');
@@ -77,7 +90,6 @@ export const getLocalStats = (): PlayerStats => {
   const declaresCorrectVal = localStorage.getItem('stats_declaresCorrect');
   const declaresWrongVal = localStorage.getItem('stats_declaresWrong');
 
-  // Support legacy migration if new values are not set
   let legacyGames = 0;
   let legacyWins = 0;
   try {
@@ -87,7 +99,6 @@ export const getLocalStats = (): PlayerStats => {
 
   const gamesPlayedTotal = gamesPlayedTotalVal !== null ? parseInt(gamesPlayedTotalVal, 10) : legacyGames;
   const gamesPlayedOffline = gamesPlayedOfflineVal !== null ? parseInt(gamesPlayedOfflineVal, 10) : 0;
-  // If we migrated legacy games, count them towards online for safety
   const gamesPlayedOnline = gamesPlayedOnlineVal !== null ? parseInt(gamesPlayedOnlineVal, 10) : legacyGames;
 
   const winsTotal = winsTotalVal !== null ? parseInt(winsTotalVal, 10) : legacyWins;
@@ -109,13 +120,12 @@ export const getLocalStats = (): PlayerStats => {
     if (raw) {
       recentForm = JSON.parse(raw);
     } else {
-      // Reconstruct legacy recent form if available
       const legacyRaw = localStorage.getItem('playerRecentForm');
       if (legacyRaw) recentForm = JSON.parse(legacyRaw);
     }
   } catch (_) {}
 
-  return {
+  const migratedStats: PlayerStats = {
     name,
     gamesPlayedTotal,
     gamesPlayedOffline,
@@ -133,26 +143,19 @@ export const getLocalStats = (): PlayerStats => {
     declaresCorrect,
     declaresWrong,
   };
+
+  // If there were old stats, save them as the new atomic key right away
+  if (gamesPlayedTotalVal !== null || legacyGames > 0) {
+    setTimeout(() => saveLocalStats(migratedStats), 0);
+  }
+
+  return migratedStats;
 };
 
 export const saveLocalStats = (stats: PlayerStats) => {
   if (typeof window === 'undefined') return;
   savePersistentItem('tickPlayerName', stats.name);
-  savePersistentItem('stats_gamesPlayedTotal', stats.gamesPlayedTotal.toString());
-  savePersistentItem('stats_gamesPlayedOffline', stats.gamesPlayedOffline.toString());
-  savePersistentItem('stats_gamesPlayedOnline', stats.gamesPlayedOnline.toString());
-  savePersistentItem('stats_winsTotal', stats.winsTotal.toString());
-  savePersistentItem('stats_winsOffline', stats.winsOffline.toString());
-  savePersistentItem('stats_winsOnline', stats.winsOnline.toString());
-  savePersistentItem('stats_winStreakCurrent', stats.winStreakCurrent.toString());
-  savePersistentItem('stats_winStreakBest', stats.winStreakBest.toString());
-  savePersistentItem('stats_recentForm', JSON.stringify(stats.recentForm));
-  savePersistentItem('stats_totalPointsScored', stats.totalPointsScored.toString());
-  savePersistentItem('stats_roundsPlayed', stats.roundsPlayed.toString());
-  savePersistentItem('stats_lowestRoundScore', stats.lowestRoundScore.toString());
-  savePersistentItem('stats_highestRoundScore', stats.highestRoundScore.toString());
-  savePersistentItem('stats_declaresCorrect', stats.declaresCorrect.toString());
-  savePersistentItem('stats_declaresWrong', stats.declaresWrong.toString());
+  savePersistentItem('tickPlayerStats', JSON.stringify(stats));
 };
 
 export const processGameEndStats = (
@@ -272,4 +275,27 @@ export const resetLocalStats = () => {
   localStorage.removeItem('playerWinStreak');
   localStorage.removeItem('playerRecentForm');
   localStorage.removeItem('tick_game_tutorial_completed');
+
+  // Clean up legacy stats_* keys
+  const legacyStatsKeys = [
+    'stats_gamesPlayedTotal',
+    'stats_gamesPlayedOffline',
+    'stats_gamesPlayedOnline',
+    'stats_winsTotal',
+    'stats_winsOffline',
+    'stats_winsOnline',
+    'stats_winStreakCurrent',
+    'stats_winStreakBest',
+    'stats_recentForm',
+    'stats_totalPointsScored',
+    'stats_roundsPlayed',
+    'stats_lowestRoundScore',
+    'stats_highestRoundScore',
+    'stats_declaresCorrect',
+    'stats_declaresWrong'
+  ];
+  legacyStatsKeys.forEach(key => {
+    localStorage.removeItem(key);
+    idbDelete(key).catch(() => {});
+  });
 };

@@ -114,6 +114,86 @@ const PickerRow: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
   </div>
 );
 
+// SVG Win Rate Sparkline Chart Component (No libraries needed)
+const WinRateSparkline: React.FC = () => {
+  const historyList = [...getMatchHistory()].reverse(); // Chronological order (oldest first)
+  if (historyList.length < 2) {
+    return (
+      <div className="glass-panel" style={{
+        padding: '16px', background: 'rgba(255,255,255,0.01)', border: '1px dashed rgba(255,255,255,0.1)',
+        borderRadius: '12px', marginTop: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100px'
+      }}>
+        <span style={{ fontSize: '1.5rem', marginBottom: '6px' }}>📈</span>
+        <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', textAlign: 'center', maxWidth: '200px', lineHeight: 1.4 }}>
+          Play 2 or more matches to view your win rate trend sparkline!
+        </span>
+      </div>
+    );
+  }
+
+  // Calculate cumulative win rates
+  let winsCount = 0;
+  const dataPoints = historyList.map((entry, index) => {
+    if (entry.isWin) winsCount++;
+    return (winsCount / (index + 1)) * 100;
+  });
+
+  // SVG dimensions
+  const width = 240;
+  const height = 65;
+  const padding = 6;
+
+  // Map data points to SVG coordinates
+  const points = dataPoints.map((val, idx) => {
+    const x = padding + (idx / (dataPoints.length - 1)) * (width - padding * 2);
+    // Invert Y axis: 100% win rate is at Y=padding, 0% is at Y=height-padding
+    const y = height - padding - (val / 100) * (height - padding * 2);
+    return { x, y, value: val };
+  });
+
+  const pathD = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  const areaD = `${pathD} L ${points[points.length - 1].x.toFixed(1)} ${height - padding} L ${points[0].x.toFixed(1)} ${height - padding} Z`;
+
+  const startWinRate = dataPoints[0];
+  const currentWinRate = dataPoints[dataPoints.length - 1];
+  const isUp = currentWinRate >= startWinRate;
+
+  return (
+    <div className="glass-panel" style={{
+      padding: '16px', background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.06)',
+      borderRadius: '12px', marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px'
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--color-text-muted)', fontWeight: 800 }}>
+          📈 Win Rate Trend
+        </span>
+        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: isUp ? 'var(--color-green)' : 'var(--color-red)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+          {isUp ? '▲' : '▼'} {Math.round(currentWinRate)}%
+        </span>
+      </div>
+      <div style={{ position: 'relative', width: '100%', height: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+          <defs>
+            <linearGradient id="sparklineGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="var(--color-cyan)" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="var(--color-cyan)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <line x1={padding} y1={height / 2} x2={width - padding} y2={height / 2} stroke="rgba(255,255,255,0.04)" strokeDasharray="3,3" />
+          <path d={areaD} fill="url(#sparklineGrad)" />
+          <path d={pathD} fill="none" stroke="var(--color-cyan)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx={points[0].x} cy={points[0].y} r="3.5" fill="#fff" stroke="var(--color-cyan)" strokeWidth="1.5" />
+          <circle cx={points[points.length - 1].x} cy={points[points.length - 1].y} r="4.5" fill="var(--color-cyan)" />
+        </svg>
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.62rem', color: 'rgba(255,255,255,0.3)', fontWeight: 700 }}>
+        <span>Start ({Math.round(startWinRate)}%)</span>
+        <span>{dataPoints.length} Matches</span>
+      </div>
+    </div>
+  );
+};
+
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartOffline,
   onJoinOnline,
@@ -134,6 +214,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
   const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
   const [cardGlowEnabled, setCardGlowEnabled] = useState<boolean>(() => localStorage.getItem('cardGlowEnabled') !== 'false');
+  const [shakeToSortEnabled, setShakeToSortEnabled] = useState<boolean>(() => localStorage.getItem('shakeToSortEnabled') !== 'false');
   const [animIn, setAnimIn] = useState(true);
   const [hasDailyNotif, setHasDailyNotif] = useState<boolean>(() => hasUnclaimedDaily());
   const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
@@ -292,6 +373,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
     await savePersistentItem('cardGlowEnabled', cardGlowEnabled ? 'true' : 'false');
     localStorage.setItem('cardGlowEnabled', cardGlowEnabled ? 'true' : 'false');
+    await savePersistentItem('shakeToSortEnabled', shakeToSortEnabled ? 'true' : 'false');
+    localStorage.setItem('shakeToSortEnabled', shakeToSortEnabled ? 'true' : 'false');
     if (batterySaverEnabled) document.body.classList.add('battery-saver');
     else document.body.classList.remove('battery-saver');
     navigate('main');
@@ -687,6 +770,13 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </div>
               <div className="mm-setting-row">
                 <div className="mm-setting-info">
+                  <span className="mm-setting-name">📳 Shake to Sort</span>
+                  <span className="mm-setting-hint">Shake device to sort cards</span>
+                </div>
+                <Toggle id="shk" checked={shakeToSortEnabled} onChange={setShakeToSortEnabled} />
+              </div>
+              <div className="mm-setting-row">
+                <div className="mm-setting-info">
                   <span className="mm-setting-name">📖 Tutorial</span>
                 </div>
                 <button className="mm-mini-btn" onClick={onShowTutorial}>Show Guide</button>
@@ -763,6 +853,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   </span>
                   <span className="mm-stats-summary-key">Best Win Streak</span>
                 </div>
+
+                <WinRateSparkline />
                 
                 {/* Reset Section */}
                 <div className="mm-stats-reset-wrap">

@@ -21,6 +21,7 @@ public class Game {
     private String winnerId;
     private boolean isMultiplayer = false;
     private String hostId;
+    private List<Spectator> spectators = new ArrayList<>();
 
     public Player getPlayerById(String id) {
         if (players == null) return null;

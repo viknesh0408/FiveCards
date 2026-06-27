@@ -6,7 +6,6 @@ import { GameTable } from './components/GameTable';
 import { RoundResultModal } from './components/RoundResultModal';
 import { GameOverModal } from './components/GameOverModal';
 import { InactivityKickModal } from './components/InactivityKickModal';
-import type { AiLevel } from './utils/gameHelpers';
 import { soundEffects } from './utils/soundEffects';
 
 import { checkForUpdates } from "./services/updateChecker";
@@ -15,6 +14,8 @@ import { TutorialModal } from "./components/TutorialModal";
 import { initPersistentStorage, savePersistentItem } from "./utils/persistentStorage";
 import { setupLocalNotifications } from "./utils/localNotifications";
 import { getLocalStats, saveLocalStats } from './utils/statsSystem';
+import { pullAndMergeStats } from './services/statsSync';
+import { getMatchHistory } from './utils/statsSystem';
 import { Haptics } from '@capacitor/haptics';
 import { App as CapacitorApp } from '@capacitor/app';
 
@@ -52,6 +53,7 @@ export const App: React.FC = () => {
     apiBase,
     stompClientRef,
     leaveGame,
+    isSpectator,
   } = useWebSocket();
 
   // Initialize Battery Saver class on launch
@@ -230,6 +232,21 @@ export const App: React.FC = () => {
       }
       setPlayerId(id);
 
+      // Pull & merge stats from backend (restores data after reinstall/browser clear)
+      if (navigator.onLine) {
+        try {
+          const result = await pullAndMergeStats(id, getLocalStats(), getMatchHistory());
+          if (result) {
+            saveLocalStats(result.stats);
+            if (result.history.length > 0) {
+              savePersistentItem('tickMatchHistory', JSON.stringify(result.history));
+            }
+          }
+        } catch (_) {
+          // Silently ignore — local data is always the fallback
+        }
+      }
+
       if (!navigator.onLine) {
         alert('No internet connection');
         return;
@@ -242,8 +259,9 @@ export const App: React.FC = () => {
           if (res.ok) {
             const data = await res.json();
             const isInGame = data.players?.some((p: any) => p.id === id);
-            if (isInGame && data.status !== 'GAME_OVER') {
-              connect(activeGameId, id);
+            const isSpectator = data.spectators?.some((s: any) => s.id === id);
+            if ((isInGame || isSpectator) && data.status !== 'GAME_OVER') {
+              connect(activeGameId, id, isSpectator);
               setScreen('table');
             } else {
               localStorage.removeItem('activeGameId');
@@ -263,16 +281,26 @@ export const App: React.FC = () => {
 
   // Auto-leave if player is kicked/removed from the game due to inactivity
   useEffect(() => {
-    if (screen === 'table' && gameState && gameState.players && playerId) {
-      const isPlayerStillInGame = gameState.players.some(p => p.id === playerId);
-      if (!isPlayerStillInGame) {
-        localStorage.removeItem('activeGameId');
-        disconnect();
-        setScreen('menu');
-        setIsKicked(true);
+    if (screen === 'table' && gameState && playerId) {
+      if (isSpectator) {
+        const isSpectatorStillInGame = gameState.spectators?.some(s => s.id === playerId);
+        if (gameState.spectators && !isSpectatorStillInGame) {
+          localStorage.removeItem('activeGameId');
+          disconnect();
+          setScreen('menu');
+          setIsKicked(true);
+        }
+      } else if (gameState.players) {
+        const isPlayerStillInGame = gameState.players.some(p => p.id === playerId);
+        if (!isPlayerStillInGame) {
+          localStorage.removeItem('activeGameId');
+          disconnect();
+          setScreen('menu');
+          setIsKicked(true);
+        }
       }
     }
-  }, [screen, gameState, playerId, disconnect]);
+  }, [screen, gameState, playerId, disconnect, isSpectator]);
 
   // Show reconnecting overlay with countdown when WebSocket drops mid-game
   useEffect(() => {
@@ -348,48 +376,22 @@ export const App: React.FC = () => {
   };
 
   const handleStartOffline = async (settings: OfflineSettings) => {
-    if (!navigator.onLine) {
-      alert('No internet connection');
-      return;
-    }
     try {
-      // 1. Create a game session
-      const createRes = await fetch(`${apiBase}/api/game/create?maxRounds=${settings.maxRounds}&isMultiplayer=false`, {
-        method: 'POST',
-      });
-      const createData = await createRes.json();
-      const gameId = createData.gameId;
-
       // Save name locally
       const stats = getLocalStats();
       stats.name = settings.playerName;
       saveLocalStats(stats);
 
-      // 2. Join the human player
-      const avatar = localStorage.getItem('selected_avatar') || 'none';
-      const avatarPic = localStorage.getItem('selected_avatar_pic') || 'none';
-      await fetch(`${apiBase}/api/game/${gameId}/join?playerId=${playerId}&name=${encodeURIComponent(settings.playerName)}&avatar=${encodeURIComponent(avatar)}&avatarPic=${encodeURIComponent(avatarPic)}`, {
-        method: 'POST',
-      });
+      // Save offline configurations for connect() hook initialization
+      localStorage.setItem('offline_maxRounds', settings.maxRounds.toString());
+      localStorage.setItem('offline_aiCount', settings.aiCount.toString());
+      localStorage.setItem('offline_playerName', settings.playerName);
+      localStorage.removeItem('localGameState');
 
-      // 3. Add AI players
-      for (let i = 0; i < settings.aiCount; i++) {
-        const level: AiLevel = 'MEDIUM';
-        const botName = `Bot ${i + 1}`;
-
-        await fetch(`${apiBase}/api/game/${gameId}/add-ai?name=${encodeURIComponent(botName)}&aiLevel=${level}`, {
-          method: 'POST',
-        });
-      }
-
-      // 4. Start the game session
-      await fetch(`${apiBase}/api/game/${gameId}/start`, {
-        method: 'POST',
-      });
-
-      // 5. Connect WebSocket
+      // Connect locally
+      const gameId = 'LOCAL_GAME';
       localStorage.setItem('activeGameId', gameId);
-      connect(gameId, playerId);
+      connect(gameId, playerId, false, true);
       setScreen('table');
     } catch (e) {
       console.error('Failed to start offline game', e);
@@ -466,6 +468,38 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleSpectateOnline = async (gameId: string, name: string) => {
+    if (!navigator.onLine) {
+      alert('No internet connection');
+      return;
+    }
+    try {
+      // Save name locally
+      const stats = getLocalStats();
+      stats.name = name;
+      saveLocalStats(stats);
+
+      // 1. Join spectator
+      const spectateRes = await fetch(`${apiBase}/api/game/${gameId}/spectate?playerId=${playerId}&name=${encodeURIComponent(name)}`, {
+        method: 'POST',
+      });
+
+      if (!spectateRes.ok) {
+        const errorData = await spectateRes.json();
+        alert(errorData.error || 'Failed to spectate room');
+        return;
+      }
+
+      // 2. Connect WebSocket
+      localStorage.setItem('activeGameId', gameId);
+      connect(gameId, playerId, true);
+      setScreen('table');
+    } catch (e) {
+      console.error('Failed to spectate online game', e);
+      handleNetworkError(e, 'Error spectating room. Check the code and try again.');
+    }
+  };
+
   const handleLeave = () => {
     localStorage.removeItem('activeGameId');
     leaveGame();
@@ -512,6 +546,7 @@ export const App: React.FC = () => {
         <MainMenu
           onStartOffline={handleStartOffline}
           onJoinOnline={handleJoinOnline}
+          onSpectateOnline={handleSpectateOnline}
           onCreateOnline={handleCreateOnline}
           onShowTutorial={() => setShowTutorial(true)}
           onRegisterBackButton={(handler) => {
@@ -595,6 +630,7 @@ export const App: React.FC = () => {
           <GameTable
             gameState={gameState}
             currentPlayerId={playerId}
+            isSpectator={isSpectator}
             onDraw={drawCard}
             onDiscard={discardCard}
             onDiscardMulti={discardMultipleCards}

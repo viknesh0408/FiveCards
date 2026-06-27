@@ -4,6 +4,7 @@ import com.game.tickgame.dto.SanitizedGame;
 import com.game.tickgame.model.AiLevel;
 import com.game.tickgame.model.Game;
 import com.game.tickgame.model.Player;
+import com.game.tickgame.model.Spectator;
 import com.game.tickgame.service.GameEngine;
 import com.game.tickgame.service.GamePersistenceService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,29 @@ public class GameController {
             gamePersistenceService.saveGame(game);
             
             return ResponseEntity.ok(SanitizedGame.fromGame(game, playerId));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{gameId}/spectate")
+    public ResponseEntity<?> spectateGame(
+            @PathVariable String gameId,
+            @RequestParam String playerId,
+            @RequestParam String name) {
+        try {
+            Game game = gameEngine.getGame(gameId);
+            if (game == null) {
+                game = gamePersistenceService.loadGame(gameId);
+                if (game == null) {
+                    return ResponseEntity.status(404).body(Map.of("error", "Game room not found: " + gameId));
+                }
+            }
+
+            Spectator spectator = gameEngine.addSpectator(gameId, playerId, name);
+            gamePersistenceService.saveGame(game);
+            
+            return ResponseEntity.ok(SanitizedGame.fromGame(game, playerId, true));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         }

@@ -12,6 +12,7 @@ import { AvatarImage } from './AvatarImage';
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
   onJoinOnline: (roomId: string, name: string) => void;
+  onSpectateOnline?: (roomId: string, name: string) => void;
   onCreateOnline: (name: string, maxRounds: number) => void;
   onShowTutorial?: () => void;
   onRegisterBackButton?: (handler: (() => boolean) | null) => void;
@@ -116,6 +117,7 @@ const PickerRow: React.FC<{ label: string; children: React.ReactNode }> = ({ lab
 export const MainMenu: React.FC<MainMenuProps> = ({
   onStartOffline,
   onJoinOnline,
+  onSpectateOnline,
   onCreateOnline,
   onShowTutorial,
   onRegisterBackButton,
@@ -270,6 +272,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     onJoinOnline(roomId.trim().toUpperCase(), playerName);
   };
 
+  const handleSpectateOnline = () => {
+    if (!roomId.trim() || !playerName.trim()) return;
+    savePersistentItem('tickPlayerName', playerName);
+    if (onSpectateOnline) {
+      onSpectateOnline(roomId.trim().toUpperCase(), playerName);
+    }
+  };
+
   const handleCreateOnline = () => {
     if (!playerName.trim()) return;
     savePersistentItem('tickPlayerName', playerName);
@@ -288,7 +298,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   };
 
   return (
-    <div className={`mm-root mm-view-${view} ${view !== 'stats' && view !== 'rules' ? 'mm-no-scroll' : ''}`}>
+    <div className={`mm-root mm-view-${view} ${view !== 'rules' ? 'mm-no-scroll' : ''}`}>
       {/* Animated background orbs */}
       <div className="mm-orb mm-orb-1" />
       <div className="mm-orb mm-orb-2" />
@@ -629,9 +639,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
               </div>
             </div>
 
-            <button className="mm-cta-btn" onClick={handleJoinOnline} disabled={roomId.length < 4}>
-              Join Room 🚀
-            </button>
+            <div className="mm-spectate-buttons-container" style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '16px' }}>
+              <button className="mm-cta-btn" style={{ flex: 1, margin: 0 }} onClick={handleJoinOnline} disabled={roomId.length < 4}>
+                Join Room 🚀
+              </button>
+              <button className="mm-cta-btn mm-btn-spectate" style={{ flex: 1, margin: 0, backgroundColor: 'rgba(0,255,240,0.05)', border: '2px solid var(--color-cyan)', color: 'var(--color-cyan)', boxShadow: '0 0 10px rgba(0,255,240,0.1)' }} onClick={handleSpectateOnline} disabled={roomId.length < 4}>
+                Spectate 👁️
+              </button>
+            </div>
           </div>
         )}
 

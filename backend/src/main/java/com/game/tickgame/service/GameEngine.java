@@ -81,6 +81,42 @@ public class GameEngine {
         return player;
     }
 
+    public Spectator addSpectator(String gameId, String playerId, String name) {
+        Game game = activeGames.get(gameId);
+        if (game == null) {
+            throw new IllegalArgumentException("Game not found: " + gameId);
+        }
+
+        if (game.getSpectators() == null) {
+            game.setSpectators(new ArrayList<>());
+        }
+
+        Spectator existing = game.getSpectators().stream()
+                .filter(s -> s.getId().equals(playerId))
+                .findFirst()
+                .orElse(null);
+        if (existing != null) {
+            return existing;
+        }
+
+        if (game.getPlayerById(playerId) != null) {
+            throw new IllegalStateException("Cannot spectate if you are an active player in the game");
+        }
+
+        Spectator spectator = new Spectator(playerId, name, System.currentTimeMillis());
+        game.getSpectators().add(spectator);
+        return spectator;
+    }
+
+    public void removeSpectator(String gameId, String playerId) {
+        Game game = activeGames.get(gameId);
+        if (game == null) return;
+
+        if (game.getSpectators() != null) {
+            game.getSpectators().removeIf(s -> s.getId().equals(playerId));
+        }
+    }
+
     public void startNewGame(String gameId) {
         Game game = activeGames.get(gameId);
         if (game == null) return;

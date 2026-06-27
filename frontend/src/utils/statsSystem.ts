@@ -1,4 +1,6 @@
 import { savePersistentItem } from './persistentStorage';
+import { pushStats } from '../services/statsSync';
+import { idbDelete } from './idbStore';
 
 export interface MatchHistoryEntry {
   gameId: string;
@@ -215,6 +217,14 @@ export const processGameEndStats = (
   };
 
   saveLocalStats(newStats);
+
+  // Fire-and-forget cloud sync — errors are silently swallowed
+  const playerId = localStorage.getItem('tickPlayerId');
+  if (playerId) {
+    const currentHistory = getMatchHistory();
+    pushStats(playerId, newStats, currentHistory).catch(() => {});
+  }
+
   return newStats;
 };
 
@@ -239,7 +249,7 @@ export const saveMatchToHistory = (entry: Omit<MatchHistoryEntry, 'date'>) => {
       date: new Date().toISOString(),
     };
     const updated = [newEntry, ...history].slice(0, 50);
-    localStorage.setItem('tickMatchHistory', JSON.stringify(updated));
+    savePersistentItem('tickMatchHistory', JSON.stringify(updated));
   } catch (e) {
     console.error('Failed to save match to history', e);
   }
@@ -251,6 +261,7 @@ export const resetLocalStats = () => {
   const empty = createEmptyStats(name);
   saveLocalStats(empty);
   localStorage.removeItem('tickMatchHistory');
+  idbDelete('tickMatchHistory');
   
   // Clean up legacy keys too
   localStorage.removeItem('playerGamesPlayed');

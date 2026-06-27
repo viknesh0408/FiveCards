@@ -27,6 +27,7 @@ public class SanitizedGame {
     }
 
     private String hostId;
+    private List<Spectator> spectators;
 
     @Data
     public static class SanitizedPlayer {
@@ -69,6 +70,14 @@ public class SanitizedGame {
     }
 
     public static SanitizedGame fromGame(Game game, String playerId) {
+        boolean isSpectator = false;
+        if (game != null && game.getSpectators() != null && playerId != null) {
+            isSpectator = game.getSpectators().stream().anyMatch(s -> playerId.equals(s.getId()));
+        }
+        return fromGame(game, playerId, isSpectator);
+    }
+
+    public static SanitizedGame fromGame(Game game, String playerId, boolean isSpectator) {
         if (game == null) return null;
 
         SanitizedGame sg = new SanitizedGame();
@@ -79,6 +88,7 @@ public class SanitizedGame {
         sg.setWinnerId(game.getWinnerId());
         sg.setHostId(game.getHostId());
         sg.setMultiplayer(game.isMultiplayer());
+        sg.setSpectators(game.getSpectators() != null ? new ArrayList<>(game.getSpectators()) : new ArrayList<>());
 
         boolean revealAll = (game.getStatus() == GameStatus.ROUND_OVER || game.getStatus() == GameStatus.GAME_OVER);
 
@@ -98,8 +108,8 @@ public class SanitizedGame {
             sp.setAvatar(p.getAvatar());
             sp.setAvatarPic(p.getAvatarPic());
 
-            // Hide cards unless it's this player, or the round is finished and we show all hands
-            if (revealAll || p.getId().equals(playerId)) {
+            // Hide cards unless it's this player, or we are a spectator (reveal all), or the round is finished
+            if (revealAll || p.getId().equals(playerId) || isSpectator) {
                 sp.setHand(p.getHand());
             } else {
                 sp.setHand(new ArrayList<>()); // Empty hand for opponents during play

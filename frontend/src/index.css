@@ -966,6 +966,56 @@ body::before {
   overflow: hidden;
 }
 
+.opponent-mini-hand .game-card {
+  width: 34px !important;
+  height: 50px !important;
+  border-radius: 5px !important;
+  padding: 2px !important;
+  margin-left: -16px !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.4) !important;
+  position: relative !important;
+  transform: none !important;
+  font-size: 8px !important;
+}
+.opponent-mini-hand .game-card .card-corner {
+  padding: 0 !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+.opponent-mini-hand .game-card .card-corner.top {
+  top: 2px !important;
+  left: 2px !important;
+}
+.opponent-mini-hand .game-card .card-corner.bottom {
+  bottom: 2px !important;
+  right: 2px !important;
+}
+.opponent-mini-hand .game-card .card-rank {
+  font-size: 8px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+.opponent-mini-hand .game-card .card-suit-icon {
+  font-size: 7px !important;
+  line-height: 1 !important;
+}
+.opponent-mini-hand .game-card .card-center-suit {
+  font-size: 11px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  opacity: 0.8 !important;
+  line-height: 1 !important;
+}
+.opponent-mini-hand .game-card .card-inner-border {
+  top: 2px !important;
+  left: 2px !important;
+  right: 2px !important;
+  bottom: 2px !important;
+  border-radius: 3px !important;
+}
+
 .opponent-mini-hand .card-back::after {
   content: '';
   position: absolute;
@@ -5400,12 +5450,32 @@ body.battery-saver .hud-btn-voice.speaking {
   padding-right: 8px;
   padding-bottom: 16px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.18) transparent;
+  scrollbar-color: rgba(52, 211, 153, 0.25) rgba(255, 255, 255, 0.02);
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
   display: flex;
   flex-direction: column;
   gap: 20px;
+  /* Fade out content at edges */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 12px), transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 12px), transparent 100%);
+}
+/* Custom Webkit Scrollbar for Stats Scroll */
+.mm-stats-scroll::-webkit-scrollbar {
+  width: 6px;
+  display: block !important;
+}
+.mm-stats-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 3px;
+}
+.mm-stats-scroll::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.25);
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mm-stats-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 211, 153, 0.45);
 }
 .mm-stats-section {
   display: flex;
@@ -5587,37 +5657,42 @@ body.battery-saver .hud-btn-voice.speaking {
 @media (max-width: 850px) {
   .mm-stats-layout {
     flex-direction: column;
-    /* On tablet/mobile: remove fixed height so content flows naturally */
-    height: auto;
-    max-height: none;
-    overflow: visible;
-    width: 100%;
-    gap: 12px;
+    /* Lock to full remaining height so inner scroll works */
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: hidden !important;
+    width: 100% !important;
+    gap: 16px !important;
   }
   .mm-stats-left {
     width: 100% !important;
     max-width: 100% !important;
-    /* Let left column expand fully; outer mm-scene scrolls */
+    flex-shrink: 0 !important;
     overflow: visible !important;
-    height: auto;
+    height: auto !important;
   }
   .mm-stats-right {
-    /* Right panel also expands; outer scroll handles it */
-    overflow: visible !important;
-    min-height: 0;
-    height: auto;
+    /* Flex-grow to fill remaining space so inner scroll has room */
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    height: auto !important;
   }
   .mm-stats-scroll {
-    /* Inner scroll disabled on tablet/mobile — outer mm-scene scrolls */
-    overflow-y: visible !important;
-    height: auto;
-    min-height: 0;
+    /* Inner scroll enabled — viewport is locked */
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    height: auto !important;
   }
 }
 
 @media (max-width: 700px) {
   .mm-stats-layout {
-    padding-bottom: 80px; /* room for footer tab bar */
+    padding-bottom: 0; /* inner scroll handles spacing — no need for page push */
+  }
+  .mm-stats-scroll {
+    padding-bottom: calc(80px + 16px) !important; /* room for footer tab bar inside scroll */
   }
   .mm-stats-left {
     width: 100% !important;
@@ -8385,6 +8460,20 @@ body.battery-saver .hud-btn-voice.speaking {
   }
 }
 
+.mm-view-stats .mm-scene {
+  padding: 12px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+}
+
+@media (min-width: 851px) {
+  .mm-view-stats .mm-scene {
+    padding: 20px !important;
+    align-items: center !important;
+  }
+}
+
 /* ── MATCH HISTORY SCROLL LOG OVERRIDES ── */
 .mm-history-layout {
   height: calc(100vh - 80px) !important;
@@ -8400,6 +8489,31 @@ body.battery-saver .hud-btn-voice.speaking {
   flex-direction: column !important;
   gap: 14px !important;
   padding: 10px 4px !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(52, 211, 153, 0.25) rgba(255, 255, 255, 0.02) !important;
+  /* Fades out scroll content at the top and bottom */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 12px), transparent 100%) !important;
+  mask-image: linear-gradient(to bottom, transparent 0%, black 12px, black calc(100% - 12px), transparent 100%) !important;
+}
+
+/* Custom Webkit Scrollbar for Match History Log */
+.mm-history-layout .mm-stats-scroll::-webkit-scrollbar {
+  width: 6px !important;
+  display: block !important;
+}
+.mm-history-layout .mm-stats-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 3px !important;
+}
+.mm-history-layout .mm-stats-scroll::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.25) !important;
+  border-radius: 3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+.mm-history-layout .mm-stats-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 211, 153, 0.45) !important;
 }
 
 .mm-history-card {
@@ -8433,36 +8547,41 @@ body.battery-saver .hud-btn-voice.speaking {
     height: 100% !important;
     max-height: 100% !important;
     width: 100% !important;
-    gap: 12px !important;
+    gap: 16px !important;
     overflow: hidden !important;
     align-self: stretch !important;
     margin: 0 !important;
+    padding-bottom: 12px !important;
   }
   
   .mm-history-layout .mm-stats-left {
     width: 100% !important;
     max-width: 100% !important;
     flex-shrink: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
   }
   
   .mm-history-layout .mm-stats-right {
-    flex: 1 !important;
+    flex: 1 1 0% !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
     max-height: none !important;
     overflow: hidden !important;
     padding: 20px 16px !important;
+    height: auto !important;
   }
   
   .mm-history-layout .mm-stats-scroll {
-    flex: 1 !important;
+    flex: 1 1 0% !important;
     min-height: 0 !important;
     overflow-y: auto !important;
     display: flex !important;
     flex-direction: column !important;
     gap: 14px !important;
     padding: 10px 4px !important;
+    height: auto !important;
   }
 }
 
@@ -8868,6 +8987,34 @@ body.battery-saver .hud-btn-voice.speaking {
   .game-over-buttons .btn-secondary {
     width: 100% !important;
   }
+}
+
+.hand-sort-button {
+  position: absolute;
+  top: -14px;
+  left: 12px;
+  background: rgba(0, 255, 240, 0.08);
+  border: 1px solid rgba(0, 255, 240, 0.25);
+  color: var(--color-cyan);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+  box-shadow: 0 0 10px rgba(0, 255, 240, 0.05);
+}
+.hand-sort-button:hover {
+  background: rgba(0, 255, 240, 0.18);
+  border-color: var(--color-cyan);
+  box-shadow: 0 0 12px rgba(0, 255, 240, 0.2);
+}
+.hand-sort-button:active {
+  transform: scale(0.95);
 }
 
 

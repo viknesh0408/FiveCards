@@ -75,6 +75,12 @@ public class GameWebSocketController {
                 activePlayerUser.setTimeoutCount(0);
             }
 
+            // Reject gameplay actions from spectators
+            boolean isPlayer = game.getPlayerById(playerId) != null;
+            if (!isPlayer && !"REJOIN".equals(type) && !"LEAVE".equals(type)) {
+                throw new IllegalStateException("Spectators cannot perform game actions.");
+            }
+
             try {
                 switch (type) {
                     case "READY":
@@ -187,7 +193,11 @@ public class GameWebSocketController {
                         break;
 
                     case "LEAVE":
-                        handlePlayerLeave(gameId, playerId);
+                        if (game.getPlayerById(playerId) != null) {
+                            handlePlayerLeave(gameId, playerId);
+                        } else {
+                            gameEngine.removeSpectator(gameId, playerId);
+                        }
                         break;
                 }
 
@@ -223,6 +233,14 @@ public class GameWebSocketController {
             if (!p.isAi()) {
                 messagingTemplate.convertAndSend("/topic/game/" + game.getGameId() + "/player/" + p.getId(), 
                         SanitizedGame.fromGame(game, p.getId()));
+            }
+        }
+
+        // Send customized private state to each spectator (hands revealed)
+        if (game.getSpectators() != null) {
+            for (Spectator s : game.getSpectators()) {
+                messagingTemplate.convertAndSend("/topic/game/" + game.getGameId() + "/spectator/" + s.getId(), 
+                        SanitizedGame.fromGame(game, s.getId(), true));
             }
         }
     }
@@ -605,10 +623,15 @@ public class GameWebSocketController {
                     
                     synchronized (game) {
                         if (!connectedPlayers.contains(playerId)) {
-                            System.out.println("[DISCONNECT] Player " + playerId + " did not reconnect. Removing player.");
-                            handlePlayerLeave(gameId, playerId);
+                            System.out.println("[DISCONNECT] Client " + playerId + " did not reconnect. Cleaning up.");
+                            if (game.getPlayerById(playerId) != null) {
+                                handlePlayerLeave(gameId, playerId);
+                            } else {
+                                gameEngine.removeSpectator(gameId, playerId);
+                                broadcastGameState(game);
+                            }
                         } else {
-                            System.out.println("[DISCONNECT] Player " + playerId + " successfully reconnected during grace period.");
+                            System.out.println("[DISCONNECT] Client " + playerId + " successfully reconnected during grace period.");
                         }
                     }
                 }, 20, TimeUnit.SECONDS);

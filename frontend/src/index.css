@@ -1991,6 +1991,7 @@ body::before {
   border-radius: 0;
   height: 100%;
   overflow-y: auto;
+  padding: calc(24px + env(safe-area-inset-top, 0px)) 24px 24px 24px !important;
 }
 
 /* Modal: phone */
@@ -2675,7 +2676,7 @@ body::before {
     width: 260px !important;
   }
   .side-scoreboard-container {
-    top: 50px !important;
+    top: 68px !important;
   }
 
   .modal-content {
@@ -2737,7 +2738,7 @@ body::before {
     width: 240px !important;
   }
   .side-scoreboard-container {
-    top: 40px !important;
+    top: 54px !important;
   }
 
   .modal-content {
@@ -2785,7 +2786,7 @@ body::before {
     width: 220px !important;
   }
   .side-scoreboard-container {
-    top: 32px !important;
+    top: 48px !important;
   }
 
   .modal-content {
@@ -3918,9 +3919,48 @@ body::before {
   }
 }
 
-/* Battery Saver Mode Overrides (Explicitly disables all continuous loop animations to save power) */
+/* Battery Saver Mode Overrides (Explicitly disables all intensive animations, filters, and rendering overhead) */
 body.battery-saver .menu-container::before,
-body.battery-saver .menu-container::after,
+body.battery-saver .menu-container::after {
+  display: none !important;
+}
+
+body.battery-saver .mm-orb {
+  animation: none !important;
+  display: none !important;
+}
+
+body.battery-saver .glass-panel,
+body.battery-saver .mm-form-panel,
+body.battery-saver .mm-rules-panel,
+body.battery-saver .mm-stats-right,
+body.battery-saver .side-scoreboard,
+body.battery-saver .modal-content,
+body.battery-saver .chat-panel-overlay,
+body.battery-saver .mm-footer-tabs,
+body.battery-saver .opponent-avatar-card,
+body.battery-saver .spectator-hud-panel,
+body.battery-saver .emoji-picker-options {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: rgba(8, 14, 28, 0.97) !important;
+}
+
+body.battery-saver .user-hand-cards .game-card,
+body.battery-saver .top-discard-card .game-card,
+body.battery-saver .card-flip-reveal .game-card {
+  animation: none !important;
+}
+
+body.battery-saver .joker-glow,
+body.battery-saver .game-card.joker-glow,
+body.battery-saver .user-hand-cards .game-card.joker-glow,
+body.battery-saver .card-pile.glow-cyan .game-card,
+body.battery-saver .card-pile.glow-cyan .card-back {
+  animation: none !important;
+  box-shadow: 0 0 6px var(--color-cyan-glow) !important;
+}
+
 body.battery-saver .floating-preview-card,
 body.battery-saver .turn-ring,
 body.battery-saver .clock-icon,

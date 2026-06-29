@@ -60,7 +60,14 @@ export const App: React.FC = () => {
 
   // Initialize Battery Saver class on launch and request motion permission on first interaction
   useEffect(() => {
-    const isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
+    let isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
+    const saved = localStorage.getItem('batterySaverEnabled');
+    if (saved === null) {
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || !!(window as any).Capacitor;
+      isBatterySaver = isMobile;
+      localStorage.setItem('batterySaverEnabled', isMobile ? 'true' : 'false');
+    }
+
     if (isBatterySaver) {
       document.body.classList.add('battery-saver');
     } else {

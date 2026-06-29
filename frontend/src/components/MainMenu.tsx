@@ -212,9 +212,15 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [roomId, setRoomId] = useState<string>('');
   const [soundEnabled, setSoundEnabled] = useState<boolean>(() => localStorage.getItem('soundEnabled') !== 'false');
   const [vibrationEnabled, setVibrationEnabled] = useState<boolean>(() => localStorage.getItem('vibrationEnabled') !== 'false');
-  const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => localStorage.getItem('batterySaverEnabled') === 'true');
+  const [batterySaverEnabled, setBatterySaverEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('batterySaverEnabled');
+    if (saved !== null) {
+      return saved === 'true';
+    }
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || !!(window as any).Capacitor;
+    return isMobile;
+  });
   const [cardGlowEnabled, setCardGlowEnabled] = useState<boolean>(() => localStorage.getItem('cardGlowEnabled') !== 'false');
-  const [shakeToSortEnabled, setShakeToSortEnabled] = useState<boolean>(() => localStorage.getItem('shakeToSortEnabled') !== 'false');
   const [animIn, setAnimIn] = useState(true);
   const [hasDailyNotif, setHasDailyNotif] = useState<boolean>(() => hasUnclaimedDaily());
   const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
@@ -373,8 +379,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     await savePersistentItem('batterySaverEnabled', batterySaverEnabled ? 'true' : 'false');
     await savePersistentItem('cardGlowEnabled', cardGlowEnabled ? 'true' : 'false');
     localStorage.setItem('cardGlowEnabled', cardGlowEnabled ? 'true' : 'false');
-    await savePersistentItem('shakeToSortEnabled', shakeToSortEnabled ? 'true' : 'false');
-    localStorage.setItem('shakeToSortEnabled', shakeToSortEnabled ? 'true' : 'false');
     if (batterySaverEnabled) document.body.classList.add('battery-saver');
     else document.body.classList.remove('battery-saver');
     navigate('main');
@@ -767,13 +771,6 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                   <span className="mm-setting-hint">Glow for Jokers and matches</span>
                 </div>
                 <Toggle id="glw" checked={cardGlowEnabled} onChange={setCardGlowEnabled} />
-              </div>
-              <div className="mm-setting-row">
-                <div className="mm-setting-info">
-                  <span className="mm-setting-name">📳 Shake to Sort</span>
-                  <span className="mm-setting-hint">Shake device to sort cards</span>
-                </div>
-                <Toggle id="shk" checked={shakeToSortEnabled} onChange={setShakeToSortEnabled} />
               </div>
               <div className="mm-setting-row">
                 <div className="mm-setting-info">

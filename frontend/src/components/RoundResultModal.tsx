@@ -45,6 +45,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
   const { currentRound, players, currentRoundNumber, maxRounds } = gameState;
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
   const [showStreakCelebration, setShowStreakCelebration] = useState<boolean>(false);
+  const isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
 
   React.useEffect(() => {
     if (!currentRound) return;
@@ -289,7 +290,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               Awesomeness! 🚀
             </button>
           </div>
-          {Array.from({ length: 22 }).map((_, i) => {
+          {!isBatterySaver && Array.from({ length: 22 }).map((_, i) => {
             const left = Math.random() * 100;
             const delay = Math.random() * 2.5;
             const duration = 2 + Math.random() * 2;

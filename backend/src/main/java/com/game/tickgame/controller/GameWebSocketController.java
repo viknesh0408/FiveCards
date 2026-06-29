@@ -49,6 +49,9 @@ public class GameWebSocketController {
     // Set to track connected player IDs
     private final Set<String> connectedPlayers = ConcurrentHashMap.newKeySet();
 
+    // Map to track active session IDs for each player to prevent disconnect/reconnect race conditions
+    private final ConcurrentHashMap<String, String> activePlayerSessions = new ConcurrentHashMap<>();
+
     @MessageMapping("/game/{gameId}/action")
     public void handleGameAction(@DestinationVariable String gameId, GameAction action, SimpMessageHeaderAccessor headerAccessor) {
         if (headerAccessor.getSessionAttributes() != null) {
@@ -68,6 +71,10 @@ public class GameWebSocketController {
 
             // Track that this player is connected
             connectedPlayers.add(playerId);
+            String sessionId = headerAccessor.getSessionId();
+            if (sessionId != null) {
+                activePlayerSessions.put(playerId, sessionId);
+            }
 
             // Reset timeout count on manual activity
             Player activePlayerUser = game.getPlayerById(playerId);
@@ -609,14 +616,23 @@ public class GameWebSocketController {
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         SimpMessageHeaderAccessor headers = SimpMessageHeaderAccessor.wrap(event.getMessage());
+        String sessionId = headers.getSessionId();
         Map<String, Object> sessionAttributes = headers.getSessionAttributes();
         if (sessionAttributes != null) {
             String gameId = (String) sessionAttributes.get("gameId");
             String playerId = (String) sessionAttributes.get("playerId");
 
-            if (gameId != null && playerId != null) {
-                // Remove from active connected set
-                connectedPlayers.remove(playerId);
+            if (gameId != null && playerId != null && sessionId != null) {
+                // Only disconnect if the session that disconnected is the active one
+                String activeSession = activePlayerSessions.get(playerId);
+                if (sessionId.equals(activeSession)) {
+                    connectedPlayers.remove(playerId);
+                    activePlayerSessions.remove(playerId);
+                    System.out.println("[DISCONNECT] Active session disconnected for player " + playerId + ". Scheduling 60s grace period.");
+                } else {
+                    System.out.println("[DISCONNECT] Old/Inactive session " + sessionId + " disconnected for player " + playerId + ". Ignoring.");
+                    return;
+                }
                 
                 // Schedule a grace period check to allow rejoining on refresh
                 aiExecutor.schedule(() -> {
@@ -628,7 +644,7 @@ public class GameWebSocketController {
                     
                     synchronized (game) {
                         if (!connectedPlayers.contains(playerId)) {
-                            System.out.println("[DISCONNECT] Client " + playerId + " did not reconnect. Cleaning up.");
+                            System.out.println("[DISCONNECT] Client " + playerId + " did not reconnect after 60s. Kicking.");
                             if (game.getPlayerById(playerId) != null) {
                                 handlePlayerLeave(gameId, playerId);
                             } else {
@@ -636,10 +652,10 @@ public class GameWebSocketController {
                                 broadcastGameState(game);
                             }
                         } else {
-                            System.out.println("[DISCONNECT] Client " + playerId + " successfully reconnected during grace period.");
+                            System.out.println("[DISCONNECT] Client " + playerId + " successfully reconnected during 60s grace period.");
                         }
                     }
-                }, 20, TimeUnit.SECONDS);
+                }, 60, TimeUnit.SECONDS);
             }
         }
     }

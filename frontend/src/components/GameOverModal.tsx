@@ -22,6 +22,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 }) => {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState<boolean>(false);
   const [statsResults, setStatsResults] = useState<PlayerStats | null>(null);
+  const isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
 
   const { players, winnerId } = gameState;
   const hasPlayerLeft = !!(gameState.isMultiplayer || (gameState as any).multiplayer) && players.length <= 1;
@@ -161,6 +162,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   const podium3rdName = podium3rd ? podium3rd.name : '';
 
   const renderConfetti = () => {
+    if (isBatterySaver) return null;
     const colors = ['#22d3ee', '#fbbf24', '#f87171', '#34d399', '#c084fc'];
     return (
       <div className="confetti-wrapper">

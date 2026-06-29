@@ -34,10 +34,15 @@ export function useVoiceChat({
   connected,
 }: UseVoiceChatOptions): VoiceChatState {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(false);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [isSpeakerMuted, setIsSpeakerMuted] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(true); // Default to muted (not mic)
+  const [isSpeakerMuted, setIsSpeakerMuted] = useState<boolean>(false); // Default to unmuted (speaker on)
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [speakingStates, setSpeakingStates] = useState<Record<string, boolean>>({});
+
+  const isMutedRef = useRef<boolean>(true);
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
 
   // Local mic stream
   const localStreamRef = useRef<MediaStream | null>(null);
@@ -232,7 +237,7 @@ export function useVoiceChat({
       setIsVoiceEnabled(true);
 
       // Apply current mute state
-      stream.getAudioTracks().forEach((t) => { t.enabled = !isMuted; });
+      stream.getAudioTracks().forEach((t) => { t.enabled = !isMutedRef.current; });
 
       // Subscribe to our private signaling topic
       if (stompClientRef.current && !signalSubRef.current) {
@@ -266,7 +271,7 @@ export function useVoiceChat({
         console.error('[Voice] getUserMedia error:', e);
       }
     }
-  }, [gameId, connected, isMuted, stompClientRef, currentPlayerId, humanPlayerIds, handleSignal, startSpeakingDetection, connectToPeer]);
+  }, [gameId, connected, stompClientRef, currentPlayerId, humanPlayerIds, handleSignal, startSpeakingDetection, connectToPeer]);
 
   // ─── Disable voice ────────────────────────────────────────────────────────
 
@@ -318,6 +323,13 @@ export function useVoiceChat({
         setTimeout(() => connectToPeer(peerId), i * 200);
       });
   }, [isVoiceEnabled, humanPlayerIds, currentPlayerId, connectToPeer]);
+
+  // ─── Auto-join voice chat when match starts / connects ────────────────────
+  useEffect(() => {
+    if (connected && gameId && !isVoiceEnabled && !localStreamRef.current) {
+      enableVoice();
+    }
+  }, [connected, gameId, enableVoice, isVoiceEnabled]);
 
   // ─── Cleanup on unmount ───────────────────────────────────────────────────
 

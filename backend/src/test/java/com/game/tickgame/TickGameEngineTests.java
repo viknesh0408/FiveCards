@@ -37,8 +37,8 @@ public class TickGameEngineTests {
     @Test
     public void testPersistence() {
         Game game = gameEngine.createGame("TEST_PER", 5);
-        gameEngine.addPlayer("TEST_PER", "P1", "Alice", false, null);
-        gameEngine.addPlayer("TEST_PER", "P2", "Bot1", true, AiLevel.EASY);
+        gameEngine.addPlayer("TEST_PER", "P1", "Alice", false, null, "none", "none");
+        gameEngine.addPlayer("TEST_PER", "P2", "Bot1", true, AiLevel.EASY, "none", "none");
         gameEngine.startNewGame("TEST_PER");
         
         // Save
@@ -246,9 +246,9 @@ public class TickGameEngineTests {
     public void testAiLogicAndSimulation() {
         Game game = gameEngine.createGame("SIM1", 5); // 5 rounds simulation
         
-        gameEngine.addPlayer("SIM1", "AI_E", "EasyBot", true, AiLevel.EASY);
-        gameEngine.addPlayer("SIM1", "AI_M", "MediumBot", true, AiLevel.MEDIUM);
-        gameEngine.addPlayer("SIM1", "AI_H", "HardBot", true, AiLevel.HARD);
+        gameEngine.addPlayer("SIM1", "AI_E", "EasyBot", true, AiLevel.EASY, "none", "none");
+        gameEngine.addPlayer("SIM1", "AI_M", "MediumBot", true, AiLevel.MEDIUM, "none", "none");
+        gameEngine.addPlayer("SIM1", "AI_H", "HardBot", true, AiLevel.HARD, "none", "none");
 
         assertEquals(3, game.getPlayers().size());
 
@@ -300,8 +300,8 @@ public class TickGameEngineTests {
     @Test
     public void testDiscardFirstAndMatchComboFlow() {
         Game game = gameEngine.createGame("MATCH_FLOW", 5);
-        Player p1 = gameEngine.addPlayer("MATCH_FLOW", "P1", "Alice", false, null);
-        Player p2 = gameEngine.addPlayer("MATCH_FLOW", "P2", "Bob", false, null);
+        Player p1 = gameEngine.addPlayer("MATCH_FLOW", "P1", "Alice", false, null, "none", "none");
+        Player p2 = gameEngine.addPlayer("MATCH_FLOW", "P2", "Bob", false, null, "none", "none");
         
         gameEngine.startNewGame("MATCH_FLOW");
         Round round = game.getCurrentRound();
@@ -384,8 +384,8 @@ public class TickGameEngineTests {
     @Test
     public void testNewTickRulesFlow() {
         Game game = gameEngine.createGame("TICK_FLOW", 5);
-        Player p1 = gameEngine.addPlayer("TICK_FLOW", "P1", "Alice", false, null);
-        Player p2 = gameEngine.addPlayer("TICK_FLOW", "P2", "Bob", false, null);
+        Player p1 = gameEngine.addPlayer("TICK_FLOW", "P1", "Alice", false, null, "none", "none");
+        Player p2 = gameEngine.addPlayer("TICK_FLOW", "P2", "Bob", false, null, "none", "none");
 
         gameEngine.startNewGame("TICK_FLOW");
         Round round = game.getCurrentRound();
@@ -421,8 +421,8 @@ public class TickGameEngineTests {
     @Test
     public void testTickAfterDiscardThrows() {
         Game game = gameEngine.createGame("TICK_FAIL", 5);
-        Player p1 = gameEngine.addPlayer("TICK_FAIL", "P1", "Alice", false, null);
-        Player p2 = gameEngine.addPlayer("TICK_FAIL", "P2", "Bob", false, null);
+        Player p1 = gameEngine.addPlayer("TICK_FAIL", "P1", "Alice", false, null, "none", "none");
+        Player p2 = gameEngine.addPlayer("TICK_FAIL", "P2", "Bob", false, null, "none", "none");
 
         gameEngine.startNewGame("TICK_FAIL");
         Round round = game.getCurrentRound();
@@ -451,8 +451,8 @@ public class TickGameEngineTests {
         // Create a game
         String gameId = "TIMEOUT_TEST";
         Game game = gameEngine.createGame(gameId, 5);
-        Player p1 = gameEngine.addPlayer(gameId, "P1", "Alice", false, null);
-        Player p2 = gameEngine.addPlayer(gameId, "P2", "Bob", false, null);
+        Player p1 = gameEngine.addPlayer(gameId, "P1", "Alice", false, null, "none", "none");
+        Player p2 = gameEngine.addPlayer(gameId, "P2", "Bob", false, null, "none", "none");
         
         gameEngine.startNewGame(gameId);
         Round round = game.getCurrentRound();
@@ -491,8 +491,8 @@ public class TickGameEngineTests {
         // Run game setups until a printed Joker is selected as the joker card
         for (int i = 0; i < 500; i++) {
             Game game = gameEngine.createGame("JOKER_TEST_" + i, 1);
-            gameEngine.addPlayer("JOKER_TEST_" + i, "P1", "Alice", false, null);
-            gameEngine.addPlayer("JOKER_TEST_" + i, "P2", "Bob", false, null);
+            gameEngine.addPlayer("JOKER_TEST_" + i, "P1", "Alice", false, null, "none", "none");
+            gameEngine.addPlayer("JOKER_TEST_" + i, "P2", "Bob", false, null, "none", "none");
             gameEngine.startNewGame("JOKER_TEST_" + i);
             
             Round round = game.getCurrentRound();

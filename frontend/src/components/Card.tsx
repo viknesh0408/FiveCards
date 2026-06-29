@@ -62,7 +62,7 @@ export const Card: React.FC<CardProps> = ({
   const suitSymbol = getSuitSymbol(card.suit);
   const rankDisplay = getRankDisplay(card.rank);
   const suitClass = getSuitClass(card.suit);
-  const isJoker = card.joker || (card.rank && jokerRank && card.rank === jokerRank);
+  const isJoker = card.joker || !!(card.rank && jokerRank && card.rank.toString().toUpperCase() === jokerRank.toString().toUpperCase());
 
   const isPrintedJoker = isJoker && !card.suit && !card.rank;
   const cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';

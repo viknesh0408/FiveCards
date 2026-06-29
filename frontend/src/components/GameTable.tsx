@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { SanitizedGame, Spectator, ChatMessage } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { getRankDisplay } from '../utils/gameHelpers';
@@ -9,8 +9,6 @@ import { Share } from '@capacitor/share';
 import { Clipboard } from '@capacitor/clipboard';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 import type { Client } from '@stomp/stompjs';
-import { Haptics } from '@capacitor/haptics';
-import { soundEffects } from '../utils/soundEffects';
 
 interface GameTableProps {
   gameState: SanitizedGame;
@@ -68,7 +66,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   const [tutorialStep, setTutorialStep] = useState<number>(0);
   const [copiedToastText, setCopiedToastText] = useState<string | null>(null);
   const [revealHands, setRevealHands] = useState<boolean>(true);
-  const [showSortToast, setShowSortToast] = useState<boolean>(false);
 
   const [showChatPanel, setShowChatPanel] = useState<boolean>(false);
   const [chatInput, setChatInput] = useState<string>('');
@@ -424,100 +421,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     }
   }, [gameState, displayedGameState]);
 
-  const sortHand = useCallback(() => {
-    const sorted = [...orderedHand].sort((a, b) => {
-      if (a.joker && !b.joker) return -1;
-      if (!a.joker && b.joker) return 1;
-      if (a.joker && b.joker) return 0;
 
-      const rankOrder: Record<string, number> = {
-        'ACE': 1, 'TWO': 2, 'THREE': 3, 'FOUR': 4, 'FIVE': 5,
-        'SIX': 6, 'SEVEN': 7, 'EIGHT': 8, 'NINE': 9, 'TEN': 10,
-        'JACK': 11, 'QUEEN': 12, 'KING': 13
-      };
-      const rankA = a.rank || '';
-      const rankB = b.rank || '';
-      const valA = rankOrder[rankA] || 99;
-      const valB = rankOrder[rankB] || 99;
-
-      if (valA !== valB) {
-        return valA - valB;
-      }
-
-      const suitOrder: Record<string, number> = {
-        'HEARTS': 1,
-        'DIAMONDS': 2,
-        'CLUBS': 3,
-        'SPADES': 4
-      };
-      const suitA = a.suit || '';
-      const suitB = b.suit || '';
-      return (suitOrder[suitA] || 99) - (suitOrder[suitB] || 99);
-    });
-
-    setAnimateHand(false);
-    setOrderedHand(sorted);
-    setTimeout(() => setAnimateHand(true), 150);
-
-    const vibrationEnabled = localStorage.getItem('vibrationEnabled') !== 'false';
-    if (vibrationEnabled) {
-      Haptics.vibrate({ duration: 100 }).catch(() => {});
-    }
-    soundEffects.playClick();
-  }, [orderedHand]);
-
-  useEffect(() => {
-    if (isSpectator) return;
-
-    let lastX: number | null = null;
-    let lastY: number | null = null;
-    let lastZ: number | null = null;
-    let lastTime = 0;
-    const SHAKE_LIMIT = 15;
-    const COOLDOWN = 1200;
-
-    const handleDeviceMotion = (e: DeviceMotionEvent) => {
-      const shakeEnabled = localStorage.getItem('shakeToSortEnabled') !== 'false';
-      if (!shakeEnabled) return;
-
-      const acc = e.acceleration || e.accelerationIncludingGravity;
-      if (!acc) return;
-
-      const currentTime = Date.now();
-      if (currentTime - lastTime < 100) return;
-
-      const x = acc.x || 0;
-      const y = acc.y || 0;
-      const z = acc.z || 0;
-
-      if (lastX !== null && lastY !== null && lastZ !== null) {
-        const deltaX = Math.abs(x - lastX);
-        const deltaY = Math.abs(y - lastY);
-        const deltaZ = Math.abs(z - lastZ);
-
-        if ((deltaX > SHAKE_LIMIT && deltaY > SHAKE_LIMIT) || 
-            (deltaX > SHAKE_LIMIT && deltaZ > SHAKE_LIMIT) || 
-            (deltaY > SHAKE_LIMIT && deltaZ > SHAKE_LIMIT)) {
-          
-          if (currentTime - lastTime > COOLDOWN) {
-            lastTime = currentTime;
-            sortHand();
-            setShowSortToast(true);
-            setTimeout(() => setShowSortToast(false), 1200);
-          }
-        }
-      }
-
-      lastX = x;
-      lastY = y;
-      lastZ = z;
-    };
-
-    window.addEventListener('devicemotion', handleDeviceMotion);
-    return () => {
-      window.removeEventListener('devicemotion', handleDeviceMotion);
-    };
-  }, [sortHand, isSpectator]);
 
   const handleDragStart = (e: React.DragEvent, idx: number) => {
     draggedIndexRef.current = idx;
@@ -1455,9 +1359,15 @@ export const GameTable: React.FC<GameTableProps> = ({
                 return disp1 === disp2;
               };
 
+              const isCardJoker = (card: any) => {
+                if (!card) return false;
+                const jr = currentRound?.jokerRank;
+                return !!(card.joker || (card.rank && jr && card.rank.toString().toUpperCase() === jr.toString().toUpperCase()));
+              };
+
               const isMatch = !!(topDiscard && (
                 (c.rank && topDiscard.rank && isRankMatch(c.rank, topDiscard.rank)) ||
-                (c.joker && topDiscard.joker)
+                (isCardJoker(c) && isCardJoker(topDiscard))
               ));
 
               return (
@@ -1668,34 +1578,6 @@ export const GameTable: React.FC<GameTableProps> = ({
             <polyline points="20 6 9 17 4 12" />
           </svg>
           {copiedToastText}
-        </div>
-      )}
-
-      {/* Toast sorted confirmation */}
-      {showSortToast && (
-        <div 
-          className="glass-panel"
-          style={{
-            position: 'fixed',
-            bottom: '140px',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            padding: '8px 16px',
-            background: 'rgba(0, 255, 240, 0.1)',
-            border: '1px solid rgba(0, 255, 240, 0.3)',
-            color: 'var(--color-cyan)',
-            borderRadius: '20px',
-            fontSize: '0.8rem',
-            fontWeight: 800,
-            zIndex: 999,
-            pointerEvents: 'none',
-            boxShadow: '0 0 10px rgba(0, 255, 240, 0.15)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          🃏 Cards Sorted!
         </div>
       )}
 

@@ -28,6 +28,7 @@ interface GameTableProps {
   connected: boolean;
   chatMessages: ChatMessage[];
   onSendChatMessage: (msg: string) => void;
+  isOffline?: boolean;
 }
 
 export const GameTable: React.FC<GameTableProps> = ({
@@ -47,6 +48,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   connected,
   chatMessages,
   onSendChatMessage,
+  isOffline = false,
 }) => {
   const [displayedGameState, setDisplayedGameState] = useState<SanitizedGame>(gameState);
   const { gameId, players, currentRound, status, isMultiplayer } = displayedGameState;
@@ -117,6 +119,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     humanPlayerIds,
     stompClientRef,
     connected,
+    isOffline,
   });
   const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -347,6 +350,31 @@ export const GameTable: React.FC<GameTableProps> = ({
       return newOrderedHand;
     });
   }, [self?.hand]);
+
+  const sortHand = () => {
+    setOrderedHand(prev => {
+      const sorted = [...prev].sort((a, b) => {
+        // 1. Jokers / Joker rank at the front
+        const jr = currentRound?.jokerRank;
+        const isAJoker = !!(a.joker || (a.rank && jr && a.rank.toString().toUpperCase() === jr.toString().toUpperCase()));
+        const isBJoker = !!(b.joker || (b.rank && jr && b.rank.toString().toUpperCase() === jr.toString().toUpperCase()));
+
+        if (isAJoker && !isBJoker) return -1;
+        if (!isAJoker && isBJoker) return 1;
+
+        // 2. Sort by value ascending
+        const valA = a.value !== undefined ? a.value : 0;
+        const valB = b.value !== undefined ? b.value : 0;
+        if (valA !== valB) return valA - valB;
+
+        // 3. Sort by suit name
+        const suitA = a.suit || '';
+        const suitB = b.suit || '';
+        return suitA.localeCompare(suitB);
+      });
+      return sorted;
+    });
+  };
 
   const handleDraw = (fromDiscard: boolean) => {
     if (drawTimeoutRef.current) {
@@ -621,11 +649,14 @@ export const GameTable: React.FC<GameTableProps> = ({
     setSelectedClientIds([]);
   };
 
-
-
   const shareRoomCode = async () => {
     const isNative = !!(window as any).Capacitor;
-    const shareText = `Join my game room on 5 Cards! Room Code: ${gameId}`;
+    let origin = window.location.origin;
+    if (origin.includes('capacitor') || (origin.includes('localhost') && !origin.includes('5173'))) {
+      origin = 'https://fivecards.onrender.com';
+    }
+    const shareUrl = `${origin}/?room=${gameId}`;
+    const shareText = `Join my game room on 5 Cards! Room Code: ${gameId}\nClick here to join directly: ${shareUrl}`;
 
     if (isNative) {
       try {
@@ -645,9 +676,9 @@ export const GameTable: React.FC<GameTableProps> = ({
       // Fallback to Clipboard for native app
       try {
         await Clipboard.write({
-          string: gameId
+          string: shareUrl
         });
-        showToast("Room code copied to clipboard!");
+        showToast("Direct link copied to clipboard!");
         return;
       } catch (err) {
         console.error('Capacitor native copy failed:', err);
@@ -666,7 +697,6 @@ export const GameTable: React.FC<GameTableProps> = ({
         return;
       } catch (err) {
         console.log('Web share failed or was cancelled:', err);
-        // If user cancelled, don't fallback to clipboard copy
         if (err instanceof Error && err.name === 'AbortError') {
           return;
         }
@@ -676,21 +706,21 @@ export const GameTable: React.FC<GameTableProps> = ({
     // Modern clipboard API check or fallback text copy (e.g. non-secure HTTP context)
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        await navigator.clipboard.writeText(gameId);
-        showToast("Room code copied to clipboard!");
+        await navigator.clipboard.writeText(shareText);
+        showToast("Room invitation copied to clipboard!");
       } else {
-        fallbackWebCopy();
+        fallbackWebCopy(shareText);
       }
     } catch (err) {
       console.warn('Modern navigator.clipboard failed, attempting text area fallback:', err);
-      fallbackWebCopy();
+      fallbackWebCopy(shareText);
     }
   };
 
-  const fallbackWebCopy = () => {
+  const fallbackWebCopy = (textToCopy: string) => {
     try {
       const textArea = document.createElement("textarea");
-      textArea.value = gameId;
+      textArea.value = textToCopy;
       textArea.style.position = "fixed";
       textArea.style.top = "0";
       textArea.style.left = "0";
@@ -719,7 +749,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       document.body.removeChild(textArea);
       
       if (successful) {
-        showToast("Room code copied to clipboard!");
+        showToast("Room invitation copied to clipboard!");
       } else {
         showToast(`Room code: ${gameId}`);
       }
@@ -1334,6 +1364,15 @@ export const GameTable: React.FC<GameTableProps> = ({
           </div>
         ) : (
           <div className={`user-hand-cards ${isPickingFromPile ? 'no-pick-transition' : ''} ${!animateHand ? 'no-appear-animation' : ''} ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'user-hand-cards' ? 'tutorial-highlight' : ''}`} style={{ position: 'relative', overflow: 'visible' }}>
+            {!isSpectator && self && self.hand && self.hand.length > 1 && (
+              <button 
+                className="hand-sort-button" 
+                onClick={sortHand} 
+                title="Sort hand by rank/value"
+              >
+                <span>🔀</span> Sort
+              </button>
+            )}
             {/* Hand Value Sum - Top Right Corner */}
             {self && (
               <div className="hand-value-badge">

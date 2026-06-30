@@ -56,6 +56,7 @@ export const App: React.FC = () => {
     isReconnecting,
     chatMessages,
     sendChatMessage,
+    isOffline,
   } = useWebSocket();
 
   // Initialize Battery Saver class on launch and request motion permission on first interaction
@@ -351,6 +352,21 @@ export const App: React.FC = () => {
         });
     }
   }, []);
+
+  // Handle URL deep link room join
+  useEffect(() => {
+    if (storageInitialized && screen === 'menu' && navigator.onLine) {
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get('room')?.trim().toUpperCase();
+      if (roomParam && roomParam.length >= 4) {
+        // Clear search parameter from URL to prevent rejoin on reload
+        window.history.replaceState({}, document.title, window.location.pathname);
+        const stats = getLocalStats();
+        const name = stats.name || 'Player';
+        handleJoinOnline(roomParam, name);
+      }
+    }
+  }, [storageInitialized, screen]);
 
   // Disable pinch-to-zoom and gesture zooming globally
   useEffect(() => {
@@ -653,6 +669,7 @@ export const App: React.FC = () => {
             connected={connected}
             chatMessages={chatMessages}
             onSendChatMessage={sendChatMessage}
+            isOffline={isOffline}
           />
 
           {/* Round Results Screen Overlay */}

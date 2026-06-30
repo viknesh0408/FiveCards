@@ -210,6 +210,8 @@ export const useWebSocket = () => {
   const [latestReaction, setLatestReaction] = useState<{ playerId: string; emoji: string; id: string } | null>(null);
   const [isSpectatorState, setIsSpectatorState] = useState<boolean>(false);
   const [isOffline, setIsOffline] = useState<boolean>(false);
+  const isSpectatorRef = useRef<boolean>(false);
+  const isOfflineRef = useRef<boolean>(false);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
 
   const [reconnectCountdown, setReconnectCountdown] = useState<number | null>(null);
@@ -248,6 +250,8 @@ export const useWebSocket = () => {
     setChatMessages([]);
     setIsSpectatorState(false);
     setIsOffline(false);
+    isSpectatorRef.current = false;
+    isOfflineRef.current = false;
     localGameRef.current = null;
     aiTurnStartedRef.current = null;
   }, [disconnectSocket]);
@@ -261,7 +265,7 @@ export const useWebSocket = () => {
   const handleDisconnectOrClose = useCallback(() => {
     // If the client was intentionally deactivated (stompClientRef.current is null), do not reconnect
     if (!stompClientRef.current) return;
-    if (isOffline) return;
+    if (isOfflineRef.current) return;
 
     setIsReconnecting(true);
     if (countdownIntervalRef.current) return; // Reconnect is already counting down
@@ -285,11 +289,11 @@ export const useWebSocket = () => {
         // Trigger actual reconnect attempt via ref
         if (connectRef.current && gameIdRef.current && playerIdRef.current) {
           console.log(`[WS] Reconnect attempt #${attempt} triggered.`);
-          connectRef.current(gameIdRef.current, playerIdRef.current, isSpectatorState, isOffline, true);
+          connectRef.current(gameIdRef.current, playerIdRef.current, isSpectatorRef.current, isOfflineRef.current, true);
         }
       }
     }, 1000);
-  }, [isOffline, isSpectatorState]);
+  }, []);
 
   const connect = useCallback((gameId: string, playerId: string, isSpectator = false, isOfflineOption = false, isReconnectAttempt = false) => {
     connectRef.current = connect;
@@ -308,6 +312,8 @@ export const useWebSocket = () => {
 
     gameIdRef.current = gameId;
     playerIdRef.current = playerId;
+    isSpectatorRef.current = isSpectator;
+    isOfflineRef.current = isOfflineOption;
     setIsSpectatorState(isSpectator);
     setIsOffline(isOfflineOption);
     setError(null);
@@ -341,12 +347,17 @@ export const useWebSocket = () => {
       return;
     }
 
+    const isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
     const client = new Client({
       brokerURL: WS_URL,
       reconnectDelay: 0, // Disable Stomp auto-reconnect delay, we will control it exponentially!
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
+      heartbeatIncoming: isBatterySaver ? 25000 : 10000,
+      heartbeatOutgoing: isBatterySaver ? 25000 : 10000,
       onConnect: () => {
+        if (stompClientRef.current !== client) {
+          console.log('[WS] onConnect ignored from old client instance.');
+          return;
+        }
         setConnected(true);
         reconnectAttemptRef.current = 0;
         setReconnectCountdown(null);
@@ -358,6 +369,7 @@ export const useWebSocket = () => {
 
         // 1. Subscribe to public state channel
         client.subscribe(`/topic/game/${gameId}/state`, (message) => {
+          if (stompClientRef.current !== client) return;
           const rawGame = JSON.parse(message.body);
           const updatedGame: SanitizedGame = {
             ...rawGame,
@@ -390,6 +402,7 @@ export const useWebSocket = () => {
           : `/topic/game/${gameId}/player/${playerId}`;
 
         client.subscribe(privateChannel, (message) => {
+          if (stompClientRef.current !== client) return;
           const payload = JSON.parse(message.body);
           if (payload.error) {
             setError(payload.error);
@@ -426,6 +439,7 @@ export const useWebSocket = () => {
 
         // 2.5 Subscribe to reactions topic
         client.subscribe(`/topic/game/${gameId}/reactions`, (message) => {
+          if (stompClientRef.current !== client) return;
           const payload = JSON.parse(message.body);
           setLatestReaction({
             playerId: payload.playerId,
@@ -436,6 +450,7 @@ export const useWebSocket = () => {
 
         // 2.6 Subscribe to chat topic
         client.subscribe(`/topic/game/${gameId}/chat`, (message) => {
+          if (stompClientRef.current !== client) return;
           const payload = JSON.parse(message.body);
           setChatMessages(prev => [...prev, {
             id: payload.id || Math.random().toString(36).substring(2, 9),
@@ -456,14 +471,26 @@ export const useWebSocket = () => {
         });
       },
       onDisconnect: () => {
+        if (stompClientRef.current !== client) {
+          console.log('[WS] onDisconnect ignored from old client instance.');
+          return;
+        }
         setConnected(false);
         handleDisconnectOrClose();
       },
       onWebSocketClose: () => {
+        if (stompClientRef.current !== client) {
+          console.log('[WS] onWebSocketClose ignored from old client instance.');
+          return;
+        }
         setConnected(false);
         handleDisconnectOrClose();
       },
       onStompError: (frame) => {
+        if (stompClientRef.current !== client) {
+          console.log('[WS] onStompError ignored from old client instance.');
+          return;
+        }
         console.error('Broker reported error: ' + frame.headers['message']);
         console.error('Additional details: ' + frame.body);
         setError('WebSocket Connection Error');

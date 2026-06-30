@@ -24,6 +24,7 @@ interface UseVoiceChatOptions {
   humanPlayerIds: string[]; // all human player IDs in the room (excluding self & AI bots)
   stompClientRef: React.MutableRefObject<Client | null>;
   connected: boolean; // whether STOMP is connected
+  isOffline?: boolean;
 }
 
 export function useVoiceChat({
@@ -32,6 +33,7 @@ export function useVoiceChat({
   humanPlayerIds,
   stompClientRef,
   connected,
+  isOffline = false,
 }: UseVoiceChatOptions): VoiceChatState {
   const [isVoiceEnabled, setIsVoiceEnabled] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(true); // Default to muted (not mic)
@@ -196,7 +198,7 @@ export function useVoiceChat({
         const changed = Object.keys(updates).some((k) => prev[k] !== updates[k]);
         return changed ? { ...prev, ...updates } : prev;
       });
-    }, 150);
+    }, 250);
   }, []);
 
   const stopSpeakingDetection = useCallback(() => {
@@ -326,10 +328,19 @@ export function useVoiceChat({
 
   // ─── Auto-join voice chat when match starts / connects ────────────────────
   useEffect(() => {
+    const isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
+    if (isOffline) {
+      console.log('[Voice] Offline mode. Auto-join voice chat bypassed.');
+      return;
+    }
+    if (isBatterySaver) {
+      console.log('[Voice] Battery Saver is enabled. Auto-join voice chat bypassed.');
+      return;
+    }
     if (connected && gameId && !isVoiceEnabled && !localStreamRef.current) {
       enableVoice();
     }
-  }, [connected, gameId, enableVoice, isVoiceEnabled]);
+  }, [connected, gameId, enableVoice, isVoiceEnabled, isOffline]);
 
   // ─── Cleanup on unmount ───────────────────────────────────────────────────
 

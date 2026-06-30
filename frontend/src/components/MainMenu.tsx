@@ -269,7 +269,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         setSelectedAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
       }
       if (v === 'online-create') {
-        if (maxRounds !== 3 && maxRounds !== 10 && maxRounds !== 30) {
+        if (maxRounds !== 3 && maxRounds !== 10 && maxRounds !== 20 && maxRounds !== 30) {
           setMaxRounds(10);
         }
       }
@@ -684,7 +684,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
             <div className="mm-form-body">
               <PickerRow label="Rounds">
-                {([3, 10, 30] as const).map(r => (
+                {([3, 10, 20, 30] as const).map(r => (
                   <button
                     key={r}
                     className={`mm-chip ${maxRounds === r ? 'active' : ''}`}
@@ -727,13 +727,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             </div>
 
             <div className="mm-spectate-buttons-container" style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '16px' }}>
-              <button className="mm-cta-btn" style={{ flex: 1, margin: 0 }} onClick={handleJoinOnline} disabled={roomId.length < 4}>
-                Join Room 🚀
-              </button>
               <button className="mm-cta-btn mm-btn-spectate" style={{ flex: 1, margin: 0, backgroundColor: 'rgba(0,255,240,0.05)', border: '2px solid var(--color-cyan)', color: 'var(--color-cyan)', boxShadow: '0 0 10px rgba(0,255,240,0.1)' }} onClick={handleSpectateOnline} disabled={roomId.length < 4}>
                 Spectate 👁️
               </button>
+              <button className="mm-cta-btn" style={{ flex: 1, margin: 0 }} onClick={handleJoinOnline} disabled={roomId.length < 4}>
+                Join Room 🚀
+              </button>
             </div>
+
           </div>
         )}
 

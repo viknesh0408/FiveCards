@@ -321,7 +321,6 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                   <span>{p.name}</span>
                   {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
-                  {p.isAi && <span style={{ fontSize: '0.75rem', color: 'var(--color-gold)' }}>[BOT]</span>}
                 </span>
               </div>
               <strong className="text-gold" style={{ fontSize: '1.15rem' }}>{p.totalScore} pts</strong>
@@ -354,7 +353,6 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                       </div>
                       <span>{p.name}</span>
                       {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
-                      {p.isAi && <span style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}> [BOT]</span>}
                     </td>
                       {gameState.rounds.map((r, i) => {
                         const score = r.playerScores ? r.playerScores[p.id] : undefined;

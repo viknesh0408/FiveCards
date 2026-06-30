@@ -2,6 +2,10 @@ import React from 'react';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { getSuitSymbol, getRankDisplay, getSuitClass } from '../utils/gameHelpers';
 
+// Read once at module load; these settings do not change during a game session
+const _selectedBack = localStorage.getItem('selected_card_back') || 'classic';
+const _cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';
+
 interface CardProps {
   card?: CardType;
   isBack?: boolean;
@@ -19,7 +23,7 @@ interface CardProps {
   jokerRank?: string | null;
 }
 
-export const Card: React.FC<CardProps> = ({
+export const Card = React.memo<CardProps>(({
   card,
   isBack = false,
   selected = false,
@@ -36,10 +40,9 @@ export const Card: React.FC<CardProps> = ({
   jokerRank,
 }) => {
   if (isBack) {
-    const selectedBack = localStorage.getItem('selected_card_back') || 'classic';
     return (
       <div 
-        className={`game-card card-back card-back-${selectedBack} ${className}`} 
+        className={`game-card card-back card-back-${_selectedBack} ${className}`} 
         onClick={onClick}
         draggable={draggable}
         onDragStart={onDragStart}
@@ -65,11 +68,10 @@ export const Card: React.FC<CardProps> = ({
   const isJoker = card.joker || !!(card.rank && jokerRank && card.rank.toString().toUpperCase() === jokerRank.toString().toUpperCase());
 
   const isPrintedJoker = isJoker && !card.suit && !card.rank;
-  const cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';
 
   return (
     <div
-      className={`game-card ${suitClass} ${isJoker && cardGlowEnabled ? 'joker joker-glow' : isJoker ? 'joker' : ''} ${selected ? 'selected' : ''} ${className}`}
+      className={`game-card ${suitClass} ${isJoker && _cardGlowEnabled ? 'joker joker-glow' : isJoker ? 'joker' : ''} ${selected ? 'selected' : ''} ${className}`}
       onClick={onClick}
       draggable={draggable}
       onDragStart={onDragStart}
@@ -128,5 +130,5 @@ export const Card: React.FC<CardProps> = ({
       )}
     </div>
   );
-};
+});
 

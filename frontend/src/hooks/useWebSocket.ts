@@ -351,8 +351,8 @@ export const useWebSocket = () => {
     const client = new Client({
       brokerURL: WS_URL,
       reconnectDelay: 0, // Disable Stomp auto-reconnect delay, we will control it exponentially!
-      heartbeatIncoming: isBatterySaver ? 25000 : 10000,
-      heartbeatOutgoing: isBatterySaver ? 25000 : 10000,
+      heartbeatIncoming: isBatterySaver ? 60000 : 30000,
+      heartbeatOutgoing: isBatterySaver ? 60000 : 30000,
       onConnect: () => {
         if (stompClientRef.current !== client) {
           console.log('[WS] onConnect ignored from old client instance.');

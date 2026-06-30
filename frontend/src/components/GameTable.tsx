@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { SanitizedGame, Spectator, ChatMessage } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { getRankDisplay } from '../utils/gameHelpers';
@@ -9,6 +9,9 @@ import { Share } from '@capacitor/share';
 import { Clipboard } from '@capacitor/clipboard';
 import { useVoiceChat } from '../hooks/useVoiceChat';
 import type { Client } from '@stomp/stompjs';
+
+// Module-level settings — read once, stable for the session
+const _cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';
 
 interface GameTableProps {
   gameState: SanitizedGame;
@@ -31,6 +34,148 @@ interface GameTableProps {
   isOffline?: boolean;
 }
 
+interface OpponentSlotProps {
+  opp: any;
+  isOpponentTurn: boolean;
+  timeLeft: number | null;
+  speaking: boolean;
+  activeReaction: any;
+  revealHands: boolean;
+  selectedBack: string;
+  jokerRank: string | null | undefined;
+  avatarPic: string | null;
+}
+
+const OpponentSlot = React.memo<OpponentSlotProps>(({
+  opp,
+  isOpponentTurn,
+  timeLeft,
+  speaking,
+  activeReaction,
+  revealHands,
+  selectedBack,
+  jokerRank,
+  avatarPic,
+}) => {
+  return (
+    <div className="opponent-slot">
+      <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${speaking ? 'voice-speaking' : ''}`}>
+        <div className="avatar-wrapper">
+          <div className="turn-ring" />
+          {opp.avatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.55)', top: '-11px', zIndex: 10 }}>👑</span>}
+          <div className={`avatar-circle avatar-frame-${opp.avatar || 'none'}`} style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AvatarImage picId={avatarPic} name={opp.name} className="mm-avatar-img" />
+          </div>
+          {isOpponentTurn && (
+            <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
+              {timeLeft !== null ? timeLeft : 60}
+            </div>
+          )}
+        </div>
+        <div className="avatar-info">
+          <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span>{opp.name}</span>
+          </span>
+          <span className="avatar-score">{opp.totalScore} pts</span>
+        </div>
+        {activeReaction && (
+          <div className="reaction-bubble-opponent">
+            {activeReaction.emoji}
+          </div>
+        )}
+      </div>
+      <div className="opponent-mini-hand" style={{ display: 'flex', gap: '2px' }}>
+        {revealHands && opp.hand && opp.hand.length > 0 ? (
+          opp.hand.map((card: any, cIdx: number) => (
+            <Card key={cIdx} card={card} jokerRank={jokerRank} />
+          ))
+        ) : (
+          Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (
+            <div key={cIdx} className={`card-back card-back-${selectedBack}`} />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}, (prevProps, nextProps) => {
+  // If it's not the opponent's turn, and isn't transitioning to their turn, ignore timer timeLeft changes!
+  if (!prevProps.isOpponentTurn && !nextProps.isOpponentTurn) {
+    return (
+      prevProps.opp === nextProps.opp &&
+      prevProps.speaking === nextProps.speaking &&
+      prevProps.activeReaction === nextProps.activeReaction &&
+      prevProps.revealHands === nextProps.revealHands &&
+      prevProps.selectedBack === nextProps.selectedBack &&
+      prevProps.jokerRank === nextProps.jokerRank &&
+      prevProps.avatarPic === nextProps.avatarPic
+    );
+  }
+  return (
+    prevProps.timeLeft === nextProps.timeLeft &&
+    prevProps.isOpponentTurn === nextProps.isOpponentTurn &&
+    prevProps.opp === nextProps.opp &&
+    prevProps.speaking === nextProps.speaking &&
+    prevProps.activeReaction === nextProps.activeReaction &&
+    prevProps.revealHands === nextProps.revealHands &&
+    prevProps.selectedBack === nextProps.selectedBack &&
+    prevProps.jokerRank === nextProps.jokerRank &&
+    prevProps.avatarPic === nextProps.avatarPic
+  );
+});
+
+interface ChatMessagesListProps {
+  chatMessages: ChatMessage[];
+  currentPlayerId: string;
+}
+
+const ChatMessagesList = React.memo<ChatMessagesListProps>(({ chatMessages, currentPlayerId }) => {
+  if (chatMessages.length === 0) {
+    return (
+      <div style={{ margin: 'auto', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>
+        <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>💬</span>
+        No messages yet.<br/>Type below to say hi!
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {chatMessages.map(msg => {
+        const isMe = msg.playerId === currentPlayerId;
+        return (
+          <div 
+            key={msg.id}
+            style={{
+              alignSelf: isMe ? 'flex-end' : 'flex-start',
+              maxWidth: '80%',
+              display: 'flex', flexDirection: 'column',
+              alignItems: isMe ? 'flex-end' : 'flex-start'
+            }}
+          >
+            {/* Sender Name */}
+            <span style={{ fontSize: '0.68rem', color: isMe ? 'var(--color-cyan)' : 'rgba(255,255,255,0.4)', marginBottom: '2px', fontWeight: 700 }}>
+              {msg.playerName}
+            </span>
+            {/* Message Bubble */}
+            <div style={{
+              background: isMe ? 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)' : 'rgba(255,255,255,0.04)',
+              border: isMe ? '1px solid rgba(34, 211, 238, 0.2)' : '1px solid rgba(255,255,255,0.06)',
+              borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
+              padding: '8px 12px',
+              fontSize: '0.82rem',
+              color: '#fff',
+              wordBreak: 'break-word',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+            }}>
+              {msg.message}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+});
+
 export const GameTable: React.FC<GameTableProps> = ({
   gameState,
   currentPlayerId,
@@ -52,7 +197,6 @@ export const GameTable: React.FC<GameTableProps> = ({
 }) => {
   const [displayedGameState, setDisplayedGameState] = useState<SanitizedGame>(gameState);
   const { gameId, players, currentRound, status, isMultiplayer } = displayedGameState;
-  const cardGlowEnabled = localStorage.getItem('cardGlowEnabled') !== 'false';
   const bufferedStateRef = useRef<SanitizedGame>(gameState);
   const [selectedClientIds, setSelectedClientIds] = useState<string[]>([]);
   const [isPickingFromPile, setIsPickingFromPile] = useState<boolean>(false);
@@ -208,6 +352,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   }, [latestReaction]);
 
   // Clean up expired reactions (older than 3 seconds)
+  // Interval runs every 3000ms (matching the reaction lifetime) to avoid spurious renders
   useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now();
@@ -222,7 +367,7 @@ export const GameTable: React.FC<GameTableProps> = ({
         }
         return changed ? updated : prev;
       });
-    }, 1000);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -235,16 +380,17 @@ export const GameTable: React.FC<GameTableProps> = ({
   const self = players.find(p => p.id === currentPlayerId);
   const selfIndex = players.findIndex(p => p.id === currentPlayerId);
 
-  // Rotate players so that current player is at the bottom (index 0)
-  const rotatedPlayers = [...players];
-  if (selfIndex !== -1) {
-    const beforeSelf = players.slice(0, selfIndex);
-    const afterSelf = players.slice(selfIndex);
-    rotatedPlayers.splice(0, rotatedPlayers.length, ...afterSelf, ...beforeSelf);
-  }
-
-  // Opponents are everyone except index 0 (self)
-  const opponents = selfIndex !== -1 ? rotatedPlayers.slice(1) : players;
+  // Rotate players so that current player is at the bottom (index 0) — memoized
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const opponents = useMemo(() => {
+    const rotated = [...players];
+    if (selfIndex !== -1) {
+      const before = players.slice(0, selfIndex);
+      const after = players.slice(selfIndex);
+      rotated.splice(0, rotated.length, ...after, ...before);
+    }
+    return selfIndex !== -1 ? rotated.slice(1) : players;
+  }, [players, selfIndex]);
 
   const [lastDiscarderId, setLastDiscarderId] = useState<string | null>(null);
   const prevDiscardLengthRef = useRef<number>(0);
@@ -271,25 +417,16 @@ export const GameTable: React.FC<GameTableProps> = ({
     }
   }, [currentRound?.discardPile, currentRound?.currentPlayerIndex, players, currentRound?.firstTurnCompleted]);
 
-  const getDiscardDirectionClass = (): string => {
+  const discardDirectionClass = useMemo((): string => {
     if (!lastDiscarderId) return 'discard-from-center';
     if (lastDiscarderId === 'system') return 'discard-from-center';
     if (lastDiscarderId === currentPlayerId) return 'discard-from-bottom';
-    
     const leftOpponents = opponents.slice(0, Math.ceil(opponents.length / 2));
-    if (leftOpponents.some(o => o.id === lastDiscarderId)) {
-      return 'discard-from-left';
-    }
-    
+    if (leftOpponents.some(o => o.id === lastDiscarderId)) return 'discard-from-left';
     const rightOpponents = opponents.slice(Math.ceil(opponents.length / 2));
-    if (rightOpponents.some(o => o.id === lastDiscarderId)) {
-      return 'discard-from-right';
-    }
-    
+    if (rightOpponents.some(o => o.id === lastDiscarderId)) return 'discard-from-right';
     return 'discard-from-center';
-  };
-
-  const discardDirectionClass = getDiscardDirectionClass();
+  }, [lastDiscarderId, currentPlayerId, opponents]);
 
   // Find who is the active player whose turn it is
   const activePlayer = currentRound && !currentRound.roundEnded
@@ -562,7 +699,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const hasDiscardedThisTurn = currentRound ? currentRound.hasDiscardedThisTurn : false;
   const needsToDraw = currentRound ? currentRound.needsToDraw : false;
 
-  const getDrawableDiscardCard = (): CardType | null => {
+  const drawableDiscardCard = useMemo((): CardType | null => {
     if (!currentRound || !currentRound.discardPile || currentRound.discardPile.length === 0) return null;
     let k = currentRound.cardsDiscardedThisTurn;
     if (!k || k <= 0) {
@@ -571,8 +708,7 @@ export const GameTable: React.FC<GameTableProps> = ({
     }
     const idx = currentRound.discardPile.length - k - 1;
     return idx >= 0 ? currentRound.discardPile[idx] : null;
-  };
-  const drawableDiscardCard = getDrawableDiscardCard();
+  }, [currentRound?.discardPile, currentRound?.cardsDiscardedThisTurn, self?.hand?.length]);
 
   // Reset selected cards when turn changes or after discard
   useEffect(() => {
@@ -608,8 +744,9 @@ export const GameTable: React.FC<GameTableProps> = ({
     return () => clearInterval(interval);
   }, [status, currentRound?.turnStartedAt, currentRound?.roundEnded, currentRound?.currentPlayerIndex, currentRound?.hasDiscardedThisTurn, currentRound?.needsToDraw]);
 
-  const isCardSelected = (card: any) =>
-    selectedClientIds.includes(card.clientId);
+  const isCardSelected = useCallback((card: any) =>
+    selectedClientIds.includes(card.clientId)
+  , [selectedClientIds]);
 
 
 
@@ -1045,45 +1182,18 @@ export const GameTable: React.FC<GameTableProps> = ({
             {opponents.slice(0, Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
               return (
-                <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${speakingStates[opp.id] && isVoiceEnabled ? 'voice-speaking' : ''}`}>
-                    <div className="avatar-wrapper">
-                      <div className="turn-ring" />
-                      {opp.avatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.55)', top: '-11px', zIndex: 10 }}>👑</span>}
-                      <div className={`avatar-circle avatar-frame-${opp.avatar || 'none'}`} style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <AvatarImage picId={getAvatarPic(opp)} name={opp.name} className="mm-avatar-img" />
-                      </div>
-                      {isOpponentTurn && (
-                        <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
-                          {timeLeft !== null ? timeLeft : 60}
-                        </div>
-                      )}
-                    </div>
-                    <div className="avatar-info">
-                      <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>{opp.name}</span>
-                        {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
-                      </span>
-                      <span className="avatar-score">{opp.totalScore} pts</span>
-                    </div>
-                    {activeReactions[opp.id] && (
-                      <div className="reaction-bubble-opponent">
-                        {activeReactions[opp.id].emoji}
-                      </div>
-                    )}
-                  </div>
-                  <div className="opponent-mini-hand" style={{ display: 'flex', gap: '2px' }}>
-                    {revealHands && opp.hand && opp.hand.length > 0 ? (
-                      opp.hand.map((card, cIdx) => (
-                        <Card key={cIdx} card={card} jokerRank={currentRound?.jokerRank} />
-                      ))
-                    ) : (
-                      Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (
-                        <div key={cIdx} className={`card-back card-back-${selectedBack}`} />
-                      ))
-                    )}
-                  </div>
-                </div>
+                <OpponentSlot
+                  key={opp.id}
+                  opp={opp}
+                  isOpponentTurn={!!isOpponentTurn}
+                  timeLeft={timeLeft}
+                  speaking={!!(speakingStates[opp.id] && isVoiceEnabled)}
+                  activeReaction={activeReactions[opp.id]}
+                  revealHands={revealHands}
+                  selectedBack={selectedBack}
+                  jokerRank={currentRound?.jokerRank || null}
+                  avatarPic={getAvatarPic(opp)}
+                />
               );
             })}
           </div>
@@ -1093,45 +1203,18 @@ export const GameTable: React.FC<GameTableProps> = ({
             {opponents.slice(Math.ceil(opponents.length / 2)).map((opp) => {
               const isOpponentTurn = currentRound && !currentRound.roundEnded && players[currentRound.currentPlayerIndex]?.id === opp.id;
               return (
-                <div key={opp.id} className="opponent-slot">
-                  <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${speakingStates[opp.id] && isVoiceEnabled ? 'voice-speaking' : ''}`}>
-                    <div className="avatar-wrapper">
-                      <div className="turn-ring" />
-                      {opp.avatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.55)', top: '-11px', zIndex: 10 }}>👑</span>}
-                      <div className={`avatar-circle avatar-frame-${opp.avatar || 'none'}`} style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <AvatarImage picId={getAvatarPic(opp)} name={opp.name} className="mm-avatar-img" />
-                      </div>
-                      {isOpponentTurn && (
-                        <div className={`avatar-timer-overlay ${timeLeft !== null && timeLeft <= 15 ? 'warning' : ''}`}>
-                          {timeLeft !== null ? timeLeft : 60}
-                        </div>
-                      )}
-                    </div>
-                    <div className="avatar-info">
-                      <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <span>{opp.name}</span>
-                        {opp.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
-                      </span>
-                      <span className="avatar-score">{opp.totalScore} pts</span>
-                    </div>
-                    {activeReactions[opp.id] && (
-                      <div className="reaction-bubble-opponent">
-                        {activeReactions[opp.id].emoji}
-                      </div>
-                    )}
-                  </div>
-                  <div className="opponent-mini-hand" style={{ display: 'flex', gap: '2px' }}>
-                    {revealHands && opp.hand && opp.hand.length > 0 ? (
-                      opp.hand.map((card, cIdx) => (
-                        <Card key={cIdx} card={card} jokerRank={currentRound?.jokerRank} />
-                      ))
-                    ) : (
-                      Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (
-                        <div key={cIdx} className={`card-back card-back-${selectedBack}`} />
-                      ))
-                    )}
-                  </div>
-                </div>
+                <OpponentSlot
+                  key={opp.id}
+                  opp={opp}
+                  isOpponentTurn={!!isOpponentTurn}
+                  timeLeft={timeLeft}
+                  speaking={!!(speakingStates[opp.id] && isVoiceEnabled)}
+                  activeReaction={activeReactions[opp.id]}
+                  revealHands={revealHands}
+                  selectedBack={selectedBack}
+                  jokerRank={currentRound?.jokerRank || null}
+                  avatarPic={getAvatarPic(opp)}
+                />
               );
             })}
           </div>
@@ -1147,7 +1230,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   className={`joker-display ${tutorialActive && tutorialSteps[tutorialStep].targetClass === 'joker-display' ? 'tutorial-highlight' : ''}`}
                 >
                   <span className="joker-label">Joker Rank</span>
-                  <Card card={currentRound.jokerCard} className={`mini-card ${cardGlowEnabled ? 'joker-glow' : ''}`} jokerRank={currentRound?.jokerRank} />
+                  <Card card={currentRound.jokerCard} className={`mini-card ${_cardGlowEnabled ? 'joker-glow' : ''}`} jokerRank={currentRound?.jokerRank} />
                   <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', fontWeight: 800 }}>
                     ★ {currentRound.jokerRank}s are Jokers
                   </span>
@@ -1224,7 +1307,7 @@ export const GameTable: React.FC<GameTableProps> = ({
 
           {/* Lobby Waiting Panel */}
           {status === 'WAITING_FOR_PLAYERS' && (
-            <div className="center-stacks glass-panel" style={{ flexDirection: 'column', width: '380px', padding: '32px' }}>
+            <div className="center-stacks glass-panel" style={{ flexDirection: 'column', width: 'min(380px, 92vw)', padding: 'min(32px, 6vw)' }}>
               <h3 style={{ fontSize: '1.2rem', marginBottom: '8px' }}>Waiting for Players</h3>
               <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <span>Minimum 2 players. Room Code:</span>
@@ -1415,7 +1498,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   card={c}
                   selected={selected}
                   className={[
-                    isMyTurn && !hasDiscardedThisTurn && isMatch && cardGlowEnabled ? 'joker-glow' : '',
+                    isMyTurn && !hasDiscardedThisTurn && isMatch && _cardGlowEnabled ? 'joker-glow' : '',
                     isMyTurn && !hasDiscardedThisTurn && !sameRankAsSelection && selectedClientIds.length > 0 ? 'card-dimmed' : ''
                   ].join(' ').trim()}
                   onClick={() => handleCardClick(c)}
@@ -1629,8 +1712,6 @@ export const GameTable: React.FC<GameTableProps> = ({
           width: 'min(320px, 92vw)',
           height: 'min(450px, 70vh)',
           zIndex: 1000,
-          background: 'rgba(4, 8, 20, 0.95)',
-          backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255,255,255,0.08)',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.6)',
           borderRadius: '16px',
@@ -1664,45 +1745,7 @@ export const GameTable: React.FC<GameTableProps> = ({
               display: 'flex', flexDirection: 'column', gap: '10px'
             }}
           >
-            {chatMessages.length === 0 ? (
-              <div style={{ margin: 'auto', textAlign: 'center', color: 'rgba(255,255,255,0.25)', fontSize: '0.85rem' }}>
-                <span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>💬</span>
-                No messages yet.<br/>Type below to say hi!
-              </div>
-            ) : (
-              chatMessages.map(msg => {
-                const isMe = msg.playerId === currentPlayerId;
-                return (
-                  <div 
-                    key={msg.id}
-                    style={{
-                      alignSelf: isMe ? 'flex-end' : 'flex-start',
-                      maxWidth: '80%',
-                      display: 'flex', flexDirection: 'column',
-                      alignItems: isMe ? 'flex-end' : 'flex-start'
-                    }}
-                  >
-                    {/* Sender Name */}
-                    <span style={{ fontSize: '0.68rem', color: isMe ? 'var(--color-cyan)' : 'rgba(255,255,255,0.4)', marginBottom: '2px', fontWeight: 700 }}>
-                      {msg.playerName}
-                    </span>
-                    {/* Message Bubble */}
-                    <div style={{
-                      background: isMe ? 'linear-gradient(135deg, #0e7490 0%, #0891b2 100%)' : 'rgba(255,255,255,0.04)',
-                      border: isMe ? '1px solid rgba(34, 211, 238, 0.2)' : '1px solid rgba(255,255,255,0.06)',
-                      borderRadius: isMe ? '12px 12px 2px 12px' : '12px 12px 12px 2px',
-                      padding: '8px 12px',
-                      fontSize: '0.82rem',
-                      color: '#fff',
-                      wordBreak: 'break-word',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-                    }}>
-                      {msg.message}
-                    </div>
-                  </div>
-                );
-              })
-            )}
+            <ChatMessagesList chatMessages={chatMessages} currentPlayerId={currentPlayerId} />
           </div>
 
           {/* Input Box */}

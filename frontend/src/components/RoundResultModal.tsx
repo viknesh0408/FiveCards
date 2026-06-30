@@ -149,7 +149,6 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                     </div>
                     <span>{p.name}</span>
                     {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
-                    {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)' }}>[BOT]</span>}
                   </span>
                   
                   {isTickDeclaringPlayer && (

@@ -20,7 +20,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
         // Broadcasts start with /topic (pub-sub) and /queue (user-specific messages)
         config.enableSimpleBroker("/topic", "/queue")
-                .setHeartbeatValue(new long[]{10000, 10000})
+                .setHeartbeatValue(new long[]{30000, 30000})
                 .setTaskScheduler(scheduler);
         // Messages sent from client to server start with /app
         config.setApplicationDestinationPrefixes("/app");

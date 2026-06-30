@@ -1,5 +1,8 @@
 import React from 'react';
 
+// Read once at module load — battery-saver mode does not toggle mid-session
+const _isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
+
 interface AvatarImageProps {
   picId: string | null;
   name: string;
@@ -7,7 +10,7 @@ interface AvatarImageProps {
   style?: React.CSSProperties;
 }
 
-export const AvatarImage: React.FC<AvatarImageProps> = ({ picId, name, className = '', style }) => {
+export const AvatarImage = React.memo<AvatarImageProps>(({ picId, name, className = '', style }) => {
   const initials = (name || 'P')[0].toUpperCase();
 
   if (!picId || picId === 'none') {
@@ -15,6 +18,35 @@ export const AvatarImage: React.FC<AvatarImageProps> = ({ picId, name, className
       <span className={className} style={{ ...style, fontSize: 'inherit', fontWeight: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {initials}
       </span>
+    );
+  }
+
+  // Render a simple static placeholder with corresponding emoji in Battery Saver Mode to eliminate rendering overhead
+  if (_isBatterySaver && (picId === 'neon_matrix' || picId === 'cosmic_vortex' || picId === 'cyber_skull' || picId === 'retro_wave')) {
+    const emojiMap: Record<string, string> = {
+      neon_matrix: '🤖',
+      cosmic_vortex: '🌌',
+      cyber_skull: '💀',
+      retro_wave: '🌴'
+    };
+    return (
+      <div 
+        className={className} 
+        style={{ 
+          ...style, 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          background: 'rgba(8, 14, 28, 0.95)', 
+          width: '100%', 
+          height: '100%', 
+          borderRadius: '50%', 
+          fontSize: '1.2rem',
+          border: '1.5px solid var(--color-cyan, #22d3ee)'
+        }}
+      >
+        {emojiMap[picId]}
+      </div>
     );
   }
 
@@ -79,4 +111,4 @@ export const AvatarImage: React.FC<AvatarImageProps> = ({ picId, name, className
       style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%', display: 'block', ...style }}
     />
   );
-};
+});

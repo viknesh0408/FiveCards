@@ -276,6 +276,7 @@ const playJokerSparkle = (ctx: AudioContext) => {
 
 class SoundManager {
   private ctx: AudioContext | null = null;
+  private lastClickAt = 0; // debounce guard for rapid tap audio stacking
 
   private getContext(): AudioContext {
     if (!this.ctx) {
@@ -353,6 +354,9 @@ class SoundManager {
 
   playClick() {
     if (!this.isEnabled()) return;
+    const now = Date.now();
+    if (now - this.lastClickAt < 100) return; // 100ms debounce: drop stacked decodes
+    this.lastClickAt = now;
     try {
       const ctx = this.getContext();
       playUiClick(ctx);

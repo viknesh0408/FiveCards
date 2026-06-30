@@ -312,6 +312,27 @@ export const App: React.FC = () => {
     startup();
   }, [connect, apiBase]);
 
+  // Listen for Capacitor App state changes (pause/resume) to handle fast reconnection on mobile
+  useEffect(() => {
+    if (!(window as any).Capacitor) return;
+
+    const listenerPromise = CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+      console.log('[App] App state changed, isActive:', isActive);
+      if (isActive) {
+        const activeGameId = localStorage.getItem('activeGameId');
+        const id = localStorage.getItem('tickPlayerId');
+        if (activeGameId && id && !isOffline) {
+          console.log('[App] Foregrounded. Checking WebSocket connection...');
+          connect(activeGameId, id, isSpectator);
+        }
+      }
+    });
+
+    return () => {
+      listenerPromise.then(handle => handle.remove());
+    };
+  }, [connect, isSpectator, isOffline]);
+
   // Auto-leave if player is kicked/removed from the game due to inactivity
   useEffect(() => {
     if (screen === 'table' && gameState && playerId) {
@@ -598,25 +619,14 @@ export const App: React.FC = () => {
         <>
           {/* Reconnecting Overlay – shown when WebSocket drops mid-game */}
           {isReconnecting && (
-            <div style={{
-              position: 'fixed', inset: 0, zIndex: 1000,
-              background: 'rgba(4, 8, 20, 0.85)',
-              backdropFilter: 'blur(12px)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
+            <div className="reconnect-overlay">
               <div className="glass-panel" style={{
                 padding: '40px 48px', textAlign: 'center', maxWidth: '360px', width: '90%',
                 border: '1px solid rgba(251,191,36,0.3)',
                 boxShadow: '0 0 40px rgba(251,191,36,0.1)',
               }}>
                 {/* Spinner */}
-                <div style={{
-                  width: '56px', height: '56px', margin: '0 auto 24px',
-                  border: '4px solid rgba(255,255,255,0.08)',
-                  borderTop: '4px solid #fbbf24',
-                  borderRadius: '50%',
-                  animation: 'spin 1s linear infinite',
-                }} />
+                <div className="reconnect-spinner" />
                 <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fbbf24', marginBottom: '8px' }}>
                   Reconnecting...
                 </h2>

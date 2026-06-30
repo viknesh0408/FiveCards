@@ -1126,7 +1126,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                                     color: 'var(--color-text-muted)'
                                   }}
                                 >
-                                  {opp.name} {opp.isAi ? '[BOT]' : ''}: <strong>{opp.score} pts</strong>
+                                  {opp.name}: <strong>{opp.score} pts</strong>
                                 </span>
                               ))}
                             </div>

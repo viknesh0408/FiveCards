@@ -69,7 +69,6 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
                   {isLeader && <span style={{ marginRight: '2px', filter: 'drop-shadow(0 0 4px var(--color-gold-glow))' }}>👑</span>}
                   <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
                   {isSelf && <span style={{ fontSize: '0.75rem', color: 'var(--color-cyan)', flexShrink: 0 }}>(You)</span>}
-                  {p.isAi && <span style={{ fontSize: '0.65rem', color: 'var(--color-gold)', flexShrink: 0 }}>[BOT]</span>}
                 </span>
                 {isCurrentTurn && <span className="text-cyan animate-pulse" style={{ fontSize: '0.75rem', flexShrink: 0 }}>●</span>}
                 {p.declaredTick && <span className="text-red" style={{ fontSize: '0.7rem', fontWeight: 800, flexShrink: 0 }}>[TICK]</span>}

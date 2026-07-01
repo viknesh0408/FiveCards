@@ -46,6 +46,30 @@ interface OpponentSlotProps {
   avatarPic: string | null;
 }
 
+const calculateHandValue = (hand?: any[] | null, jokerRank?: string | null): number => {
+  if (!hand) return 0;
+  return hand.reduce((sum, c) => {
+    const isJoker = c.joker || !!(c.rank && jokerRank && c.rank.toString().toUpperCase() === jokerRank.toString().toUpperCase());
+    if (isJoker || !c.rank) return sum;
+    switch (c.rank.toString().toUpperCase()) {
+      case 'ACE': return sum + 1;
+      case 'TWO': return sum + 2;
+      case 'THREE': return sum + 3;
+      case 'FOUR': return sum + 4;
+      case 'FIVE': return sum + 5;
+      case 'SIX': return sum + 6;
+      case 'SEVEN': return sum + 7;
+      case 'EIGHT': return sum + 8;
+      case 'NINE': return sum + 9;
+      case 'TEN': return sum + 10;
+      case 'JACK': return sum + 11;
+      case 'QUEEN': return sum + 12;
+      case 'KING': return sum + 13;
+      default: return sum;
+    }
+  }, 0);
+};
+
 const OpponentSlot = React.memo<OpponentSlotProps>(({
   opp,
   isOpponentTurn,
@@ -61,8 +85,42 @@ const OpponentSlot = React.memo<OpponentSlotProps>(({
     <div className="opponent-slot">
       <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${speaking ? 'voice-speaking' : ''}`}>
         <div className="avatar-wrapper">
-          <div className="turn-ring" />
-          <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', borderStyle: 'solid', borderWidth: '2px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+          {isOpponentTurn && (
+            <svg 
+              className="timer-progress-ring" 
+              viewBox="0 0 44 44" 
+              style={{ 
+                position: 'absolute', 
+                inset: '-3px', 
+                transform: 'rotate(-90deg)', 
+                overflow: 'visible', 
+                pointerEvents: 'none', 
+                filter: `drop-shadow(0 0 4px ${timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : (opp.isAi ? 'var(--color-gold)' : 'var(--color-green)')})` 
+              }}
+            >
+              <circle
+                cx="22"
+                cy="22"
+                r="19"
+                stroke="rgba(255, 255, 255, 0.08)"
+                strokeWidth="2"
+                fill="transparent"
+              />
+              <circle
+                cx="22"
+                cy="22"
+                r="19"
+                stroke={timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : (opp.isAi ? 'var(--color-gold)' : 'var(--color-green)')}
+                strokeWidth="2.5"
+                fill="transparent"
+                strokeDasharray="119.38"
+                strokeDashoffset={119.38 * (1 - (timeLeft ?? 60) / 60)}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 1s linear' }}
+              />
+            </svg>
+          )}
+          <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)' }}>
             <AvatarImage picId={avatarPic} name={opp.name} className="mm-avatar-img" />
           </div>
           {isOpponentTurn && (
@@ -75,7 +133,6 @@ const OpponentSlot = React.memo<OpponentSlotProps>(({
           <span className="avatar-name" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span>{opp.name}</span>
           </span>
-          <span className="avatar-score">{opp.totalScore} pts</span>
         </div>
         {activeReaction && (
           <div className="reaction-bubble-opponent">
@@ -83,15 +140,37 @@ const OpponentSlot = React.memo<OpponentSlotProps>(({
           </div>
         )}
       </div>
-      <div className="opponent-mini-hand" style={{ display: 'flex', gap: '2px' }}>
-        {revealHands && opp.hand && opp.hand.length > 0 ? (
-          opp.hand.map((card: any, cIdx: number) => (
-            <Card key={cIdx} card={card} jokerRank={jokerRank} />
-          ))
-        ) : (
-          Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (
-            <div key={cIdx} className={`card-back card-back-${selectedBack}`} />
-          ))
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+        <div className="opponent-mini-hand" style={{ display: 'flex', gap: '2px' }}>
+          {revealHands && opp.hand && opp.hand.length > 0 ? (
+            opp.hand.map((card: any, cIdx: number) => (
+              <Card key={cIdx} card={card} jokerRank={jokerRank} />
+            ))
+          ) : (
+            Array.from({ length: opp.cardCount || 5 }).map((_, cIdx) => (
+              <div key={cIdx} className={`card-back card-back-${selectedBack}`} />
+            ))
+          )}
+        </div>
+        {revealHands && opp.hand && opp.hand.length > 0 && (
+          <div 
+            className="opponent-hand-sum" 
+            style={{ 
+              fontSize: '0.62rem', 
+              fontWeight: 800, 
+              color: 'var(--color-green)', 
+              background: 'rgba(52, 211, 153, 0.12)', 
+              padding: '1.5px 5px', 
+              borderRadius: '4px', 
+              border: '0.5px solid rgba(52, 211, 153, 0.25)',
+              textShadow: '0 0 4px rgba(52,211,153,0.2)',
+              marginTop: '1px',
+              pointerEvents: 'none',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            Total: {calculateHandValue(opp.hand, jokerRank)}
+          </div>
         )}
       </div>
     </div>
@@ -1152,17 +1231,6 @@ export const GameTable: React.FC<GameTableProps> = ({
               </button>
             </div>
           )}
-
-          <button 
-            className={`hud-btn-scores ${showScoreboard ? 'active' : ''}`}
-            onClick={() => setShowScoreboard(!showScoreboard)}
-            title="Toggle Leaderboard"
-          >
-            <svg className="hud-svg-icon trophy-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 2H5c-1.1 0-2 .9-2 2v3c0 2.24 1.54 4.12 3.6 4.77C7.3 13.56 9.44 15 12 15s4.7-1.44 5.4-3.23c2.06-.65 3.6-2.53 3.6-4.77V4c0-1.1-.9-2-2-2zm-12.4 8c-1.1-.15-1.99-.95-2.2-2H5V4h1.6v6zm12.4-2c-.21 1.05-1.1 1.85-2.2 2V4H20v2h-1zM12 17c-2.21 0-4-1.79-4-4h8c0 2.21-1.79 4-4 4zm4.5 2h-9v2h9v-2z" />
-            </svg>
-            <span className="btn-text">{showScoreboard ? 'Hide Scores' : 'Show Scores'}</span>
-          </button>
         </div>
       </div>
 
@@ -1400,10 +1468,47 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* Helper instructions & Turn Timer */}
         <div className="hand-instructions-wrapper">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className={`player-hud-avatar-ring${isMyTurn && status === 'IN_PROGRESS' ? ' my-turn-active' : ''}`} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span className="player-hud-avatar-crest" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-                {getActiveDisplayAvatar()}
-              </span>
+            <div className={`avatar-wrapper${isMyTurn && status === 'IN_PROGRESS' ? ' my-turn-active' : ''}`} style={{ flexShrink: 0 }}>
+              {isMyTurn && status === 'IN_PROGRESS' && (
+                <svg 
+                  className="timer-progress-ring" 
+                  viewBox="0 0 44 44" 
+                  style={{ 
+                    position: 'absolute', 
+                    inset: '-3px', 
+                    transform: 'rotate(-90deg)', 
+                    overflow: 'visible', 
+                    pointerEvents: 'none', 
+                    filter: `drop-shadow(0 0 4px ${timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : 'var(--color-green)'})` 
+                  }}
+                >
+                  <circle
+                    cx="22"
+                    cy="22"
+                    r="19"
+                    stroke="rgba(255, 255, 255, 0.08)"
+                    strokeWidth="2"
+                    fill="transparent"
+                  />
+                  <circle
+                    cx="22"
+                    cy="22"
+                    r="19"
+                    stroke={timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : 'var(--color-green)'}
+                    strokeWidth="2.5"
+                    fill="transparent"
+                    strokeDasharray="119.38"
+                    strokeDashoffset={119.38 * (1 - (timeLeft ?? 60) / 60)}
+                    strokeLinecap="round"
+                    style={{ transition: 'stroke-dashoffset 1s linear' }}
+                  />
+                </svg>
+              )}
+              <div className={`player-hud-avatar-ring${isMyTurn && status === 'IN_PROGRESS' ? ' my-turn-active' : ''}`} style={{ borderColor: 'var(--color-cyan)' }}>
+                <span className="player-hud-avatar-crest">
+                  {getActiveDisplayAvatar()}
+                </span>
+              </div>
             </div>
             <div className="hand-instructions-text">
               {isSpectator && 'Spectating: Live Game View'}
@@ -1421,8 +1526,8 @@ export const GameTable: React.FC<GameTableProps> = ({
         </div>
 
         {isSpectator ? (
-          <div className="spectator-hud-panel glass-panel" style={{ width: '100%', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px', borderRadius: '12px', border: '1px solid rgba(0, 255, 240, 0.15)', background: 'rgba(0, 8, 12, 0.6)', boxShadow: '0 0 15px rgba(0, 255, 240, 0.05)', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left' }}>
+          <div className="spectator-hud-panel glass-panel" style={{ width: '100%', minHeight: '70px', display: 'flex', flexWrap: 'wrap', gap: '10px', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderRadius: '12px', border: '1px solid rgba(0, 255, 240, 0.15)', background: 'rgba(0, 8, 12, 0.6)', boxShadow: '0 0 15px rgba(0, 255, 240, 0.05)', marginBottom: '20px', boxSizing: 'border-box' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', textAlign: 'left', minWidth: '200px', flex: '1' }}>
               <span style={{ fontSize: '0.9rem', color: 'var(--color-cyan)', fontWeight: 800, textShadow: '0 0 8px rgba(0,255,240,0.3)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <span>👁️ Spectating Mode</span>
               </span>
@@ -1430,10 +1535,10 @@ export const GameTable: React.FC<GameTableProps> = ({
                 Viewing live multiplayer match history and cards.
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
               <button 
                 className="btn-secondary" 
-                style={{ margin: 0, padding: '8px 16px', fontSize: '0.85rem', height: '36px', border: '2px solid var(--color-cyan)', backgroundColor: revealHands ? 'rgba(0, 255, 240, 0.15)' : 'transparent', color: 'var(--color-cyan)', transition: 'var(--transition-smooth)', borderRadius: '8px', cursor: 'pointer' }}
+                style={{ margin: 0, padding: '8px 16px', fontSize: '0.85rem', minHeight: '36px', height: 'auto', border: '2px solid var(--color-cyan)', backgroundColor: revealHands ? 'rgba(0, 255, 240, 0.15)' : 'transparent', color: 'var(--color-cyan)', transition: 'var(--transition-smooth)', borderRadius: '8px', cursor: 'pointer', whiteSpace: 'nowrap', flexShrink: 0 }}
                 onClick={() => setRevealHands(!revealHands)}
               >
                 {revealHands ? '🙈 Hide Hands' : '👁️ Reveal Hands'}

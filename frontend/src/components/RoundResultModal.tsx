@@ -200,9 +200,6 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                       (Hand: {handValue} pts)
                     </div>
                   )}
-                  <div className="result-total-score" style={{ marginTop: '6px' }}>
-                    Grand Total: <strong>{p.totalScore}</strong> pts
-                  </div>
                 </div>
               </div>
             );

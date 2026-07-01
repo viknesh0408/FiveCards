@@ -20,37 +20,37 @@ interface ShopItem {
 
 const CARD_BACKS: ShopItem[] = [
   { id: 'classic', name: 'Classic Red', description: 'The timeless standard layout', price: 0, type: 'cardBack' },
-  { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 1000, type: 'cardBack' },
-  { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 1500, type: 'cardBack' },
-  { id: 'wood', name: 'Classic Wood', description: 'Ornate polished mahogany wood pattern', price: 2000, type: 'cardBack' },
-  { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 2000, type: 'cardBack' },
-  { id: 'amethyst', name: 'Amethyst Geode', description: 'Deep purple crystalline texture with shimmering light', price: 2500, type: 'cardBack' },
-  { id: 'ruby', name: 'Ruby Heart', description: 'Crimson red metallic plate with glowing heartbeat line', price: 3000, type: 'cardBack' },
-  { id: 'sapphire', name: 'Ocean Sapphire', description: 'Royal blue waves with silver accents', price: 3500, type: 'cardBack' },
-  { id: 'steampunk', name: 'Steampunk Brass', description: 'Ornate bronze gears and copper piping style', price: 4000, type: 'cardBack' },
-  { id: 'cyberpunk', name: 'Cyberpunk Glitch', description: 'Glitchy neon green and static lines', price: 5000, type: 'cardBack' },
-  { id: 'prism', name: 'Rainbow Prism', description: 'Shifting light spectrum and geometric shards', price: 6000, type: 'cardBack' },
-  { id: 'matrix', name: 'Matrix Code', description: 'Falling green digital rain code', price: 7000, type: 'cardBack' },
-  { id: 'lava', name: 'Volcanic Lava', description: 'Glowing orange molten magma flows', price: 8000, type: 'cardBack' },
-  { id: 'cosmic', name: 'Cosmic Nebula', description: 'Swirling starry galaxy background', price: 9000, type: 'cardBack' },
-  { id: 'gold', name: 'Golden Royal', description: 'Prestigious golden filigree and ornate details', price: 10000, type: 'cardBack' },
-  { id: 'obsidian', name: 'Dark Obsidian', description: 'Stealth charcoal texture with purple neon pulses', price: 12000, type: 'cardBack' },
-  { id: 'dragon_scale', name: 'Dragon Scale', description: 'Scaled fire-breathing red reptile armor plate', price: 15000, type: 'cardBack' },
+  { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 500, type: 'cardBack' },
+  { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 750, type: 'cardBack' },
+  { id: 'wood', name: 'Classic Wood', description: 'Ornate polished mahogany wood pattern', price: 1000, type: 'cardBack' },
+  { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 1000, type: 'cardBack' },
+  { id: 'amethyst', name: 'Amethyst Geode', description: 'Deep purple crystalline texture with shimmering light', price: 1250, type: 'cardBack' },
+  { id: 'ruby', name: 'Ruby Heart', description: 'Crimson red metallic plate with glowing heartbeat line', price: 1500, type: 'cardBack' },
+  { id: 'sapphire', name: 'Ocean Sapphire', description: 'Royal blue waves with silver accents', price: 1750, type: 'cardBack' },
+  { id: 'steampunk', name: 'Steampunk Brass', description: 'Ornate bronze gears and copper piping style', price: 2000, type: 'cardBack' },
+  { id: 'cyberpunk', name: 'Cyberpunk Glitch', description: 'Glitchy neon green and static lines', price: 2500, type: 'cardBack' },
+  { id: 'prism', name: 'Rainbow Prism', description: 'Shifting light spectrum and geometric shards', price: 3000, type: 'cardBack' },
+  { id: 'matrix', name: 'Matrix Code', description: 'Falling green digital rain code', price: 3500, type: 'cardBack' },
+  { id: 'lava', name: 'Volcanic Lava', description: 'Glowing orange molten magma flows', price: 4000, type: 'cardBack' },
+  { id: 'cosmic', name: 'Cosmic Nebula', description: 'Swirling starry galaxy background', price: 4500, type: 'cardBack' },
+  { id: 'gold', name: 'Golden Royal', description: 'Prestigious golden filigree and ornate details', price: 5000, type: 'cardBack' },
+  { id: 'obsidian', name: 'Dark Obsidian', description: 'Stealth charcoal texture with purple neon pulses', price: 6000, type: 'cardBack' },
+  { id: 'dragon_scale', name: 'Dragon Scale', description: 'Scaled fire-breathing red reptile armor plate', price: 7500, type: 'cardBack' },
 ];
 
 
 
 const ANIMATED_AVATARS: ShopItem[] = [
-  { id: 'neon_matrix', name: 'Matrix Cyber', description: 'Cybernetic matrix code theme profile', price: 3000, type: 'avatarPic' },
-  { id: 'cosmic_vortex', name: 'Cosmic Vortex', description: 'Deep space cosmic nebula theme profile', price: 3500, type: 'avatarPic' },
-  { id: 'cyber_skull', name: 'Glitch Skull', description: 'Neon glitch cyber skull theme profile', price: 4000, type: 'avatarPic' },
-  { id: 'retro_wave', name: 'Retrowave Sun', description: 'Retro synthwave sunset theme profile', price: 4500, type: 'avatarPic' },
+  { id: 'neon_matrix', name: 'Matrix Cyber', description: 'Cybernetic matrix code theme profile', price: 1500, type: 'avatarPic' },
+  { id: 'cosmic_vortex', name: 'Cosmic Vortex', description: 'Deep space cosmic nebula theme profile', price: 1750, type: 'avatarPic' },
+  { id: 'cyber_skull', name: 'Glitch Skull', description: 'Neon glitch cyber skull theme profile', price: 2000, type: 'avatarPic' },
+  { id: 'retro_wave', name: 'Retrowave Sun', description: 'Retro synthwave sunset theme profile', price: 2250, type: 'avatarPic' },
 ];
 
 const TABLE_FELTS: ShopItem[] = [
   { id: 'emerald_green', name: 'Emerald Green', description: 'Classic casino velvet felt background', price: 0, type: 'tableFelt' },
-  { id: 'royal_blue', name: 'Royal Blue', description: 'Deep prestige royal blue felt background', price: 1000, type: 'tableFelt' },
-  { id: 'cyber_purple', name: 'Cyber Purple', description: 'Vibrant neon purple futuristic felt background', price: 1500, type: 'tableFelt' },
+  { id: 'royal_blue', name: 'Royal Blue', description: 'Deep prestige royal blue felt background', price: 500, type: 'tableFelt' },
+  { id: 'cyber_purple', name: 'Cyber Purple', description: 'Vibrant neon purple futuristic felt background', price: 750, type: 'tableFelt' },
 ];
 
 interface ShopPanelProps {

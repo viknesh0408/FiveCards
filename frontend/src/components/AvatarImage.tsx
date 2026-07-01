@@ -26,21 +26,7 @@ export const AvatarImage = React.memo<AvatarImageProps>(({ picId, name, classNam
       retro_wave: '🌴'
     };
     return (
-      <div 
-        className={className} 
-        style={{ 
-          ...style, 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          background: 'rgba(8, 14, 28, 0.95)', 
-          width: '100%', 
-          height: '100%', 
-          borderRadius: '50%', 
-          fontSize: '1.2rem',
-          border: '1.5px solid var(--color-cyan, #22d3ee)'
-        }}
-      >
+      <div className={`premium-avatar-crest premium-anim-${picId} ${className}`} style={style}>
         {emojiMap[picId]}
       </div>
     );

@@ -36,22 +36,22 @@ interface ShopItem {
 
 const CARD_BACKS: ShopItem[] = [
   { id: 'classic', name: 'Classic Red', description: 'The timeless standard layout', price: 0 },
-  { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 1000 },
-  { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 1500 },
-  { id: 'wood', name: 'Classic Wood', description: 'Ornate polished mahogany wood pattern', price: 2000 },
-  { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 2000 },
-  { id: 'amethyst', name: 'Amethyst Geode', description: 'Deep purple crystalline texture with shimmering light', price: 2500 },
-  { id: 'ruby', name: 'Ruby Heart', description: 'Crimson red metallic plate with glowing heartbeat line', price: 3000 },
-  { id: 'sapphire', name: 'Ocean Sapphire', description: 'Royal blue waves with silver accents', price: 3500 },
-  { id: 'steampunk', name: 'Steampunk Brass', description: 'Ornate bronze gears and copper piping style', price: 4000 },
-  { id: 'cyberpunk', name: 'Cyberpunk Glitch', description: 'Glitchy neon green and static lines', price: 5000 },
-  { id: 'prism', name: 'Rainbow Prism', description: 'Shifting light spectrum and geometric shards', price: 6000 },
-  { id: 'matrix', name: 'Matrix Code', description: 'Falling green digital rain code', price: 7000 },
-  { id: 'lava', name: 'Volcanic Lava', description: 'Glowing orange molten magma flows', price: 8000 },
-  { id: 'cosmic', name: 'Cosmic Nebula', description: 'Swirling starry galaxy background', price: 9000 },
-  { id: 'gold', name: 'Golden Royal', description: 'Prestigious golden filigree and ornate details', price: 10000 },
-  { id: 'obsidian', name: 'Dark Obsidian', description: 'Stealth charcoal texture with purple neon pulses', price: 12000 },
-  { id: 'dragon_scale', name: 'Dragon Scale', description: 'Scaled fire-breathing red reptile armor plate', price: 15000 },
+  { id: 'neon', name: 'Neon Cyber', description: 'Vibrant glowing grid from the future', price: 500 },
+  { id: 'holographic', name: 'Holographic Aura', description: 'Shimmering pastel rainbow shifting light', price: 750 },
+  { id: 'wood', name: 'Classic Wood', description: 'Ornate polished mahogany wood pattern', price: 1000 },
+  { id: 'emerald', name: 'Emerald Forest', description: 'Rich green luxury marble with gold veins', price: 1000 },
+  { id: 'amethyst', name: 'Amethyst Geode', description: 'Deep purple crystalline texture with shimmering light', price: 1250 },
+  { id: 'ruby', name: 'Ruby Heart', description: 'Crimson red metallic plate with glowing heartbeat line', price: 1500 },
+  { id: 'sapphire', name: 'Ocean Sapphire', description: 'Royal blue waves with silver accents', price: 1750 },
+  { id: 'steampunk', name: 'Steampunk Brass', description: 'Ornate bronze gears and copper piping style', price: 2000 },
+  { id: 'cyberpunk', name: 'Cyberpunk Glitch', description: 'Glitchy neon green and static lines', price: 2500 },
+  { id: 'prism', name: 'Rainbow Prism', description: 'Shifting light spectrum and geometric shards', price: 3000 },
+  { id: 'matrix', name: 'Matrix Code', description: 'Falling green digital rain code', price: 3500 },
+  { id: 'lava', name: 'Volcanic Lava', description: 'Glowing orange molten magma flows', price: 4000 },
+  { id: 'cosmic', name: 'Cosmic Nebula', description: 'Swirling starry galaxy background', price: 4500 },
+  { id: 'gold', name: 'Golden Royal', description: 'Prestigious golden filigree and ornate details', price: 5000 },
+  { id: 'obsidian', name: 'Dark Obsidian', description: 'Stealth charcoal texture with purple neon pulses', price: 6000 },
+  { id: 'dragon_scale', name: 'Dragon Scale', description: 'Scaled fire-breathing red reptile armor plate', price: 7500 },
 ];
 
 
@@ -804,142 +804,153 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
         {/* ── STATS VIEW ─────────────────────────────────────── */}
         {view === 'stats' && (
-          <div className="mm-stats-layout">
-            {/* Left Column: Summary and Reset */}
-            <div className="mm-form-panel glass-panel mm-stats-left">
-              <button className="mm-back-btn" onClick={() => navigate('main')}>← Back</button>
-              <div className="mm-form-header" style={{ marginBottom: '20px' }}>
-                <span className="mm-form-icon">📊</span>
-                <h2 className="mm-form-title">Overview</h2>
-                <p className="mm-form-desc">Career statistics summary</p>
+          <div className="mm-stats-page">
+            {/* Sticky Header */}
+            <div className="mm-stats-page-header">
+              <button className="mm-back-btn mm-stats-back" onClick={() => navigate('main')}>← Back</button>
+              <div className="mm-stats-page-title-wrap">
+                <span className="mm-stats-page-icon">📊</span>
+                <h2 className="mm-stats-page-title">Statistics</h2>
               </div>
+              <div style={{ width: 60 }} />
+            </div>
 
-              {/* Stats overview list */}
-              <div className="mm-stats-overview-list">
-                <div className="mm-stats-summary-card">
-                  <span className="mm-stats-summary-val">{stats.gamesPlayedTotal}</span>
-                  <span className="mm-stats-summary-key">Total Matches</span>
+            {/* Scrollable Body */}
+            <div className="mm-stats-body">
+
+              {/* Hero Stats Bar */}
+              <div className="mm-stats-hero-bar">
+                <div className="mm-stats-hero-item">
+                  <span className="mm-stats-hero-val">{stats.gamesPlayedTotal}</span>
+                  <span className="mm-stats-hero-key">Matches</span>
                 </div>
-                <div className="mm-stats-summary-card">
-                  <span className="mm-stats-summary-val" style={{ color: '#22d3ee' }}>
+                <div className="mm-stats-hero-divider" />
+                <div className="mm-stats-hero-item">
+                  <span className="mm-stats-hero-val" style={{ color: '#22d3ee' }}>
                     {stats.gamesPlayedTotal > 0 ? Math.round((stats.winsTotal / stats.gamesPlayedTotal) * 100) : 0}%
                   </span>
-                  <span className="mm-stats-summary-key">Win Rate</span>
+                  <span className="mm-stats-hero-key">Win Rate</span>
                 </div>
-                <div className="mm-stats-summary-card">
-                  <span className="mm-stats-summary-val" style={{ color: '#fbbf24' }}>
-                    {stats.winStreakBest}
-                  </span>
-                  <span className="mm-stats-summary-key">Best Win Streak</span>
+                <div className="mm-stats-hero-divider" />
+                <div className="mm-stats-hero-item">
+                  <span className="mm-stats-hero-val" style={{ color: '#fbbf24' }}>{stats.winsTotal}</span>
+                  <span className="mm-stats-hero-key">Victories</span>
                 </div>
+                <div className="mm-stats-hero-divider" />
+                <div className="mm-stats-hero-item">
+                  <span className="mm-stats-hero-val" style={{ color: '#fb923c' }}>{stats.winStreakBest}</span>
+                  <span className="mm-stats-hero-key">Best Streak</span>
+                </div>
+              </div>
 
+              {/* Win Rate Sparkline */}
+              <div className="mm-stats-section-card">
+                <div className="mm-stats-section-label">📈 Performance Trend</div>
                 <WinRateSparkline />
-                
-                {/* Reset Section */}
-                <div className="mm-stats-reset-wrap">
-                  <button 
-                    className="mm-reset-btn" 
-                    onClick={() => {
-                      if (confirm("Are you sure you want to reset all your statistics? This cannot be undone.")) {
-                        resetLocalStats();
-                        setStats(getLocalStats());
-                      }
-                    }}
-                  >
-                    🗑️ Reset Statistics
-                  </button>
+              </div>
+
+              {/* Mode Split */}
+              <div className="mm-stats-section-label-standalone">🎮 Mode Statistics</div>
+              <div className="mm-stats-mode-row">
+                <div className="mm-stats-mode-card">
+                  <div className="mm-stats-mode-header">
+                    <span className="mm-stats-mode-icon">🤖</span>
+                    <span className="mm-stats-mode-name">Vs AI</span>
+                  </div>
+                  <div className="mm-stats-mode-rows">
+                    <div className="mm-stats-mode-row-item"><span>Played</span><strong>{stats.gamesPlayedOffline}</strong></div>
+                    <div className="mm-stats-mode-row-item"><span>Wins</span><strong>{stats.winsOffline}</strong></div>
+                    <div className="mm-stats-mode-row-item"><span>Win Rate</span><strong style={{ color: '#34d399' }}>{stats.gamesPlayedOffline > 0 ? Math.round((stats.winsOffline / stats.gamesPlayedOffline) * 100) : 0}%</strong></div>
+                  </div>
+                </div>
+                <div className="mm-stats-mode-card">
+                  <div className="mm-stats-mode-header">
+                    <span className="mm-stats-mode-icon">🌐</span>
+                    <span className="mm-stats-mode-name">Multiplayer</span>
+                  </div>
+                  <div className="mm-stats-mode-rows">
+                    <div className="mm-stats-mode-row-item"><span>Played</span><strong>{stats.gamesPlayedOnline}</strong></div>
+                    <div className="mm-stats-mode-row-item"><span>Wins</span><strong>{stats.winsOnline}</strong></div>
+                    <div className="mm-stats-mode-row-item"><span>Win Rate</span><strong style={{ color: '#34d399' }}>{stats.gamesPlayedOnline > 0 ? Math.round((stats.winsOnline / stats.gamesPlayedOnline) * 100) : 0}%</strong></div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Column: Detailed Grid */}
-            <div className="mm-stats-right glass-panel">
-              <h3 className="mm-stats-title">📈 Detailed Performance</h3>
-              <div className="mm-stats-scroll">
-                
-                {/* Grid 1: Split Modes */}
-                <div className="mm-stats-section">
-                  <h4 className="mm-stats-section-title">Mode Statistics</h4>
-                  <div className="mm-stats-grid">
-                    <div className="mm-stats-card">
-                      <span className="mm-stats-card-title">🤖 Vs AI Matches</span>
-                      <div className="mm-stats-card-content">
-                        <div><span>Played</span><strong>{stats.gamesPlayedOffline}</strong></div>
-                        <div><span>Wins</span><strong>{stats.winsOffline}</strong></div>
-                        <div><span>Win Rate</span><strong style={{ color: '#34d399' }}>{stats.gamesPlayedOffline > 0 ? Math.round((stats.winsOffline / stats.gamesPlayedOffline) * 100) : 0}%</strong></div>
-                      </div>
+              {/* Declare Accuracy */}
+              <div className="mm-stats-section-card">
+                <div className="mm-stats-section-label">🎯 Declare (Tick) Accuracy</div>
+                <div className="mm-stats-accuracy-box">
+                  <div className="mm-stats-accuracy-chart-wrap">
+                    <div className="mm-stats-accuracy-val">
+                      {(() => {
+                        const total = stats.declaresCorrect + stats.declaresWrong;
+                        return total > 0 ? `${Math.round((stats.declaresCorrect / total) * 100)}%` : '0%';
+                      })()}
                     </div>
-                    
-                    <div className="mm-stats-card">
-                      <span className="mm-stats-card-title">🌐 Multiplayer Matches</span>
-                      <div className="mm-stats-card-content">
-                        <div><span>Played</span><strong>{stats.gamesPlayedOnline}</strong></div>
-                        <div><span>Wins</span><strong>{stats.winsOnline}</strong></div>
-                        <div><span>Win Rate</span><strong style={{ color: '#34d399' }}>{stats.gamesPlayedOnline > 0 ? Math.round((stats.winsOnline / stats.gamesPlayedOnline) * 100) : 0}%</strong></div>
-                      </div>
+                    <span className="mm-stats-accuracy-label">Accuracy</span>
+                  </div>
+                  <div className="mm-stats-accuracy-details">
+                    <div className="mm-stats-detail-row">
+                      <span className="dot-correct">●</span>
+                      <span>Correct Declares</span>
+                      <strong>{stats.declaresCorrect}</strong>
+                    </div>
+                    <div className="mm-stats-detail-row">
+                      <span className="dot-wrong">●</span>
+                      <span>Wrong Declares</span>
+                      <strong>{stats.declaresWrong}</strong>
+                    </div>
+                    <div className="mm-stats-detail-row">
+                      <span>Total Declares</span>
+                      <strong>{stats.declaresCorrect + stats.declaresWrong}</strong>
                     </div>
                   </div>
                 </div>
-
-                {/* Grid 2: Declare Accuracy */}
-                <div className="mm-stats-section">
-                  <h4 className="mm-stats-section-title">Declare (Tick) Accuracy</h4>
-                  <div className="mm-stats-accuracy-box">
-                    <div className="mm-stats-accuracy-chart-wrap">
-                      <div className="mm-stats-accuracy-val">
-                        {(() => {
-                          const total = stats.declaresCorrect + stats.declaresWrong;
-                          return total > 0 ? `${Math.round((stats.declaresCorrect / total) * 100)}%` : '0%';
-                        })()}
-                      </div>
-                      <span className="mm-stats-accuracy-label">Accuracy</span>
-                    </div>
-                    <div className="mm-stats-accuracy-details">
-                      <div className="mm-stats-detail-row">
-                        <span className="dot-correct">●</span>
-                        <span>Correct Declares</span>
-                        <strong>{stats.declaresCorrect}</strong>
-                      </div>
-                      <div className="mm-stats-detail-row">
-                        <span className="dot-wrong">●</span>
-                        <span>Wrong Declares</span>
-                        <strong>{stats.declaresWrong}</strong>
-                      </div>
-                      <div className="mm-stats-detail-row">
-                        <span>Total Declares</span>
-                        <strong>{stats.declaresCorrect + stats.declaresWrong}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Grid 3: Scoring & Records */}
-                <div className="mm-stats-section">
-                  <h4 className="mm-stats-section-title">Scoring &amp; Records</h4>
-                  <div className="mm-stats-grid mini-grid">
-                    <div className="mm-stats-card mini">
-                      <span className="mm-stats-card-key">Lowest Round Score</span>
-                      <span className="mm-stats-card-val cyan">{stats.roundsPlayed > 0 ? stats.lowestRoundScore : '-'}</span>
-                    </div>
-                    <div className="mm-stats-card mini">
-                      <span className="mm-stats-card-key">Highest Round Score</span>
-                      <span className="mm-stats-card-val orange">{stats.roundsPlayed > 0 ? stats.highestRoundScore : '-'}</span>
-                    </div>
-                    <div className="mm-stats-card mini">
-                      <span className="mm-stats-card-key">Average Round Score</span>
-                      <span className="mm-stats-card-val gold">
-                        {stats.roundsPlayed > 0 ? (stats.totalPointsScored / stats.roundsPlayed).toFixed(1) : '-'}
-                      </span>
-                    </div>
-                    <div className="mm-stats-card mini">
-                      <span className="mm-stats-card-key">Total Rounds Played</span>
-                      <span className="mm-stats-card-val">{stats.roundsPlayed}</span>
-                    </div>
-                  </div>
-                </div>
-
               </div>
-            </div>
+
+              {/* Scoring Records */}
+              <div className="mm-stats-section-label-standalone">🏆 Scoring &amp; Records</div>
+              <div className="mm-stats-records-grid">
+                <div className="mm-stats-record-tile">
+                  <span className="mm-stats-record-icon">📉</span>
+                  <span className="mm-stats-record-val cyan">{stats.roundsPlayed > 0 ? stats.lowestRoundScore : '—'}</span>
+                  <span className="mm-stats-record-key">Lowest Round</span>
+                </div>
+                <div className="mm-stats-record-tile">
+                  <span className="mm-stats-record-icon">📈</span>
+                  <span className="mm-stats-record-val orange">{stats.roundsPlayed > 0 ? stats.highestRoundScore : '—'}</span>
+                  <span className="mm-stats-record-key">Highest Round</span>
+                </div>
+                <div className="mm-stats-record-tile">
+                  <span className="mm-stats-record-icon">⚖️</span>
+                  <span className="mm-stats-record-val gold">
+                    {stats.roundsPlayed > 0 ? (stats.totalPointsScored / stats.roundsPlayed).toFixed(1) : '—'}
+                  </span>
+                  <span className="mm-stats-record-key">Avg Round</span>
+                </div>
+                <div className="mm-stats-record-tile">
+                  <span className="mm-stats-record-icon">🔁</span>
+                  <span className="mm-stats-record-val">{stats.roundsPlayed}</span>
+                  <span className="mm-stats-record-key">Total Rounds</span>
+                </div>
+              </div>
+
+              {/* Reset */}
+              <div className="mm-stats-reset-wrap">
+                <button
+                  className="mm-reset-btn"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to reset all your statistics? This cannot be undone.")) {
+                      resetLocalStats();
+                      setStats(getLocalStats());
+                    }
+                  }}
+                >
+                  🗑️ Reset Statistics
+                </button>
+              </div>
+
+            </div>{/* end mm-stats-body */}
           </div>
         )}
 

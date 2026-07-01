@@ -122,6 +122,7 @@ public class GameEngine {
         if (game == null) return;
 
         game.setCurrentRoundNumber(0);
+        game.setNextRoundStartIndex(0); // Round 1 always starts with player 0 (index 0)
         game.setWinnerId(null);
         game.getRounds().clear();
         for (Player p : game.getPlayers()) {
@@ -196,10 +197,16 @@ public class GameEngine {
         discardPile.add(round.getDrawPile().remove(0));
         round.setDiscardPile(discardPile);
 
-        // 7. Choose starting player (rotates each round)
-        int startingPlayerIndex = (nextRoundNumber - 1) % game.getPlayers().size();
+        // 7. Choose starting player: always the next player clockwise from last round's starter.
+        //    nextRoundStartIndex was already set to the correct index before calling this method.
+        int startingPlayerIndex = game.getNextRoundStartIndex();
         round.setCurrentPlayerIndex(startingPlayerIndex);
         round.setTurnStartedAt(System.currentTimeMillis());
+
+        // Advance pointer NOW so the round AFTER this one starts with the next player clockwise.
+        int nextStart = (startingPlayerIndex + 1) % game.getPlayers().size();
+        game.setNextRoundStartIndex(nextStart);
+        System.out.println("[startNextRound] Round " + nextRoundNumber + " starts with player index " + startingPlayerIndex + " (" + game.getPlayers().get(startingPlayerIndex).getName() + "). Next round will start with index " + nextStart);
 
         game.setCurrentRound(round);
     }

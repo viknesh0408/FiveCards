@@ -840,6 +840,7 @@ body::before {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0 !important;
 }
 
 /* Dual-orbital turn ring: outer slow + inner fast */
@@ -927,6 +928,7 @@ body::before {
   font-size: 0.9rem;
   box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.25), 0 2px 6px rgba(0, 0, 0, 0.35);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  flex-shrink: 0 !important;
 }
 
 .avatar-info {
@@ -3094,11 +3096,67 @@ body::before {
     font-size: 0.62rem !important;
   }
   
-  .opponents-top-container.compact-opponents .opponent-mini-hand .card-back {
+  .opponents-top-container.compact-opponents .opponent-mini-hand .card-back,
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card {
     width: 18px !important;
     height: 27px !important;
     margin-left: -8px !important;
     border-radius: 3px !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .card-back:first-child,
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card:first-child {
+    margin-left: 0 !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card {
+    padding: 1.5px !important;
+    font-size: 6px !important;
+    border-width: 0.5px !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card .card-corner.top {
+    top: 1px !important;
+    left: 1px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 0.5px !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card .card-corner.bottom {
+    display: none !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card .card-center-suit {
+    display: none !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card .card-inner-border {
+    display: none !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card .card-rank {
+    font-size: 7px !important;
+    font-weight: 800 !important;
+    line-height: 1 !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card .card-suit-icon {
+    font-size: 6px !important;
+    line-height: 1 !important;
+  }
+  
+  .opponents-top-container.compact-opponents .opponent-mini-hand .game-card.joker::before {
+    display: block !important;
+    content: '★' !important;
+    font-size: 6px !important;
+    padding: 0.5px 1.5px !important;
+    top: 0.5px !important;
+    right: 0.5px !important;
+    border-radius: 1.5px !important;
+    letter-spacing: 0px !important;
+    line-height: 1 !important;
   }
   
   .opponents-top-container.compact-opponents .avatar-timer-overlay {
@@ -6339,8 +6397,10 @@ body.battery-saver .hud-btn-voice.speaking {
 
 /* ── 4. OWN AVATAR GLOW + FLOAT WHEN IT IS MY TURN ── */
 .player-hud-avatar-ring.my-turn-active {
-  animation: avatar-self-float 2.4s ease-in-out infinite;
   box-shadow: 0 0 12px rgba(34, 211, 238, 0.45), 0 0 24px rgba(34, 211, 238, 0.2);
+}
+.avatar-wrapper.my-turn-active {
+  animation: avatar-self-float 2.4s ease-in-out infinite;
 }
 
 @keyframes avatar-self-float {
@@ -8530,17 +8590,247 @@ body.battery-saver .hud-btn-voice.speaking {
   }
 }
 
+/* ── STATS PAGE (single-column momentum scroll) ── */
 .mm-view-stats .mm-scene {
-  padding: calc(24px + env(safe-area-inset-top, 0px)) 12px 12px !important;
+  padding: 0 !important;
   display: flex !important;
   flex-direction: column !important;
   align-items: stretch !important;
+  overflow: hidden !important;
+  height: 100% !important;
 }
 
+/* Full-height page container that holds sticky header + scrollable body */
+.mm-stats-page {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+/* Sticky header bar */
+.mm-stats-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 14px) + 14px) 16px 14px;
+  background: linear-gradient(to bottom, rgba(4, 16, 8, 0.98) 60%, transparent);
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(52, 211, 153, 0.08);
+}
+.mm-stats-back {
+  flex-shrink: 0;
+}
+.mm-stats-page-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mm-stats-page-icon {
+  font-size: 1.3rem;
+}
+.mm-stats-page-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+/* The momentum-scroll body */
+.mm-stats-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(52, 211, 153, 0.2) transparent;
+  padding: 16px 16px calc(env(safe-area-inset-bottom, 0px) + 90px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.mm-stats-body::-webkit-scrollbar { width: 3px; }
+.mm-stats-body::-webkit-scrollbar-thumb {
+  background: rgba(52, 211, 153, 0.2);
+  border-radius: 2px;
+}
+
+/* Hero stats bar (4 numbers across top) */
+.mm-stats-hero-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: linear-gradient(135deg, rgba(52, 211, 153, 0.08) 0%, rgba(8, 24, 16, 0.9) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.18);
+  border-radius: 16px;
+  padding: 18px 8px;
+  gap: 0;
+}
+.mm-stats-hero-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex: 1;
+}
+.mm-stats-hero-val {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--color-text);
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+.mm-stats-hero-key {
+  font-size: 0.62rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  text-align: center;
+}
+.mm-stats-hero-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+/* Section cards */
+.mm-stats-section-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Standalone section label (between cards) */
+.mm-stats-section-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 2px;
+}
+.mm-stats-section-label-standalone {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  padding: 0 2px;
+  margin-bottom: -4px;
+}
+
+/* Mode cards (2 side-by-side) */
+.mm-stats-mode-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.mm-stats-mode-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mm-stats-mode-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 8px;
+}
+.mm-stats-mode-icon { font-size: 1rem; }
+.mm-stats-mode-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.mm-stats-mode-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mm-stats-mode-row-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+}
+.mm-stats-mode-row-item span {
+  color: rgba(255, 255, 255, 0.5);
+}
+.mm-stats-mode-row-item strong {
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+/* Records 2x2 grid */
+.mm-stats-records-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mm-stats-record-tile {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 14px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+.mm-stats-record-tile:active { border-color: rgba(52, 211, 153, 0.25); }
+.mm-stats-record-icon { font-size: 1.3rem; }
+.mm-stats-record-val {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--color-text);
+  line-height: 1;
+}
+.mm-stats-record-val.cyan  { color: #22d3ee; }
+.mm-stats-record-val.orange { color: #fb923c; }
+.mm-stats-record-val.gold  { color: #fbbf24; }
+.mm-stats-record-key {
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Desktop: widen a bit */
 @media (min-width: 851px) {
-  .mm-view-stats .mm-scene {
-    padding: 40px 20px 20px !important;
-    align-items: center !important;
+  .mm-stats-page {
+    max-width: 540px;
+  }
+  .mm-stats-page-header {
+    padding: 24px 24px 16px;
+  }
+  .mm-stats-body {
+    padding: 20px 24px 40px;
   }
 }
 
@@ -8985,7 +9275,7 @@ body.battery-saver .hud-btn-voice.speaking {
     width: 64px !important;
     height: 64px !important;
   }
-  .mm-avatar-img {
+  .mm-avatar-ring .mm-avatar-img {
     width: 60px !important;
     height: 60px !important;
   }
@@ -9321,4 +9611,156 @@ body.battery-saver .center-stacks {
   border-radius: 12px !important;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   PREMIUM AVATARS RESPONSIVE STYLING & CONTAINMENT
+   ═══════════════════════════════════════════════════════════════════════════ */
 
+.premium-avatar-crest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(8, 14, 28, 0.95);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  border: 1.5px solid var(--color-cyan, #22d3ee);
+  box-sizing: border-box;
+  flex-shrink: 0 !important;
+}
+
+/* Responsive constraints based on device screen widths */
+@media (max-width: 599px) {
+  .premium-avatar-crest {
+    font-size: 0.82rem !important;
+    border-width: 1px !important;
+  }
+}
+
+@media (max-width: 399px) {
+  .premium-avatar-crest {
+    font-size: 0.65rem !important;
+    border-width: 1px !important;
+  }
+}
+
+/* Contextual overrides for small avatar containers */
+.scoreboard-avatar-wrap .premium-avatar-crest {
+  font-size: 0.7rem !important;
+  border-width: 1px !important;
+}
+
+.podium-avatar-wrap .premium-avatar-crest {
+  font-size: 1rem !important;
+  border-width: 1px !important;
+}
+
+.player-hud-avatar-ring .premium-avatar-crest {
+  border-width: 0px !important; /* Hide redundant inner border inside HUD ring */
+  font-size: 0.9rem !important;
+}
+
+/* ── PREMIUM AVATAR ANIMATIONS ─────────────────────────────── */
+
+/* 🤖 Neon Matrix — green scanline pulse + flicker */
+@keyframes pav-matrix-flicker {
+  0%   { opacity: 1; filter: drop-shadow(0 0 4px #39ff14) brightness(1.1); }
+  8%   { opacity: 0.82; filter: drop-shadow(0 0 2px #39ff14) brightness(0.95); }
+  9%   { opacity: 1; filter: drop-shadow(0 0 6px #39ff14) brightness(1.2); }
+  40%  { opacity: 1; filter: drop-shadow(0 0 4px #39ff14) brightness(1.05); }
+  60%  { opacity: 0.88; filter: drop-shadow(0 0 8px #22d3ee) brightness(1.1); }
+  100% { opacity: 1; filter: drop-shadow(0 0 4px #39ff14) brightness(1.1); }
+}
+@keyframes pav-matrix-border {
+  0%   { border-color: #39ff14; box-shadow: 0 0 6px #39ff1466, inset 0 0 8px rgba(57,255,20,0.08); }
+  50%  { border-color: #22d3ee; box-shadow: 0 0 12px #22d3ee55, inset 0 0 12px rgba(34,211,238,0.1); }
+  100% { border-color: #39ff14; box-shadow: 0 0 6px #39ff1466, inset 0 0 8px rgba(57,255,20,0.08); }
+}
+.premium-anim-neon_matrix {
+  animation:
+    pav-matrix-flicker 3.5s ease-in-out infinite,
+    pav-matrix-border  3.5s ease-in-out infinite;
+  border-color: #39ff14 !important;
+}
+
+/* 🌌 Cosmic Vortex — hue-rotate glow + slow scale pulse */
+@keyframes pav-cosmic-glow {
+  0%   { filter: drop-shadow(0 0 5px #a855f7) hue-rotate(0deg) brightness(1.1); }
+  33%  { filter: drop-shadow(0 0 12px #6366f1) hue-rotate(40deg) brightness(1.2); }
+  66%  { filter: drop-shadow(0 0 8px #ec4899) hue-rotate(80deg) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 5px #a855f7) hue-rotate(0deg) brightness(1.1); }
+}
+@keyframes pav-cosmic-scale {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.06); }
+}
+@keyframes pav-cosmic-border {
+  0%   { border-color: #a855f7; box-shadow: 0 0 8px #a855f755, inset 0 0 10px rgba(168,85,247,0.1); }
+  33%  { border-color: #6366f1; box-shadow: 0 0 14px #6366f166, inset 0 0 14px rgba(99,102,241,0.12); }
+  66%  { border-color: #ec4899; box-shadow: 0 0 10px #ec489966, inset 0 0 10px rgba(236,72,153,0.1); }
+  100% { border-color: #a855f7; box-shadow: 0 0 8px #a855f755, inset 0 0 10px rgba(168,85,247,0.1); }
+}
+.premium-anim-cosmic_vortex {
+  animation:
+    pav-cosmic-glow   5s linear infinite,
+    pav-cosmic-scale  4s ease-in-out infinite,
+    pav-cosmic-border 5s linear infinite;
+  border-color: #a855f7 !important;
+}
+
+/* 💀 Cyber Skull — eerie breathe + red shimmer */
+@keyframes pav-skull-breathe {
+  0%, 100% { transform: scale(1);    opacity: 1; }
+  40%       { transform: scale(1.04); opacity: 0.9; }
+  70%       { transform: scale(0.97); opacity: 1; }
+}
+@keyframes pav-skull-glow {
+  0%   { filter: drop-shadow(0 0 3px #ef4444) brightness(1); }
+  45%  { filter: drop-shadow(0 0 10px #ef444488) brightness(1.15); }
+  50%  { filter: drop-shadow(0 0 2px #dc2626) brightness(0.9); }
+  55%  { filter: drop-shadow(0 0 10px #ef444488) brightness(1.15); }
+  100% { filter: drop-shadow(0 0 3px #ef4444) brightness(1); }
+}
+@keyframes pav-skull-border {
+  0%, 100% { border-color: #7f1d1d; box-shadow: 0 0 4px #ef444433; }
+  50%       { border-color: #ef4444; box-shadow: 0 0 12px #ef444466, inset 0 0 10px rgba(239,68,68,0.12); }
+}
+.premium-anim-cyber_skull {
+  animation:
+    pav-skull-breathe 2.8s ease-in-out infinite,
+    pav-skull-glow    2.8s ease-in-out infinite,
+    pav-skull-border  2.8s ease-in-out infinite;
+  border-color: #ef4444 !important;
+}
+
+/* 🌴 Retro Wave — warm sunset bob + glow pulse */
+@keyframes pav-retro-bob {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  30%       { transform: translateY(-2px) rotate(1deg); }
+  70%       { transform: translateY(1px) rotate(-0.5deg); }
+}
+@keyframes pav-retro-glow {
+  0%   { filter: drop-shadow(0 0 4px #f97316) brightness(1.05); }
+  50%  { filter: drop-shadow(0 0 10px #fbbf24) brightness(1.2); }
+  100% { filter: drop-shadow(0 0 4px #f97316) brightness(1.05); }
+}
+@keyframes pav-retro-border {
+  0%   { border-color: #f97316; box-shadow: 0 0 6px #f9731655, inset 0 0 8px rgba(249,115,22,0.08); }
+  50%  { border-color: #fbbf24; box-shadow: 0 0 14px #fbbf2466, inset 0 0 12px rgba(251,191,36,0.1); }
+  100% { border-color: #f97316; box-shadow: 0 0 6px #f9731655, inset 0 0 8px rgba(249,115,22,0.08); }
+}
+.premium-anim-retro_wave {
+  animation:
+    pav-retro-bob    3.2s ease-in-out infinite,
+    pav-retro-glow   3.2s ease-in-out infinite,
+    pav-retro-border 3.2s ease-in-out infinite;
+  border-color: #f97316 !important;
+}
+
+/* Battery-saver: freeze animations */
+body.battery-saver .premium-anim-neon_matrix,
+body.battery-saver .premium-anim-cosmic_vortex,
+body.battery-saver .premium-anim-cyber_skull,
+body.battery-saver .premium-anim-retro_wave {
+  animation: none !important;
+}

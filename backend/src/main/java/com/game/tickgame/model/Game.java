@@ -22,6 +22,8 @@ public class Game {
     private boolean isMultiplayer = false;
     private String hostId;
     private List<Spectator> spectators = new ArrayList<>();
+    /** Tracks which player index starts the next round (advances +1 clockwise each round). */
+    private int nextRoundStartIndex = 0;
 
     public Player getPlayerById(String id) {
         if (players == null) return null;

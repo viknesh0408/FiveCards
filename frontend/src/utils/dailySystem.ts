@@ -56,11 +56,11 @@ export const DAILY_REWARDS: DailyReward[] = [
   },
   {
     day: 2,
-    icon: '🎨',
-    label: 'Avatar Frame',
-    description: 'Rare neon avatar frame unlocked',
-    type: 'avatar',
-    coinValue: 50,
+    icon: '🪙',
+    label: '150 Coins',
+    description: 'Bonus login coins pack!',
+    type: 'coins',
+    coinValue: 150,
   },
   {
     day: 3,
@@ -401,53 +401,8 @@ export function getDailyRewardsForState(state: DailyState): DailyReward[] {
     day5PicDesc = 'Unlocks the cosmic Alien profile picture!';
   }
 
-  // Day 2 Frame
-  let day2FrameId = 'neon_frame';
-  let day2FrameName = 'Neon Frame';
-  let day2FrameIcon = '🎨';
-  let day2FrameDesc = 'Rare neon avatar frame unlocked';
-  let day2Coins = 50;
-
-  if (activeCycle === 1) {
-    day2FrameId = 'neon_frame';
-    day2FrameName = 'Neon Frame';
-  } else if (activeCycle === 2) {
-    day2FrameId = 'frost';
-    day2FrameName = 'Frost Frame';
-    day2FrameIcon = '❄️';
-    day2FrameDesc = 'Cool frosted crystals avatar frame unlocked';
-    day2Coins = 100;
-  } else if (activeCycle === 3) {
-    day2FrameId = 'fire';
-    day2FrameName = 'Fire Frame';
-    day2FrameIcon = '🔥';
-    day2FrameDesc = 'Energetic warm orange-red dancing fire ring';
-    day2Coins = 150;
-  } else if (activeCycle === 4) {
-    day2FrameId = 'amethyst_frame';
-    day2FrameName = 'Amethyst Frame';
-    day2FrameIcon = '✨';
-    day2FrameDesc = 'Purple crystalline avatar frame unlocked';
-    day2Coins = 200;
-  } else if (activeCycle === 5) {
-    day2FrameId = 'sapphire_frame';
-    day2FrameName = 'Sapphire Frame';
-    day2FrameIcon = '💧';
-    day2FrameDesc = 'Flowing blue ocean waters avatar frame';
-    day2Coins = 250;
-  } else if (activeCycle === 6) {
-    day2FrameId = 'steampunk_frame';
-    day2FrameName = 'Steampunk Frame';
-    day2FrameIcon = '⚙️';
-    day2FrameDesc = 'Ornate rotating brass gears avatar frame';
-    day2Coins = 300;
-  } else if (activeCycle === 7) {
-    day2FrameId = 'prism_frame';
-    day2FrameName = 'Prism Frame';
-    day2FrameIcon = '🌈';
-    day2FrameDesc = 'Prismatic color cycle avatar frame';
-    day2Coins = 350;
-  }
+  // Day 2 Coins (Frame replacement)
+  let day2Coins = 100 + activeCycle * 50;
 
   // Day 3 Card Back
   let day3BackId = 'holographic';
@@ -550,12 +505,11 @@ export function getDailyRewardsForState(state: DailyState): DailyReward[] {
     },
     {
       day: 2,
-      icon: day2FrameIcon,
-      label: day2FrameName,
-      description: day2FrameDesc,
-      type: 'avatar',
+      icon: '🪙',
+      label: `${day2Coins} Coins`,
+      description: `Streak day 2 login bonus!`,
+      type: 'coins',
       coinValue: day2Coins,
-      itemId: day2FrameId,
     },
     {
       day: 3,
@@ -629,22 +583,22 @@ export function getDailyRewardsForState(state: DailyState): DailyReward[] {
         isAvatarUnlocked = true;
       } else if (activeCycle === 2) {
         isCardBackUnlocked = state.unlockedCardBacks.includes('obsidian');
-        isAvatarUnlocked = state.unlockedAvatars.includes('gold_aura');
+        isAvatarUnlocked = true;
       } else if (activeCycle === 3) {
         isCardBackUnlocked = true;
-        isAvatarUnlocked = state.unlockedAvatars.includes('royal');
+        isAvatarUnlocked = true;
       } else if (activeCycle === 4) {
         isCardBackUnlocked = state.unlockedCardBacks.includes('cyberpunk');
-        isAvatarUnlocked = state.unlockedAvatars.includes('cyberpunk_frame');
+        isAvatarUnlocked = true;
       } else if (activeCycle === 5) {
         isCardBackUnlocked = state.unlockedCardBacks.includes('lava');
-        isAvatarUnlocked = state.unlockedAvatars.includes('lava_frame');
+        isAvatarUnlocked = true;
       } else if (activeCycle === 6) {
         isCardBackUnlocked = state.unlockedCardBacks.includes('cosmic');
-        isAvatarUnlocked = state.unlockedAvatars.includes('cosmic_frame');
+        isAvatarUnlocked = true;
       } else if (activeCycle === 7) {
         isCardBackUnlocked = state.unlockedCardBacks.includes('dragon_scale');
-        isAvatarUnlocked = state.unlockedAvatars.includes('dragon_frame');
+        isAvatarUnlocked = true;
       }
 
       if (isCardBackUnlocked && isAvatarUnlocked) {
@@ -702,21 +656,16 @@ export function claimDailyReward(): DailyState {
         if (!nextUnlockedCardBacks.includes('gold')) nextUnlockedCardBacks.push('gold');
       } else if (activeCycle === 2) {
         if (!nextUnlockedCardBacks.includes('obsidian')) nextUnlockedCardBacks.push('obsidian');
-        if (!nextUnlockedAvatars.includes('gold_aura')) nextUnlockedAvatars.push('gold_aura');
       } else if (activeCycle === 3) {
-        if (!nextUnlockedAvatars.includes('royal')) nextUnlockedAvatars.push('royal');
+        // No frame to unlock
       } else if (activeCycle === 4) {
         if (!nextUnlockedCardBacks.includes('cyberpunk')) nextUnlockedCardBacks.push('cyberpunk');
-        if (!nextUnlockedAvatars.includes('cyberpunk_frame')) nextUnlockedAvatars.push('cyberpunk_frame');
       } else if (activeCycle === 5) {
         if (!nextUnlockedCardBacks.includes('lava')) nextUnlockedCardBacks.push('lava');
-        if (!nextUnlockedAvatars.includes('lava_frame')) nextUnlockedAvatars.push('lava_frame');
       } else if (activeCycle === 6) {
         if (!nextUnlockedCardBacks.includes('cosmic')) nextUnlockedCardBacks.push('cosmic');
-        if (!nextUnlockedAvatars.includes('cosmic_frame')) nextUnlockedAvatars.push('cosmic_frame');
       } else if (activeCycle === 7) {
         if (!nextUnlockedCardBacks.includes('dragon_scale')) nextUnlockedCardBacks.push('dragon_scale');
-        if (!nextUnlockedAvatars.includes('dragon_frame')) nextUnlockedAvatars.push('dragon_frame');
       }
     }
   }

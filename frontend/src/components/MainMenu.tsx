@@ -54,24 +54,7 @@ const CARD_BACKS: ShopItem[] = [
   { id: 'dragon_scale', name: 'Dragon Scale', description: 'Scaled fire-breathing red reptile armor plate', price: 15000 },
 ];
 
-const AVATAR_FRAMES: ShopItem[] = [
-  { id: 'none', name: 'Default Frame', description: 'Simple, clean border profile ring', price: 0 },
-  { id: 'neon_frame', name: 'Neon Cyber', description: 'Electrifying cyan and hot pink glowing ring', price: 1000 },
-  { id: 'frost', name: 'Ice Frost', description: 'Frosted blue crystals and cold sparkle glow', price: 1500 },
-  { id: 'fire', name: 'Fire Flame', description: 'Energetic warm orange-red dancing fire ring', price: 2000 },
-  { id: 'amethyst_frame', name: 'Amethyst Crystal', description: 'Purple crystalline glowing geode ring', price: 2500 },
-  { id: 'ruby_frame', name: 'Ruby Heartbeat', description: 'Pulsing crimson crystal border', price: 3000 },
-  { id: 'sapphire_frame', name: 'Sapphire Wave', description: 'Flowing blue ocean waters', price: 3500 },
-  { id: 'steampunk_frame', name: 'Steampunk Gear', description: 'Rotating brass gears border', price: 4000 },
-  { id: 'cyberpunk_frame', name: 'Glitch Matrix', description: 'Shifting cyan/lime noise glitch border', price: 5000 },
-  { id: 'prism_frame', name: 'Rainbow Prism', description: 'Prismatic color cycle border', price: 6000 },
-  { id: 'matrix_frame', name: 'Digital Code', description: 'Code waterfall flowing around avatar', price: 7000 },
-  { id: 'lava_frame', name: 'Volcanic Lava', description: 'Hot glowing molten lava ring', price: 8000 },
-  { id: 'cosmic_frame', name: 'Cosmic Nebula', description: 'Starry nebula galaxy swirl frame', price: 9000 },
-  { id: 'gold_aura', name: 'Golden Aura', description: 'Continuous rotate of brilliant royal gold rays', price: 10000 },
-  { id: 'dragon_frame', name: 'Dragon Emperor', description: 'Crimson scales crowned with dragon claws', price: 12000 },
-  { id: 'royal', name: 'Royal Crown', description: 'Majestic golden crest crowned with a royal tiara', price: 15000 },
-];
+
 
 const CARTOON_AVATARS = [
   { id: 'none', name: 'None (Initials)' },
@@ -205,7 +188,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [view, setView] = useState<View>('main');
   const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('tickPlayerName') || '');
   const [tempPlayerName, setTempPlayerName] = useState<string>('');
-  const [tempAvatar, setTempAvatar] = useState<string>('none');
+
   const [tempCardBack, setTempCardBack] = useState<string>('classic');
   const [aiCount, setAiCount] = useState<number>(3);
   const [maxRounds, setMaxRounds] = useState<number>(10);
@@ -223,7 +206,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const [cardGlowEnabled, setCardGlowEnabled] = useState<boolean>(() => localStorage.getItem('cardGlowEnabled') !== 'false');
   const [animIn, setAnimIn] = useState(true);
   const [hasDailyNotif, setHasDailyNotif] = useState<boolean>(() => hasUnclaimedDaily());
-  const [selectedAvatar, setSelectedAvatar] = useState<string>(() => localStorage.getItem('selected_avatar') || 'none');
+
   const [selectedAvatarPic, setSelectedAvatarPic] = useState<string>(() => localStorage.getItem('selected_avatar_pic') || 'none');
   const [tempAvatarPic, setTempAvatarPic] = useState<string>('none');
   const [tempTableFelt, setTempTableFelt] = useState<string>('emerald_green');
@@ -258,14 +241,14 @@ export const MainMenu: React.FC<MainMenuProps> = ({
       if (v === 'edit-profile') {
         const ds = getDailyState();
         setTempPlayerName(localStorage.getItem('tickPlayerName') || 'Player');
-        setTempAvatar(ds.selectedAvatar || 'none');
+
         setTempCardBack(ds.selectedCardBack || 'classic');
         setTempAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
         setTempTableFelt(ds.selectedTableFelt || 'emerald_green');
       }
       if (v === 'main') {
         setHasDailyNotif(hasUnclaimedDaily());
-        setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+
         setSelectedAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
       }
       if (v === 'online-create') {
@@ -283,7 +266,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
 
   const refreshMainMenuState = () => {
     setHasDailyNotif(hasUnclaimedDaily());
-    setSelectedAvatar(localStorage.getItem('selected_avatar') || 'none');
+
     setSelectedAvatarPic(localStorage.getItem('selected_avatar_pic') || 'none');
     setCoins(getDailyState().coins);
   };
@@ -336,11 +319,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
     saveLocalStats(updatedStats);
     setStats(updatedStats);
 
-    equipShopItem('avatar', tempAvatar);
+    equipShopItem('avatar', 'none');
     equipShopItem('cardBack', tempCardBack);
     equipShopItem('tableFelt', tempTableFelt);
 
-    setSelectedAvatar(tempAvatar);
     localStorage.setItem('selected_avatar_pic', tempAvatarPic);
     setSelectedAvatarPic(tempAvatarPic);
 
@@ -426,9 +408,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 <h2 className="mm-mobile-tab-header">Me</h2>
                 
                 {/* Profile Initials/Avatar */}
-                <div className={`mm-avatar-ring avatar-frame-${selectedAvatar}`}>
-                  {selectedAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(1.3)', top: '-14px', zIndex: 10 }}>👑</span>}
-                  <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="mm-avatar-ring" style={{ width: '64px', height: '64px', borderRadius: '50%', border: '2.5px solid var(--color-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                  <span className="mm-avatar-crest" style={{ fontSize: '2rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
                     <AvatarImage picId={selectedAvatarPic} name={playerName || stats.name || 'Player'} className="mm-avatar-img" />
                   </span>
                   {stats.winStreakCurrent >= 2 && <span className="mm-avatar-streak">🔥</span>}
@@ -1170,9 +1151,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
             <div className="mm-edit-profile-scroll" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {/* Initials & Frame Live Preview */}
               <div className="mm-edit-profile-preview" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', margin: '10px 0' }}>
-                <div className={`mm-avatar-ring avatar-frame-${tempAvatar}`} style={{ width: '70px', height: '70px', borderWidth: '3px' }}>
-                  {tempAvatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(1.4)', top: '-15px', zIndex: 10 }}>👑</span>}
-                  <span className="mm-avatar-crest" style={{ fontSize: '1.6rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <div className="mm-avatar-ring" style={{ width: '70px', height: '70px', borderRadius: '50%', border: '3px solid var(--color-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                  <span className="mm-avatar-crest" style={{ fontSize: '1.6rem', fontWeight: 900, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
                     <AvatarImage picId={tempAvatarPic} name={tempPlayerName} className="mm-avatar-img" />
                   </span>
                 </div>
@@ -1221,35 +1201,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                 </div>
               </div>
 
-              {/* Avatar Frames Grid */}
-              <div className="mm-field">
-                <label className="mm-field-label">Avatar Frames</label>
-                <div className="profile-edit-grid">
-                  {AVATAR_FRAMES.map((item) => {
-                    const isUnlocked = getDailyState().unlockedAvatars.includes(item.id);
-                    const isSelected = tempAvatar === item.id;
-                    return (
-                      <div
-                        key={item.id}
-                        className={`profile-edit-item ${isSelected ? 'selected' : ''} ${!isUnlocked ? 'locked' : ''}`}
-                        onClick={() => {
-                          if (isUnlocked) {
-                            setTempAvatar(item.id);
-                            soundEffects.playClick();
-                          }
-                        }}
-                      >
-                        <div className={`preview-circle avatar-frame-${item.id}`}>
-                          {item.id === 'royal' && <span className="shop-royal-crown" style={{ fontSize: '0.65rem', top: '-7px' }}>👑</span>}
-                          <span style={{ fontSize: '0.7rem', fontWeight: 800 }}>{(tempPlayerName || 'P')[0].toUpperCase()}</span>
-                        </div>
-                        <span className="item-label">{item.name}</span>
-                        {!isUnlocked && <span className="lock-icon">🔒</span>}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+
 
                {/* Card Backs Grid */}
               <div className="mm-field">

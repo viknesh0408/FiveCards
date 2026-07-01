@@ -120,6 +120,8 @@ export function useVoiceChat({
   }, [sendSignal]);
 
   const addLocalTracks = useCallback((pc: RTCPeerConnection) => {
+    // localStream may be null when muted (hardware released) — that's fine,
+    // replaceTrack will be called when the user unmutes
     if (!localStreamRef.current) return;
     localStreamRef.current.getTracks().forEach((track) => {
       pc.addTrack(track, localStreamRef.current!);
@@ -227,52 +229,61 @@ export function useVoiceChat({
     }
   }, []);
 
-  // ─── Enable voice (request mic + subscribe to signaling + connect to peers) 
+  // ─── Enable voice (request mic + subscribe to signaling + connect to peers)
+  // Key design: if the user starts muted (the default), we do NOT acquire the
+  // microphone at all — the OS mic indicator will never appear. We only hold
+  // the microphone hardware while the user is actively unmuted.
+  // Signaling (offers/answers) works fine without a local track; remote peers
+  // will receive silent/absent audio until the user unmutes.
 
   const enableVoice = useCallback(async () => {
     if (!gameId || !connected) return;
 
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-      localStreamRef.current = stream;
-      setHasPermission(true);
-      setIsVoiceEnabled(true);
+    const startingMuted = isMutedRef.current; // true by default
 
-      // Apply current mute state
-      stream.getAudioTracks().forEach((t) => { t.enabled = !isMutedRef.current; });
-
-      // Subscribe to our private signaling topic
-      if (stompClientRef.current && !signalSubRef.current) {
-        signalSubRef.current = stompClientRef.current.subscribe(
-          `/topic/game/${gameId}/voice/${currentPlayerId}`,
-          (message) => {
-            try {
-              handleSignal(JSON.parse(message.body));
-            } catch (e) {
-              console.error('[Voice] Failed to parse signal', e);
-            }
-          }
-        );
-      }
-
-      startSpeakingDetection();
-
-      // Connect to all other human players currently in the room
-      // Give them a short stagger so ICE candidates don't flood at once
-      humanPlayerIds
-        .filter((id) => id !== currentPlayerId)
-        .forEach((peerId, i) => {
-          setTimeout(() => connectToPeer(peerId), i * 200);
-        });
-
-    } catch (e: any) {
-      if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
-        setHasPermission(false);
-        console.warn('[Voice] Microphone permission denied');
-      } else {
-        console.error('[Voice] getUserMedia error:', e);
+    if (!startingMuted) {
+      // Only acquire the mic if we're starting unmuted
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localStreamRef.current = stream;
+        setHasPermission(true);
+      } catch (e: any) {
+        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+          setHasPermission(false);
+          console.warn('[Voice] Microphone permission denied');
+        } else {
+          console.error('[Voice] getUserMedia error:', e);
+        }
+        return; // Can't enable voice without mic when unmuted
       }
     }
+
+    setIsVoiceEnabled(true);
+
+    // Subscribe to our private signaling topic
+    if (stompClientRef.current && !signalSubRef.current) {
+      signalSubRef.current = stompClientRef.current.subscribe(
+        `/topic/game/${gameId}/voice/${currentPlayerId}`,
+        (message) => {
+          try {
+            handleSignal(JSON.parse(message.body));
+          } catch (e) {
+            console.error('[Voice] Failed to parse signal', e);
+          }
+        }
+      );
+    }
+
+    startSpeakingDetection();
+
+    // Connect to all other human players currently in the room
+    // Give them a short stagger so ICE candidates don't flood at once
+    humanPlayerIds
+      .filter((id) => id !== currentPlayerId)
+      .forEach((peerId, i) => {
+        setTimeout(() => connectToPeer(peerId), i * 200);
+      });
+
   }, [gameId, connected, stompClientRef, currentPlayerId, humanPlayerIds, handleSignal, startSpeakingDetection, connectToPeer]);
 
   // ─── Disable voice ────────────────────────────────────────────────────────
@@ -297,13 +308,60 @@ export function useVoiceChat({
     }
   }, [isVoiceEnabled, enableVoice, disableVoice]);
 
-  const toggleMute = useCallback(() => {
-    setIsMuted((prev) => {
-      const nextMuted = !prev;
-      localStreamRef.current?.getAudioTracks().forEach((t) => { t.enabled = !nextMuted; });
-      return nextMuted;
-    });
-  }, []);
+  // ─── Mute: physically stop the hardware mic so the OS releases the indicator ─
+  // track.enabled = false only silences audio in software — the OS still shows
+  // the mic as "in use" because the MediaStreamTrack is still open.
+  // The only way to clear the status-bar mic indicator on iOS/Android is
+  // track.stop(), which closes the hardware capture entirely.
+  // On unmute we re-acquire via getUserMedia and hot-swap senders in all peers.
+
+  const toggleMute = useCallback(async () => {
+    const nextMuted = !isMutedRef.current;
+
+    if (nextMuted) {
+      // ── MUTE: stop every audio track to release the OS mic indicator ──────
+      if (localStreamRef.current) {
+        localStreamRef.current.getAudioTracks().forEach((t) => t.stop());
+        localStreamRef.current = null;
+      }
+      setIsMuted(true);
+    } else {
+      // ── UNMUTE: re-acquire mic and hot-swap senders in all peer connections ─
+      try {
+        const newStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        localStreamRef.current = newStream;
+
+        const newTrack = newStream.getAudioTracks()[0];
+        if (!newTrack) {
+          setIsMuted(true);
+          return;
+        }
+
+        // Replace the audio sender in every active RTCPeerConnection
+        const replacePromises: Promise<void>[] = [];
+        peersRef.current.forEach((pc) => {
+          const sender = pc.getSenders().find((s) => s.track?.kind === 'audio');
+          if (sender) {
+            replacePromises.push(sender.replaceTrack(newTrack).catch((e) => {
+              console.warn('[Voice] replaceTrack failed:', e);
+            }));
+          } else {
+            // Peer had no audio sender — add the track fresh
+            pc.addTrack(newTrack, newStream);
+          }
+        });
+
+        await Promise.all(replacePromises);
+        setIsMuted(false);
+      } catch (e: any) {
+        console.error('[Voice] Failed to re-acquire mic on unmute:', e);
+        if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+          setHasPermission(false);
+        }
+        setIsMuted(true); // Stay muted if we can't get the mic
+      }
+    }
+  }, []);  // stable — reads/writes refs directly, no deps needed
 
   const toggleSpeakerMute = useCallback(() => {
     setIsSpeakerMuted((prev) => {

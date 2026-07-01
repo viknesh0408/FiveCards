@@ -38,30 +38,13 @@ const CARD_BACKS: ShopItem[] = [
   { id: 'dragon_scale', name: 'Dragon Scale', description: 'Scaled fire-breathing red reptile armor plate', price: 15000, type: 'cardBack' },
 ];
 
-const AVATAR_FRAMES: ShopItem[] = [
-  { id: 'none', name: 'Default Frame', description: 'Simple, clean border profile ring', price: 0, type: 'avatar' },
-  { id: 'neon_frame', name: 'Neon Cyber', description: 'Electrifying cyan and hot pink glowing ring', price: 1000, type: 'avatar' },
-  { id: 'frost', name: 'Ice Frost', description: 'Frosted blue crystals and cold sparkle glow', price: 1500, type: 'avatar' },
-  { id: 'fire', name: 'Fire Flame', description: 'Energetic warm orange-red dancing fire ring', price: 2000, type: 'avatar' },
-  { id: 'amethyst_frame', name: 'Amethyst Crystal', description: 'Purple crystalline glowing geode ring', price: 2500, type: 'avatar' },
-  { id: 'ruby_frame', name: 'Ruby Heartbeat', description: 'Pulsing crimson crystal border', price: 3000, type: 'avatar' },
-  { id: 'sapphire_frame', name: 'Sapphire Wave', description: 'Flowing blue ocean waters', price: 3500, type: 'avatar' },
-  { id: 'steampunk_frame', name: 'Steampunk Gear', description: 'Rotating brass gears border', price: 4000, type: 'avatar' },
-  { id: 'cyberpunk_frame', name: 'Glitch Matrix', description: 'Shifting cyan/lime noise glitch border', price: 5000, type: 'avatar' },
-  { id: 'prism_frame', name: 'Rainbow Prism', description: 'Prismatic color cycle border', price: 6000, type: 'avatar' },
-  { id: 'matrix_frame', name: 'Digital Code', description: 'Code waterfall flowing around avatar', price: 7000, type: 'avatar' },
-  { id: 'lava_frame', name: 'Volcanic Lava', description: 'Hot glowing molten lava ring', price: 8000, type: 'avatar' },
-  { id: 'cosmic_frame', name: 'Cosmic Nebula', description: 'Starry nebula galaxy swirl frame', price: 9000, type: 'avatar' },
-  { id: 'gold_aura', name: 'Golden Aura', description: 'Continuous rotate of brilliant royal gold rays', price: 10000, type: 'avatar' },
-  { id: 'dragon_frame', name: 'Dragon Emperor', description: 'Crimson scales crowned with dragon claws', price: 12000, type: 'avatar' },
-  { id: 'royal', name: 'Royal Crown', description: 'Majestic golden crest crowned with a royal tiara', price: 15000, type: 'avatar' },
-];
+
 
 const ANIMATED_AVATARS: ShopItem[] = [
-  { id: 'neon_matrix', name: 'Matrix Cyber', description: 'Animated robotic matrix rain profile', price: 3000, type: 'avatarPic' },
-  { id: 'cosmic_vortex', name: 'Cosmic Vortex', description: 'Animated swirling starry nebula profile', price: 3500, type: 'avatarPic' },
-  { id: 'cyber_skull', name: 'Glitch Skull', description: 'Animated neon cyan/magenta glitch skull profile', price: 4000, type: 'avatarPic' },
-  { id: 'retro_wave', name: 'Retrowave Sun', description: 'Animated synthwave grid and rising sun profile', price: 4500, type: 'avatarPic' },
+  { id: 'neon_matrix', name: 'Matrix Cyber', description: 'Cybernetic matrix code theme profile', price: 3000, type: 'avatarPic' },
+  { id: 'cosmic_vortex', name: 'Cosmic Vortex', description: 'Deep space cosmic nebula theme profile', price: 3500, type: 'avatarPic' },
+  { id: 'cyber_skull', name: 'Glitch Skull', description: 'Neon glitch cyber skull theme profile', price: 4000, type: 'avatarPic' },
+  { id: 'retro_wave', name: 'Retrowave Sun', description: 'Retro synthwave sunset theme profile', price: 4500, type: 'avatarPic' },
 ];
 
 const TABLE_FELTS: ShopItem[] = [
@@ -164,14 +147,6 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ onBack, onStateChange }) =
                 <div className="card-back-logo">5T</div>
               </div>
             </div>
-          ) : item.type === 'avatar' ? (
-            // Avatar Frame Preview
-            <div className="shop-avatar-frame-container">
-              <div className={`shop-avatar-ring avatar-frame-${item.id}`}>
-                {item.id === 'royal' && <span className="shop-royal-crown">👑</span>}
-                <span className="shop-avatar-crest">{playerInitials}</span>
-              </div>
-            </div>
           ) : item.type === 'avatarPic' ? (
             // Animated Avatar Pic Preview
             <div className="shop-avatar-frame-container">
@@ -264,7 +239,7 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ onBack, onStateChange }) =
             soundEffects.playClick();
           }}
         >
-          👤 Avatar and Frames
+          👤 Avatar Profiles
         </button>
         <button
           className={`shop-tab-btn ${activeTab === 'tableFelts' ? 'active' : ''}`}
@@ -280,14 +255,9 @@ export const ShopPanel: React.FC<ShopPanelProps> = ({ onBack, onStateChange }) =
       <div className="daily-scroll-body shop-scroll-body">
         {activeTab === 'avatars' ? (
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-            <h3 className="shop-section-title-divider" style={{ margin: '0 0 16px 0' }}>Animated Avatars</h3>
-            <div className="shop-items-grid" style={{ marginBottom: '28px' }}>
-              {ANIMATED_AVATARS.map((item) => renderShopItem(item))}
-            </div>
-
-            <h3 className="shop-section-title-divider" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '24px', margin: '16px 0' }}>Avatar Frames</h3>
+            <h3 className="shop-section-title-divider" style={{ margin: '0 0 16px 0' }}>Premium Avatars</h3>
             <div className="shop-items-grid">
-              {AVATAR_FRAMES.map((item) => renderShopItem(item))}
+              {ANIMATED_AVATARS.map((item) => renderShopItem(item))}
             </div>
           </div>
         ) : (

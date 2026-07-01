@@ -62,8 +62,7 @@ const OpponentSlot = React.memo<OpponentSlotProps>(({
       <div className={`opponent-avatar-card glass-panel ${isOpponentTurn ? 'active-turn' : ''} ${opp.declaredTick ? 'declared-tick' : ''} ${speaking ? 'voice-speaking' : ''}`}>
         <div className="avatar-wrapper">
           <div className="turn-ring" />
-          {opp.avatar === 'royal' && <span className="shop-royal-crown" style={{ transform: 'scale(0.55)', top: '-11px', zIndex: 10 }}>👑</span>}
-          <div className={`avatar-circle avatar-frame-${opp.avatar || 'none'}`} style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)', borderStyle: 'solid', borderWidth: '2px', borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
             <AvatarImage picId={avatarPic} name={opp.name} className="mm-avatar-img" />
           </div>
           {isOpponentTurn && (
@@ -279,7 +278,6 @@ export const GameTable: React.FC<GameTableProps> = ({
   };
 
   const selectedBack = localStorage.getItem('selected_card_back') || 'classic';
-  const selectedAvatar = localStorage.getItem('selected_avatar') || 'none';
 
   // Trigger tutorial automatically when the match starts for the first time
   useEffect(() => {
@@ -1402,11 +1400,8 @@ export const GameTable: React.FC<GameTableProps> = ({
         {/* Helper instructions & Turn Timer */}
         <div className="hand-instructions-wrapper">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div className={`player-hud-avatar-ring avatar-frame-${showSelfAvatar ? selectedAvatar : (activePlayer?.avatar || 'none')}${isMyTurn && status === 'IN_PROGRESS' ? ' my-turn-active' : ''}`}>
-              {((showSelfAvatar && selectedAvatar === 'royal') || (!showSelfAvatar && activePlayer?.avatar === 'royal')) && (
-                <span className="shop-royal-crown" style={{ transform: 'scale(0.7)', top: '-11px', zIndex: 10 }}>👑</span>
-              )}
-              <span className="player-hud-avatar-crest" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className={`player-hud-avatar-ring${isMyTurn && status === 'IN_PROGRESS' ? ' my-turn-active' : ''}`} style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--color-cyan)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span className="player-hud-avatar-crest" style={{ overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
                 {getActiveDisplayAvatar()}
               </span>
             </div>

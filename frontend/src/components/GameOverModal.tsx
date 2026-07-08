@@ -36,7 +36,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
       const name = player.name || '';
       const numMatch = name.match(/\d+/);
       const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
-      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      const botAvatars = ['panda', 'fox', 'cat', 'alien', 'monkey', 'unicorn', 'dragon'];
       return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
     }
     return null;
@@ -210,7 +210,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
         <div className="podium-container">
           {podium2nd && (
             <div className="podium-stand second">
-                  <div className="podium-avatar-wrap" style={{ width: '38px', height: '38px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium2nd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                  <div className="podium-avatar-wrap" style={{ width: '38px', height: '38px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: '2px solid var(--color-cyan)' }}>
                     <AvatarImage picId={getAvatarPic(podium2nd)} name={podium2nd.name} />
                   </div>
               <span className="podium-name">{podium2ndName}</span>
@@ -221,7 +221,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium1st && (
             <div className="podium-stand first">
-                  <div className="podium-avatar-wrap" style={{ width: '48px', height: '48px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium1st.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                  <div className="podium-avatar-wrap" style={{ width: '48px', height: '48px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: '2px solid var(--color-cyan)' }}>
                     <AvatarImage picId={getAvatarPic(podium1st)} name={podium1st.name} />
                   </div>
               <span className="podium-name" style={{ fontSize: '0.95rem' }}>{podium1stName}</span>
@@ -232,7 +232,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           )}
           {podium3rd && (
             <div className="podium-stand third">
-                  <div className="podium-avatar-wrap" style={{ width: '34px', height: '34px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: podium3rd.isAi ? '2px solid var(--color-gold)' : '2px solid var(--color-cyan)' }}>
+                  <div className="podium-avatar-wrap" style={{ width: '34px', height: '34px', aspectRatio: '1/1', flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px auto', background: 'rgba(255,255,255,0.05)', border: '2px solid var(--color-cyan)' }}>
                     <AvatarImage picId={getAvatarPic(podium3rd)} name={podium3rd.name} />
                   </div>
               <span className="podium-name">{podium3rdName}</span>
@@ -315,7 +315,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 }}>
                   {idx + 1}
                 </span>
-                <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-cyan)' }}>
                   <AvatarImage picId={getAvatarPic(p)} name={p.name} />
                 </div>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
@@ -348,7 +348,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
                 {sortedPlayers.map(p => (
                   <tr key={p.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', background: p.id === winner?.id ? 'rgba(251,191,36,0.02)' : 'transparent' }}>
                     <td style={{ textAlign: 'left', fontWeight: p.id === winner?.id ? 800 : 500, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div className="scoreboard-avatar-wrap" style={{ width: '18px', height: '18px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                      <div className="scoreboard-avatar-wrap" style={{ width: '18px', height: '18px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-cyan)' }}>
                         <AvatarImage picId={getAvatarPic(p)} name={p.name} />
                       </div>
                       <span>{p.name}</span>

@@ -28,6 +28,7 @@ export const App: React.FC = () => {
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showAppLeaveConfirm, setShowAppLeaveConfirm] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
+  const [pendingRoomCode, setPendingRoomCode] = useState<string | null>(null);
   
   const menuBackButtonHandlerRef = useRef<(() => boolean) | null>(null);
   
@@ -49,6 +50,7 @@ export const App: React.FC = () => {
     latestReaction,
     sendReaction,
     apiBase,
+    wsUrl,
     stompClientRef,
     leaveGame,
     isSpectator,
@@ -374,9 +376,45 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Handle URL deep link room join
+  // Deep Link listener for native Capacitor App
   useEffect(() => {
-    if (storageInitialized && screen === 'menu' && navigator.onLine) {
+    if (!(window as any).Capacitor) return;
+
+    const setupUrlListener = async () => {
+      const listener = await CapacitorApp.addListener('appUrlOpen', (data: any) => {
+        console.log('[App] App opened with URL:', data.url);
+        try {
+          const parsedUrl = new URL(data.url);
+          const roomParam = parsedUrl.searchParams.get('room')?.trim().toUpperCase();
+          if (roomParam && roomParam.length >= 4) {
+            setPendingRoomCode(roomParam);
+          }
+        } catch (e) {
+          console.error('[App] Failed to parse launch URL', e);
+        }
+      });
+      return listener;
+    };
+
+    const listenerPromise = setupUrlListener();
+
+    return () => {
+      listenerPromise.then(handle => handle.remove());
+    };
+  }, []);
+
+  // Handle URL deep link room join (Web & Native pending)
+  useEffect(() => {
+    if (storageInitialized && playerId && screen === 'menu' && navigator.onLine) {
+      if (pendingRoomCode) {
+        const roomCode = pendingRoomCode;
+        setPendingRoomCode(null);
+        const stats = getLocalStats();
+        const name = stats.name || 'Player';
+        handleJoinOnline(roomCode, name);
+        return;
+      }
+
       const params = new URLSearchParams(window.location.search);
       const roomParam = params.get('room')?.trim().toUpperCase();
       if (roomParam && roomParam.length >= 4) {
@@ -387,7 +425,7 @@ export const App: React.FC = () => {
         handleJoinOnline(roomParam, name);
       }
     }
-  }, [storageInitialized, screen]);
+  }, [storageInitialized, playerId, screen, pendingRoomCode]);
 
   // Disable pinch-to-zoom and gesture zooming globally
   useEffect(() => {
@@ -439,6 +477,24 @@ export const App: React.FC = () => {
     } catch (e) {
       console.error('Failed to start offline game', e);
       handleNetworkError(e, 'Error initializing offline game.');
+    }
+  };
+
+  const handleFindMatchSuccess = async (gameId: string, name: string) => {
+    if (!navigator.onLine) {
+      alert('No internet connection');
+      return;
+    }
+    try {
+      // The server already added us as a player during matchmaking — just connect the WS
+      const stats = getLocalStats();
+      stats.name = name;
+      saveLocalStats(stats);
+      localStorage.setItem('activeGameId', gameId);
+      connect(gameId, playerId);
+      setScreen('table');
+    } catch (e) {
+      console.error('Failed to join matchmade game', e);
     }
   };
 
@@ -592,6 +648,10 @@ export const App: React.FC = () => {
           onSpectateOnline={handleSpectateOnline}
           onCreateOnline={handleCreateOnline}
           onShowTutorial={() => setShowTutorial(true)}
+          onFindMatchSuccess={handleFindMatchSuccess}
+          playerId={playerId}
+          apiBase={apiBase}
+          wsUrl={wsUrl}
           onRegisterBackButton={(handler) => {
             menuBackButtonHandlerRef.current = handler;
           }}

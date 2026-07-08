@@ -9764,3 +9764,260 @@ body.battery-saver .premium-anim-cyber_skull,
 body.battery-saver .premium-anim-retro_wave {
   animation: none !important;
 }
+
+/* ─── Multiplayer Hub & Matchmaking UI ──────────────────────────────────────── */
+
+/* 3-card grid for the multiplayer hub menu */
+.mm-mp-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.mm-mp-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 20px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  text-align: left;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.18s ease,
+              box-shadow 0.18s ease;
+  overflow: hidden;
+}
+
+.mm-mp-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(34, 211, 238, 0.35);
+  box-shadow: 0 8px 32px rgba(34, 211, 238, 0.1);
+}
+
+.mm-mp-card:active { transform: scale(0.98); }
+.mm-mp-card:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+
+/* Glowing pseudo-layer per card */
+.mm-mp-card-glow {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(ellipse at 20% 50%, rgba(34, 211, 238, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+.mm-glow-green  { background: radial-gradient(ellipse at 20% 50%, rgba(52, 211, 153, 0.07) 0%, transparent 70%); }
+.mm-glow-purple { background: radial-gradient(ellipse at 20% 50%, rgba(167, 139, 250, 0.07) 0%, transparent 70%); }
+
+.mm-mp-icon {
+  font-size: 1.6rem;
+  margin-bottom: 2px;
+  display: block;
+}
+.mm-mp-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--color-text);
+  letter-spacing: 0.2px;
+  display: block;
+}
+.mm-mp-desc {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+  display: block;
+}
+.mm-mp-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.1);
+  border: 1px solid rgba(34, 211, 238, 0.25);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+.mm-badge-green  { color: #34d399; background: rgba(52, 211, 153, 0.1); border-color: rgba(52, 211, 153, 0.25); }
+.mm-badge-purple { color: #a78bfa; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.25); }
+
+/* Primary find-match card gets a subtle glow border animation */
+.mm-mp-card-primary {
+  border-color: rgba(34, 211, 238, 0.2);
+  animation: mm-mp-pulse-border 3s ease-in-out infinite;
+}
+
+@keyframes mm-mp-pulse-border {
+  0%, 100% { border-color: rgba(34, 211, 238, 0.2); }
+  50%       { border-color: rgba(34, 211, 238, 0.45); box-shadow: 0 0 20px rgba(34, 211, 238, 0.08); }
+}
+
+/* ── Matchmaking searching panel ─────────────────────────────────────────── */
+
+.mm-matchmaking-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+}
+
+.mm-mm-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.mm-mm-globe {
+  font-size: 2.4rem;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Player slot grid */
+.mm-player-slots {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  width: 100%;
+  flex-wrap: wrap;
+  margin: 4px 0;
+}
+
+.mm-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 58px;
+  max-width: 80px;
+}
+
+.mm-slot-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 211, 238, 0.4);
+  background: rgba(34, 211, 238, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  transition: border-color 0.3s, background 0.3s;
+}
+
+.mm-slot-filled .mm-slot-avatar {
+  border-color: #22d3ee;
+  background: rgba(34, 211, 238, 0.12);
+  box-shadow: 0 0 16px rgba(34, 211, 238, 0.25);
+  animation: mm-slot-appear 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes mm-slot-appear {
+  from { transform: scale(0.6); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.mm-slot-waiting {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
+  position: relative;
+}
+
+.mm-slot-pulse {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(34, 211, 238, 0.4);
+  animation: mm-slot-pulse 2s ease-in-out infinite;
+}
+
+@keyframes mm-slot-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50%       { transform: scale(1.15); opacity: 0.15; }
+}
+
+.mm-slot-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text);
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mm-slot-label-muted {
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: 0.65rem;
+}
+
+/* Queue count display */
+.mm-queue-count {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  letter-spacing: 0.3px;
+}
+.mm-queue-num  { font-size: 1.4rem; font-weight: 900; }
+.mm-queue-sep  { color: rgba(255,255,255,0.25); margin: 0 2px; }
+.mm-queue-label{ font-size: 0.85rem; color: var(--color-text-muted); }
+
+/* Countdown progress bar */
+.mm-queue-bar-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.mm-queue-bar-label {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+.mm-queue-bar-track {
+  width: 100%;
+  height: 5px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.mm-queue-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #22d3ee, #00fff0);
+  transition: width 1s linear;
+  box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+}
+
+/* Searching spinner */
+.mm-searching-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid rgba(34, 211, 238, 0.15);
+  border-top-color: #22d3ee;
+  animation: mm-spinner 0.9s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes mm-spinner {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Responsive tweaks ───────────────────────────────────────────────────── */
+@media (max-width: 400px) {
+  .mm-player-slots { gap: 8px; }
+  .mm-slot-avatar { width: 44px; height: 44px; font-size: 1.25rem; }
+  .mm-slot { min-width: 50px; }
+}
+

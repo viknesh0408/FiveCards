@@ -869,6 +869,7 @@ export const useWebSocket = () => {
     latestReaction,
     sendReaction,
     apiBase: API_BASE,
+    wsUrl: WS_URL,
     isSpectator: isSpectatorState,
     isOffline,
     stompClientRef,

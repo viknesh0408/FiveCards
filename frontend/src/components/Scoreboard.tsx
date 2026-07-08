@@ -27,7 +27,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
       const name = player.name || '';
       const numMatch = name.match(/\d+/);
       const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
-      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      const botAvatars = ['panda', 'fox', 'cat', 'alien', 'monkey', 'unicorn', 'dragon'];
       return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
     }
     return null;
@@ -62,7 +62,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ gameState, currentPlayer
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem', width: '16px', flexShrink: 0 }}>
                   #{index + 1}
                 </span>
-                <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-cyan)' }}>
                   <AvatarImage picId={getAvatarPic(p)} name={p.name} />
                 </div>
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', color: isSelf ? '#ffffff' : 'rgba(255,255,255,0.8)', display: 'inline-flex', alignItems: 'center', gap: '4px', minWidth: 0 }}>

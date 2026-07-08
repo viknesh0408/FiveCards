@@ -8,6 +8,7 @@ import { ShopPanel } from './ShopPanel';
 import { hasUnclaimedDaily, getDailyState, equipShopItem } from '../utils/dailySystem';
 import { soundEffects } from '../utils/soundEffects';
 import { AvatarImage } from './AvatarImage';
+import { MultiplayerModal } from './MultiplayerModal';
 
 interface MainMenuProps {
   onStartOffline: (settings: OfflineSettings) => void;
@@ -16,6 +17,12 @@ interface MainMenuProps {
   onCreateOnline: (name: string, maxRounds: number) => void;
   onShowTutorial?: () => void;
   onRegisterBackButton?: (handler: (() => boolean) | null) => void;
+  /** Called when matchmaking finds a game — navigates straight into the game table. */
+  onFindMatchSuccess?: (gameId: string, name: string) => void;
+  /** Runtime values injected from App so MultiplayerModal can open its own WS. */
+  playerId?: string;
+  apiBase?: string;
+  wsUrl?: string;
 }
 
 export interface OfflineSettings {
@@ -25,7 +32,7 @@ export interface OfflineSettings {
   maxRounds: number;
 }
 
-type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop' | 'rules' | 'edit-profile' | 'history';
+type View = 'main' | 'offline' | 'online-choice' | 'online-join' | 'online-create' | 'settings' | 'stats' | 'daily' | 'shop' | 'rules' | 'edit-profile' | 'history' | 'multiplayer';
 
 interface ShopItem {
   id: string;
@@ -184,6 +191,10 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   onCreateOnline,
   onShowTutorial,
   onRegisterBackButton,
+  onFindMatchSuccess,
+  playerId = '',
+  apiBase = '',
+  wsUrl = '',
 }) => {
   const [view, setView] = useState<View>('main');
   const [playerName, setPlayerName] = useState<string>(() => localStorage.getItem('tickPlayerName') || '');
@@ -283,6 +294,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         } else if (
           view === 'offline' ||
           view === 'online-choice' ||
+          view === 'multiplayer' ||
           view === 'settings' ||
           view === 'stats' ||
           view === 'history' ||
@@ -294,7 +306,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           navigate('main');
           return true;
         } else if (view === 'online-create' || view === 'online-join') {
-          navigate('online-choice');
+          navigate('multiplayer');
           return true;
         }
         return false;
@@ -518,11 +530,11 @@ export const MainMenu: React.FC<MainMenuProps> = ({
                     <span className="mm-action-arrow">›</span>
                   </button>
 
-                  <button className="mm-action-btn secondary" onClick={() => navigate('online-choice')}>
+                  <button className="mm-action-btn secondary" onClick={() => navigate('multiplayer')}>
                     <span className="mm-action-icon">🌐</span>
                     <div className="mm-action-text">
                       <span className="mm-action-title">Multiplayer</span>
-                      <span className="mm-action-desc">Play with friends online</span>
+                      <span className="mm-action-desc">Global match or private room</span>
                     </div>
                     <span className="mm-action-arrow">›</span>
                   </button>
@@ -601,6 +613,22 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           </div>
         )}
 
+        {/* ── MULTIPLAYER HUB ───────────────────────────────── */}
+        {view === 'multiplayer' && (
+          <MultiplayerModal
+            playerName={playerName}
+            playerId={playerId}
+            apiBase={apiBase}
+            wsUrl={wsUrl}
+            onFindMatchSuccess={(gameId) => {
+              if (onFindMatchSuccess) onFindMatchSuccess(gameId, playerName);
+            }}
+            onCreateRoom={() => navigate('online-create')}
+            onJoinRoom={() => navigate('online-join')}
+            onBack={() => navigate('main')}
+          />
+        )}
+
         {/* ── ONLINE CHOICE ─────────────────────────────────── */}
         {view === 'online-choice' && (
           <div className="mm-form-panel glass-panel">
@@ -656,7 +684,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         {/* ── CREATE ROOM ───────────────────────────────────── */}
         {view === 'online-create' && (
           <div className="mm-form-panel glass-panel">
-            <button className="mm-back-btn" onClick={() => navigate('online-choice')}>← Back</button>
+            <button className="mm-back-btn" onClick={() => navigate('multiplayer')}>← Back</button>
             <div className="mm-form-header">
               <span className="mm-form-icon">🏠</span>
               <h2 className="mm-form-title">Create Room</h2>
@@ -686,7 +714,7 @@ export const MainMenu: React.FC<MainMenuProps> = ({
         {/* ── JOIN ROOM ─────────────────────────────────────── */}
         {view === 'online-join' && (
           <div className="mm-form-panel glass-panel">
-            <button className="mm-back-btn" onClick={() => navigate('online-choice')}>← Back</button>
+            <button className="mm-back-btn" onClick={() => navigate('multiplayer')}>← Back</button>
             <div className="mm-form-header">
               <span className="mm-form-icon">🔑</span>
               <h2 className="mm-form-title">Join Room</h2>

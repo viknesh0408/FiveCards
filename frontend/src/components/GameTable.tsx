@@ -95,7 +95,7 @@ const OpponentSlot = React.memo<OpponentSlotProps>(({
                 transform: 'rotate(-90deg)', 
                 overflow: 'visible', 
                 pointerEvents: 'none', 
-                filter: `drop-shadow(0 0 4px ${timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : (opp.isAi ? 'var(--color-gold)' : 'var(--color-green)')})` 
+                filter: `drop-shadow(0 0 4px ${timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : 'var(--color-green)'})` 
               }}
             >
               <circle
@@ -110,7 +110,7 @@ const OpponentSlot = React.memo<OpponentSlotProps>(({
                 cx="22"
                 cy="22"
                 r="19"
-                stroke={timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : (opp.isAi ? 'var(--color-gold)' : 'var(--color-green)')}
+                stroke={timeLeft !== null && timeLeft <= 15 ? 'var(--color-red)' : 'var(--color-green)'}
                 strokeWidth="2.5"
                 fill="transparent"
                 strokeDasharray="119.38"
@@ -120,7 +120,7 @@ const OpponentSlot = React.memo<OpponentSlotProps>(({
               />
             </svg>
           )}
-          <div className="avatar-circle" style={{ borderColor: opp.isAi ? 'var(--color-gold)' : 'var(--color-cyan)' }}>
+          <div className="avatar-circle" style={{ borderColor: 'var(--color-cyan)' }}>
             <AvatarImage picId={avatarPic} name={opp.name} className="mm-avatar-img" />
           </div>
           {isOpponentTurn && (
@@ -879,6 +879,7 @@ export const GameTable: React.FC<GameTableProps> = ({
           await Share.share({
             title: 'Join my 5 Cards Game!',
             text: shareText,
+            url: shareUrl,
             dialogTitle: 'Share Room Code'
           });
           return;
@@ -890,9 +891,9 @@ export const GameTable: React.FC<GameTableProps> = ({
       // Fallback to Clipboard for native app
       try {
         await Clipboard.write({
-          string: shareUrl
+          string: shareText
         });
-        showToast("Direct link copied to clipboard!");
+        showToast("Room invitation copied to clipboard!");
         return;
       } catch (err) {
         console.error('Capacitor native copy failed:', err);
@@ -902,7 +903,8 @@ export const GameTable: React.FC<GameTableProps> = ({
     // Web / Browser platform logic
     const shareData = {
       title: 'Join my 5 Cards Game!',
-      text: shareText
+      text: shareText,
+      url: shareUrl
     };
 
     if (navigator.share) {
@@ -987,7 +989,7 @@ export const GameTable: React.FC<GameTableProps> = ({
       const name = player.name || '';
       const numMatch = name.match(/\d+/);
       const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
-      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      const botAvatars = ['panda', 'fox', 'cat', 'alien', 'monkey', 'unicorn', 'dragon'];
       return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
     }
     return null;
@@ -1417,7 +1419,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                 {players.map(p => (
                   <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span>{p.name} {p.isAi && '[AI]'}</span>
+                      <span>{p.name}</span>
                     </span>
                       <span className={p.ready ? 'text-green' : 'text-red'} style={{ fontWeight: 800 }}>
                         {p.ready ? 'Ready' : 'Not Ready'}

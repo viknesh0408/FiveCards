@@ -89,7 +89,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
       const name = player.name || '';
       const numMatch = name.match(/\d+/);
       const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
-      const botAvatars = ['panda', 'fox', 'cat', 'robot', 'monkey', 'unicorn'];
+      const botAvatars = ['panda', 'fox', 'cat', 'alien', 'monkey', 'unicorn', 'dragon'];
       return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
     }
     return null;
@@ -144,7 +144,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               >
                 <div className="result-player-info">
                   <span className="result-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                    <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: p.isAi ? '1px solid var(--color-gold)' : '1px solid var(--color-cyan)' }}>
+                    <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-cyan)' }}>
                       <AvatarImage picId={getAvatarPic(p)} name={p.name} />
                     </div>
                     <span>{p.name}</span>

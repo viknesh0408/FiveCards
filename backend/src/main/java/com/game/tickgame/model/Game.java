@@ -21,6 +21,8 @@ public class Game {
     private String winnerId;
     private boolean isMultiplayer = false;
     private String hostId;
+    /** "ROOM" for private rooms (create/join), "MATCHMAKING" for global queue matches. */
+    private String gameMode = "ROOM";
     private List<Spectator> spectators = new ArrayList<>();
     /** Tracks which player index starts the next round (advances +1 clockwise each round). */
     private int nextRoundStartIndex = 0;

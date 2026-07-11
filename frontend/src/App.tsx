@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useWebSocket } from './hooks/useWebSocket';
 import { MainMenu } from './components/MainMenu';
 import type { OfflineSettings } from './components/MainMenu';
@@ -16,6 +16,7 @@ import { setupLocalNotifications } from "./utils/localNotifications";
 import { getLocalStats, saveLocalStats } from './utils/statsSystem';
 import { pullAndMergeStats } from './services/statsSync';
 import { getMatchHistory } from './utils/statsSystem';
+import type { UpdateInfo } from './utils/gameHelpers';
 import { Haptics } from '@capacitor/haptics';
 import { App as CapacitorApp } from '@capacitor/app';
 
@@ -24,7 +25,7 @@ export const App: React.FC = () => {
   const [playerId, setPlayerId] = useState<string>('');
   const [isKicked, setIsKicked] = useState<boolean>(false);
   const [storageInitialized, setStorageInitialized] = useState<boolean>(false);
-  const [update, setUpdate] = useState<any>(null);
+  const [update, setUpdate] = useState<UpdateInfo | null>(null);
   const [showTutorial, setShowTutorial] = useState<boolean>(false);
   const [showAppLeaveConfirm, setShowAppLeaveConfirm] = useState<boolean>(false);
   const [showExitConfirm, setShowExitConfirm] = useState<boolean>(false);
@@ -63,12 +64,13 @@ export const App: React.FC = () => {
 
   // Initialize Battery Saver class on launch and request motion permission on first interaction
   useEffect(() => {
-    let isBatterySaver = localStorage.getItem('batterySaverEnabled') === 'true';
+    // Read once; fall back to detecting mobile if never set
     const saved = localStorage.getItem('batterySaverEnabled');
+    const isBatterySaver = saved !== null
+      ? saved === 'true'
+      : /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || !!(window as any).Capacitor;
     if (saved === null) {
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || !!(window as any).Capacitor;
-      isBatterySaver = isMobile;
-      localStorage.setItem('batterySaverEnabled', isMobile ? 'true' : 'false');
+      localStorage.setItem('batterySaverEnabled', isBatterySaver ? 'true' : 'false');
     }
 
     if (isBatterySaver) {
@@ -267,24 +269,23 @@ export const App: React.FC = () => {
       }
       setPlayerId(id);
 
-      // Pull & merge stats from backend (restores data after reinstall/browser clear)
-      if (navigator.onLine) {
-        try {
-          const result = await pullAndMergeStats(id, getLocalStats(), getMatchHistory());
-          if (result) {
-            saveLocalStats(result.stats);
-            if (result.history.length > 0) {
-              savePersistentItem('tickMatchHistory', JSON.stringify(result.history));
-            }
-          }
-        } catch (_) {
-          // Silently ignore — local data is always the fallback
-        }
-      }
-
+      // Check connectivity first — avoid attempting network calls when offline
       if (!navigator.onLine) {
         alert('No internet connection');
         return;
+      }
+
+      // Pull & merge stats from backend (restores data after reinstall/browser clear)
+      try {
+        const result = await pullAndMergeStats(id, getLocalStats(), getMatchHistory());
+        if (result) {
+          saveLocalStats(result.stats);
+          if (result.history.length > 0) {
+            savePersistentItem('tickMatchHistory', JSON.stringify(result.history));
+          }
+        }
+      } catch (_) {
+        // Silently ignore — local data is always the fallback
       }
 
       const activeGameId = localStorage.getItem('activeGameId');
@@ -403,29 +404,6 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Handle URL deep link room join (Web & Native pending)
-  useEffect(() => {
-    if (storageInitialized && playerId && screen === 'menu' && navigator.onLine) {
-      if (pendingRoomCode) {
-        const roomCode = pendingRoomCode;
-        setPendingRoomCode(null);
-        const stats = getLocalStats();
-        const name = stats.name || 'Player';
-        handleJoinOnline(roomCode, name);
-        return;
-      }
-
-      const params = new URLSearchParams(window.location.search);
-      const roomParam = params.get('room')?.trim().toUpperCase();
-      if (roomParam && roomParam.length >= 4) {
-        // Clear search parameter from URL to prevent rejoin on reload
-        window.history.replaceState({}, document.title, window.location.pathname);
-        const stats = getLocalStats();
-        const name = stats.name || 'Player';
-        handleJoinOnline(roomParam, name);
-      }
-    }
-  }, [storageInitialized, playerId, screen, pendingRoomCode]);
 
   // Disable pinch-to-zoom and gesture zooming globally
   useEffect(() => {
@@ -448,13 +426,20 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  const handleNetworkError = (error: any, defaultMessage: string) => {
+  const handleNetworkError = useCallback((error: any, defaultMessage: string) => {
     if (!navigator.onLine || error instanceof TypeError) {
       alert('No internet connection');
     } else {
       alert(defaultMessage);
     }
-  };
+  }, []);
+
+  /** Saves the player name to local stats and persistent storage (DRY helper). */
+  const savePlayerName = useCallback((name: string) => {
+    const stats = getLocalStats();
+    stats.name = name;
+    saveLocalStats(stats);
+  }, []);
 
   const handleStartOffline = async (settings: OfflineSettings) => {
     try {
@@ -487,9 +472,7 @@ export const App: React.FC = () => {
     }
     try {
       // The server already added us as a player during matchmaking — just connect the WS
-      const stats = getLocalStats();
-      stats.name = name;
-      saveLocalStats(stats);
+      savePlayerName(name);
       localStorage.setItem('activeGameId', gameId);
       connect(gameId, playerId);
       setScreen('table');
@@ -512,9 +495,7 @@ export const App: React.FC = () => {
       const gameId = createData.gameId;
 
       // Save name locally
-      const stats = getLocalStats();
-      stats.name = name;
-      saveLocalStats(stats);
+      savePlayerName(name);
 
       // 2. Join player
       const avatar = localStorage.getItem('selected_avatar') || 'none';
@@ -533,16 +514,14 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleJoinOnline = async (gameId: string, name: string) => {
+  const handleJoinOnline = useCallback(async (gameId: string, name: string) => {
     if (!navigator.onLine) {
       alert('No internet connection');
       return;
     }
     try {
       // Save name locally
-      const stats = getLocalStats();
-      stats.name = name;
-      saveLocalStats(stats);
+      savePlayerName(name);
 
       // 1. Join player
       const avatar = localStorage.getItem('selected_avatar') || 'none';
@@ -565,7 +544,32 @@ export const App: React.FC = () => {
       console.error('Failed to join online game', e);
       handleNetworkError(e, 'Error joining room. Check the code and try again.');
     }
-  };
+  }, [apiBase, playerId, connect, savePlayerName, handleNetworkError]);
+
+  // Handle URL deep link room join (Web & Native pending)
+  // This effect is placed AFTER handleJoinOnline declaration to avoid TS2448
+  useEffect(() => {
+    if (storageInitialized && playerId && screen === 'menu' && navigator.onLine) {
+      if (pendingRoomCode) {
+        const roomCode = pendingRoomCode;
+        setPendingRoomCode(null);
+        const stats = getLocalStats();
+        const name = stats.name || 'Player';
+        handleJoinOnline(roomCode, name);
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const roomParam = params.get('room')?.trim().toUpperCase();
+      if (roomParam && roomParam.length >= 4) {
+        // Clear search parameter from URL to prevent rejoin on reload
+        window.history.replaceState({}, document.title, window.location.pathname);
+        const stats = getLocalStats();
+        const name = stats.name || 'Player';
+        handleJoinOnline(roomParam, name);
+      }
+    }
+  }, [storageInitialized, playerId, screen, pendingRoomCode, handleJoinOnline]);
 
   const handleSpectateOnline = async (gameId: string, name: string) => {
     if (!navigator.onLine) {
@@ -574,9 +578,7 @@ export const App: React.FC = () => {
     }
     try {
       // Save name locally
-      const stats = getLocalStats();
-      stats.name = name;
-      saveLocalStats(stats);
+      savePlayerName(name);
 
       // 1. Join spectator
       const spectateRes = await fetch(`${apiBase}/api/game/${gameId}/spectate?playerId=${playerId}&name=${encodeURIComponent(name)}`, {

@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { SanitizedGame } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
 import { Card } from './Card';
 import { AvatarImage } from './AvatarImage';
+import { getAvatarPic } from '../utils/gameHelpers';
 
 const calculateHandValue = (hand?: CardType[] | null): number => {
   if (!hand) return 0;
@@ -75,25 +76,22 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
     }
   }, [currentRound, players, currentPlayerId, maxRounds, currentRoundNumber]);
 
+  // Memoize flame particle positions — avoid recalculating random() on each render
+  const flameParticles = useMemo(() => {
+    if (isBatterySaver) return [];
+    return Array.from({ length: 22 }).map((_, i) => ({
+      key: i,
+      left: `${Math.random() * 100}%`,
+      animationDelay: `${Math.random() * 2.5}s`,
+      animationDuration: `${2 + Math.random() * 2}s`,
+      fontSize: `${1.2 + Math.random() * 1.5}rem`,
+    }));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBatterySaver]); // positions are intentionally static per mount
+
   if (!currentRound) return null;
 
-  const getAvatarPic = (player: any): string | null => {
-    if (player.avatarPic && player.avatarPic !== 'none') {
-      return player.avatarPic;
-    }
-    if (player.id === currentPlayerId) {
-      const pic = localStorage.getItem('selected_avatar_pic');
-      return pic && pic !== 'none' ? pic : null;
-    }
-    if (player.isAi) {
-      const name = player.name || '';
-      const numMatch = name.match(/\d+/);
-      const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
-      const botAvatars = ['panda', 'fox', 'cat', 'alien', 'monkey', 'unicorn', 'dragon'];
-      return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
-    }
-    return null;
-  };
+  // Use the shared getAvatarPic helper (no longer defined locally)
 
   // Find who called tick
   const tickPlayer = players.find(p => p.id === currentRound.tickPlayerId);
@@ -145,7 +143,7 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
                 <div className="result-player-info">
                   <span className="result-name" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                     <div className="scoreboard-avatar-wrap" style={{ width: '22px', height: '22px', borderRadius: '50%', overflow: 'hidden', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--color-cyan)' }}>
-                      <AvatarImage picId={getAvatarPic(p)} name={p.name} />
+                      <AvatarImage picId={getAvatarPic(p, currentPlayerId)} name={p.name} />
                     </div>
                     <span>{p.name}</span>
                     {p.id === currentPlayerId && <span style={{ color: 'var(--color-cyan)', fontSize: '0.75rem' }}>(You)</span>}
@@ -286,26 +284,20 @@ export const RoundResultModal: React.FC<RoundResultModalProps> = ({
               Awesomeness! 🚀
             </button>
           </div>
-          {!isBatterySaver && Array.from({ length: 22 }).map((_, i) => {
-            const left = Math.random() * 100;
-            const delay = Math.random() * 2.5;
-            const duration = 2 + Math.random() * 2;
-            const size = 1.2 + Math.random() * 1.5;
-            return (
-              <span 
-                key={i} 
-                className="floating-flame-particle"
-                style={{
-                  left: `${left}%`,
-                  animationDelay: `${delay}s`,
-                  animationDuration: `${duration}s`,
-                  fontSize: `${size}rem`,
-                }}
-              >
-                🔥
-              </span>
-            );
-          })}
+          {!isBatterySaver && flameParticles.map((p) => (
+            <span 
+              key={p.key} 
+              className="floating-flame-particle"
+              style={{
+                left: p.left,
+                animationDelay: p.animationDelay,
+                animationDuration: p.animationDuration,
+                fontSize: p.fontSize,
+              }}
+            >
+              🔥
+            </span>
+          ))}
         </div>
       )}
     </div>

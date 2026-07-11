@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { SanitizedGame, Spectator, ChatMessage } from '../hooks/useWebSocket';
 import type { Card as CardType } from '../utils/gameHelpers';
-import { getRankDisplay } from '../utils/gameHelpers';
+import { getRankDisplay, getAvatarPic } from '../utils/gameHelpers';
 import { Card } from './Card';
 import { Scoreboard } from './Scoreboard';
 import { AvatarImage } from './AvatarImage';
@@ -322,9 +322,12 @@ export const GameTable: React.FC<GameTableProps> = ({
   };
 
   // ── Voice chat ──────────────────────────────────────────────────────────
-  const humanPlayerIds = gameState.players
-    .filter((p) => !p.isAi)
-    .map((p) => p.id);
+  // Memoize so the array reference is stable and won't cause useVoiceChat to
+  // re-subscribe on every render when the player list hasn't actually changed.
+  const humanPlayerIds = useMemo(
+    () => gameState.players.filter((p) => !p.isAi).map((p) => p.id),
+    [gameState.players]
+  );
 
   const {
     isVoiceEnabled,
@@ -356,7 +359,8 @@ export const GameTable: React.FC<GameTableProps> = ({
     }, 2000);
   };
 
-  const selectedBack = localStorage.getItem('selected_card_back') || 'classic';
+  // Read once per component mount; these settings only change between games, never mid-game.
+  const selectedBack = useMemo(() => localStorage.getItem('selected_card_back') || 'classic', []);
 
   // Trigger tutorial automatically when the match starts for the first time
   useEffect(() => {
@@ -451,15 +455,16 @@ export const GameTable: React.FC<GameTableProps> = ({
 
 
 
-  if (!players || players.length === 0) return null;
-
-  // Find user profile
-  const self = players.find(p => p.id === currentPlayerId);
-  const selfIndex = players.findIndex(p => p.id === currentPlayerId);
+  // ── State that must live before the early-return guard ─────────────────────
+  // Hooks MUST always be called unconditionally — even when players is empty.
+  const [lastDiscarderId, setLastDiscarderId] = useState<string | null>(null);
+  const prevDiscardLengthRef = useRef<number>(0);
+  const prevTopCardRef = useRef<string>('');
 
   // Rotate players so that current player is at the bottom (index 0) — memoized
-  // eslint-disable-next-line react-hooks/rules-of-hooks
+  const selfIndex = players ? players.findIndex(p => p.id === currentPlayerId) : -1;
   const opponents = useMemo(() => {
+    if (!players || players.length === 0) return [];
     const rotated = [...players];
     if (selfIndex !== -1) {
       const before = players.slice(0, selfIndex);
@@ -469,9 +474,17 @@ export const GameTable: React.FC<GameTableProps> = ({
     return selfIndex !== -1 ? rotated.slice(1) : players;
   }, [players, selfIndex]);
 
-  const [lastDiscarderId, setLastDiscarderId] = useState<string | null>(null);
-  const prevDiscardLengthRef = useRef<number>(0);
-  const prevTopCardRef = useRef<string>('');
+  const [orderedHand, setOrderedHand] = useState<any[]>(() => {
+    const initialHand = players?.find(p => p.id === currentPlayerId)?.hand || [];
+    const cardKey = (c: CardType) => `${c.rank ?? 'null'}-${c.suit ?? 'null'}-${c.joker}`;
+    return initialHand.map(c => ({
+      ...c,
+      clientId: `${cardKey(c)}-${Math.random().toString(36).substring(2, 9)}`
+    }));
+  });
+  const draggedIndexRef = useRef<number | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchHasMovedRef = useRef<boolean>(false);
 
   useEffect(() => {
     const discardPile = currentRound?.discardPile || [];
@@ -505,6 +518,12 @@ export const GameTable: React.FC<GameTableProps> = ({
     return 'discard-from-center';
   }, [lastDiscarderId, currentPlayerId, opponents]);
 
+  // ── Early-return guard: nothing to render without players ────────────────
+  if (!players || players.length === 0) return null;
+
+  // Find user profile (safe to do after the guard)
+  const self = players.find(p => p.id === currentPlayerId);
+
   // Find who is the active player whose turn it is
   const activePlayer = currentRound && !currentRound.roundEnded
     ? players[currentRound.currentPlayerIndex]
@@ -512,17 +531,7 @@ export const GameTable: React.FC<GameTableProps> = ({
   const isMyTurn = !isSpectator && activePlayer?.id === currentPlayerId;
 
   // Check state of my hand with unique client-side IDs to track identical duplicates
-  const [orderedHand, setOrderedHand] = useState<any[]>(() => {
-    const initialHand = self?.hand || [];
-    const cardKey = (c: CardType) => `${c.rank ?? 'null'}-${c.suit ?? 'null'}-${c.joker}`;
-    return initialHand.map(c => ({
-      ...c,
-      clientId: `${cardKey(c)}-${Math.random().toString(36).substring(2, 9)}`
-    }));
-  });
-  const draggedIndexRef = useRef<number | null>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
-  const touchHasMovedRef = useRef<boolean>(false);
+  // (orderedHand state and drag refs are declared before the early-return above)
 
   // Sync hand cards while preserving custom order and exact counts
   useEffect(() => {
@@ -618,39 +627,37 @@ export const GameTable: React.FC<GameTableProps> = ({
     }
   }, [self?.hand?.length, isPickingFromPile]);
 
-  useEffect(() => {
-    return () => {
-      if (drawTimeoutRef.current) {
-        clearTimeout(drawTimeoutRef.current);
-      }
-    };
-  }, []);
-
   // Sync effect to keep bufferedStateRef pointing to latest live gameState prop
   useEffect(() => {
     bufferedStateRef.current = gameState;
   }, [gameState]);
 
+  // Track the previous displayed state via a ref to avoid the stale-closure issue
+  // that arises when reading displayedGameState directly inside its own effect.
+  const prevDisplayedRef = useRef<SanitizedGame>(gameState);
+
   useEffect(() => {
-    const prevRoundNumber = displayedGameState?.currentRoundNumber;
-    const prevStatus = displayedGameState?.status;
+    const prevRoundNumber = prevDisplayedRef.current?.currentRoundNumber;
+    const prevStatus = prevDisplayedRef.current?.status;
     const newRoundNumber = gameState?.currentRoundNumber;
     const newStatus = gameState?.status;
 
     // Check if a new round or new game started
-    const isNewRound = gameState && displayedGameState && (
+    const isNewRound = gameState && prevDisplayedRef.current && (
       (newStatus === 'IN_PROGRESS' && prevStatus === 'WAITING_FOR_PLAYERS') ||
       (newRoundNumber > prevRoundNumber)
     );
 
     if (isNewRound) {
       // Set the initial round state to displayedGameState
+      prevDisplayedRef.current = gameState;
       setDisplayedGameState(gameState);
       setAnimateHand(false);
 
       // Set timer to enable hand animation after 300ms
       const handAnimateTimer = setTimeout(() => {
         setDisplayedGameState(bufferedStateRef.current);
+        prevDisplayedRef.current = bufferedStateRef.current;
         setAnimateHand(true);
       }, 300);
 
@@ -659,11 +666,11 @@ export const GameTable: React.FC<GameTableProps> = ({
       };
     } else {
       // Update the displayed game state instantly
+      prevDisplayedRef.current = gameState;
       setDisplayedGameState(gameState);
     }
-  }, [gameState, displayedGameState]);
-
-
+  // Only re-run when the live gameState changes — not when displayed state changes
+  }, [gameState]);
 
   const handleDragStart = (e: React.DragEvent, idx: number) => {
     draggedIndexRef.current = idx;
@@ -977,34 +984,17 @@ export const GameTable: React.FC<GameTableProps> = ({
 
   const showSelfAvatar = status === 'WAITING_FOR_PLAYERS' || isMyTurn || !activePlayer;
 
-  const getAvatarPic = (player: any): string | null => {
-    if (player.avatarPic && player.avatarPic !== 'none') {
-      return player.avatarPic;
-    }
-    if (player.id === currentPlayerId) {
-      const pic = localStorage.getItem('selected_avatar_pic');
-      return pic && pic !== 'none' ? pic : null;
-    }
-    if (player.isAi) {
-      const name = player.name || '';
-      const numMatch = name.match(/\d+/);
-      const index = numMatch ? parseInt(numMatch[0], 10) : (player.id ? player.id.charCodeAt(0) : 0);
-      const botAvatars = ['panda', 'fox', 'cat', 'alien', 'monkey', 'unicorn', 'dragon'];
-      return botAvatars[(index - 1 + botAvatars.length) % botAvatars.length];
-    }
-    return null;
-  };
-
   const getActiveDisplayAvatar = (): React.ReactNode => {
     const activeDisplayPlayer = showSelfAvatar ? self : activePlayer;
     const name = showSelfAvatar 
       ? (self?.name || localStorage.getItem('tickPlayerName') || 'Player')
       : (activePlayer?.name || 'Player');
-    const avatarPic = activeDisplayPlayer ? getAvatarPic(activeDisplayPlayer) : localStorage.getItem('selected_avatar_pic');
+    const avatarPic = activeDisplayPlayer ? getAvatarPic(activeDisplayPlayer, currentPlayerId) : localStorage.getItem('selected_avatar_pic');
     return <AvatarImage picId={avatarPic} name={name} className="mm-avatar-img" />;
   };
 
-  const selectedFelt = localStorage.getItem('selected_table_felt') || 'emerald_green';
+  // Read once; the felt only changes on profile save (not mid-game).
+  const selectedFelt = useMemo(() => localStorage.getItem('selected_table_felt') || 'emerald_green', []);
 
   return (
     <div className={`game-table-container felt-${selectedFelt}`}>
@@ -1260,7 +1250,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   revealHands={revealHands}
                   selectedBack={selectedBack}
                   jokerRank={currentRound?.jokerRank || null}
-                  avatarPic={getAvatarPic(opp)}
+                  avatarPic={getAvatarPic(opp, currentPlayerId)}
                 />
               );
             })}
@@ -1281,7 +1271,7 @@ export const GameTable: React.FC<GameTableProps> = ({
                   revealHands={revealHands}
                   selectedBack={selectedBack}
                   jokerRank={currentRound?.jokerRank || null}
-                  avatarPic={getAvatarPic(opp)}
+                  avatarPic={getAvatarPic(opp, currentPlayerId)}
                 />
               );
             })}

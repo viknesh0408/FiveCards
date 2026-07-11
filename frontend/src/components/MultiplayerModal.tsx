@@ -285,8 +285,8 @@ export const MultiplayerModal: React.FC<MultiplayerModalProps> = ({
       </div>
 
       {!playerName.trim() && (
-        <p style={{ textAlign: 'center', color: 'var(--color-text-muted)', fontSize: '0.82rem', marginTop: '8px' }}>
-          ⚠️ Set your name in the previous screen to continue.
+        <p style={{ textAlign: 'center', color: '#f87171', fontSize: '0.82rem', marginTop: '16px', fontWeight: 'bold' }}>
+          ⚠️ Set your name in Edit Profile option to continue.
         </p>
       )}
     </div>

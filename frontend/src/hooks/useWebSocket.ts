@@ -226,6 +226,8 @@ export const useWebSocket = () => {
   const aiTurnStartedRef = useRef<string | null>(null);
 
   const connectRef = useRef<any>(null);
+  /** Set to true when the hook unmounts — abort guards read this to stop mid-flight AI turns. */
+  const isUnmountedRef = useRef<boolean>(false);
 
   const disconnectSocket = useCallback(() => {
     if (stompClientRef.current) {
@@ -506,6 +508,7 @@ export const useWebSocket = () => {
   // Clean up on unmount
   useEffect(() => {
     return () => {
+      isUnmountedRef.current = true;
       disconnect();
     };
   }, [disconnect]);
@@ -533,6 +536,8 @@ export const useWebSocket = () => {
     const executeBotTurn = async () => {
       // Natural thinking delay
       await new Promise(resolve => setTimeout(resolve, 800));
+      // Abort if the component unmounted while we were waiting
+      if (isUnmountedRef.current) return;
 
       const game = localGameRef.current;
       if (!game || !game.currentRound || game.currentRound.currentPlayerIndex !== round.currentPlayerIndex || game.status !== 'IN_PROGRESS') return;
@@ -545,21 +550,22 @@ export const useWebSocket = () => {
         const wantsTick = botShouldDeclareTick(botPlayer, game);
         if (wantsTick) {
           declareTickLocal(game, botPlayer.id);
-          saveAndBroadcastLocalGame(game);
+          if (!isUnmountedRef.current) saveAndBroadcastLocalGame(game);
           return;
         }
 
         // 2. Discard
         const cardsToDiscard = botChooseCardsToDiscard(botPlayer, botRound);
         discardMultipleCardsLocal(game, botPlayer.id, cardsToDiscard);
-        saveAndBroadcastLocalGame(game);
+        if (!isUnmountedRef.current) saveAndBroadcastLocalGame(game);
         
         // Check if matched
         const updatedGame = localGameRef.current;
         if (updatedGame && updatedGame.currentRound && !updatedGame.currentRound.needsToDraw) {
           await new Promise(resolve => setTimeout(resolve, 800));
+          if (isUnmountedRef.current) return;
           endTurnLocal(updatedGame, botPlayer.id);
-          saveAndBroadcastLocalGame(updatedGame);
+          if (!isUnmountedRef.current) saveAndBroadcastLocalGame(updatedGame);
         }
         return;
       }
@@ -569,12 +575,13 @@ export const useWebSocket = () => {
         const drawFromDiscard = botShouldDrawFromDiscard(botPlayer, botRound);
         try {
           drawCardLocal(game, botPlayer.id, drawFromDiscard);
-          saveAndBroadcastLocalGame(game);
+          if (!isUnmountedRef.current) saveAndBroadcastLocalGame(game);
           
           // 4. End Turn
           await new Promise(resolve => setTimeout(resolve, 800));
+          if (isUnmountedRef.current) return;
           endTurnLocal(game, botPlayer.id);
-          saveAndBroadcastLocalGame(game);
+          if (!isUnmountedRef.current) saveAndBroadcastLocalGame(game);
         } catch (_) {
           // Empty draw pile ends round, ignore draw error
         }
@@ -602,103 +609,81 @@ export const useWebSocket = () => {
     });
   }, [connected]);
 
+  /**
+   * Convenience wrapper for offline (local-game) action handlers.
+   * Runs `fn(game)` inside a try/catch and auto-saves+broadcasts on success.
+   * Shows the error toast on failure.
+   */
+  const withLocalGameAction = useCallback((fn: (game: LocalGame) => void) => {
+    const game = localGameRef.current;
+    if (!game) return;
+    try {
+      fn(game);
+      saveAndBroadcastLocalGame(game);
+    } catch (e: any) {
+      setError(e.message);
+      setTimeout(() => setError(null), 4000);
+    }
+  }, []);
+
   // Game control API mapping (switches between online WS and offline local engine)
   const drawCard = useCallback((fromDiscard: boolean) => {
     if (isOffline) {
-      const game = localGameRef.current;
-      if (game) {
-        try {
-          drawCardLocal(game, playerIdRef.current!, fromDiscard);
-          const round = game.currentRound;
-          if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
-            endTurnLocal(game, playerIdRef.current!);
-          }
-          saveAndBroadcastLocalGame(game);
-        } catch (e: any) {
-          setError(e.message);
-          setTimeout(() => setError(null), 4000);
+      withLocalGameAction(game => {
+        drawCardLocal(game, playerIdRef.current!, fromDiscard);
+        const round = game.currentRound;
+        if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
+          endTurnLocal(game, playerIdRef.current!);
         }
-      }
+      });
       return;
     }
     sendAction('DRAW', { fromDiscard });
-  }, [sendAction, isOffline]);
+  }, [sendAction, isOffline, withLocalGameAction]);
 
   const discardCard = useCallback((card: Card) => {
     if (isOffline) {
-      const game = localGameRef.current;
-      if (game) {
-        try {
-          discardCardLocal(game, playerIdRef.current!, card);
-          const round = game.currentRound;
-          if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
-            endTurnLocal(game, playerIdRef.current!);
-          }
-          saveAndBroadcastLocalGame(game);
-        } catch (e: any) {
-          setError(e.message);
-          setTimeout(() => setError(null), 4000);
+      withLocalGameAction(game => {
+        discardCardLocal(game, playerIdRef.current!, card);
+        const round = game.currentRound;
+        if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
+          endTurnLocal(game, playerIdRef.current!);
         }
-      }
+      });
       return;
     }
     sendAction('DISCARD', { card });
-  }, [sendAction, isOffline]);
+  }, [sendAction, isOffline, withLocalGameAction]);
 
   const discardMultipleCards = useCallback((cards: Card[]) => {
     if (isOffline) {
-      const game = localGameRef.current;
-      if (game) {
-        try {
-          discardMultipleCardsLocal(game, playerIdRef.current!, cards);
-          const round = game.currentRound;
-          if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
-            endTurnLocal(game, playerIdRef.current!);
-          }
-          saveAndBroadcastLocalGame(game);
-        } catch (e: any) {
-          setError(e.message);
-          setTimeout(() => setError(null), 4000);
+      withLocalGameAction(game => {
+        discardMultipleCardsLocal(game, playerIdRef.current!, cards);
+        const round = game.currentRound;
+        if (round && round.hasDiscardedThisTurn && !round.needsToDraw && !round.roundEnded) {
+          endTurnLocal(game, playerIdRef.current!);
         }
-      }
+      });
       return;
     }
     sendAction('DISCARD_MULTI', { cards });
-  }, [sendAction, isOffline]);
+  }, [sendAction, isOffline, withLocalGameAction]);
 
   const declareTick = useCallback(() => {
     if (isOffline) {
-      const game = localGameRef.current;
-      if (game) {
-        try {
-          declareTickLocal(game, playerIdRef.current!);
-          saveAndBroadcastLocalGame(game);
-        } catch (e: any) {
-          setError(e.message);
-          setTimeout(() => setError(null), 4000);
-        }
-      }
+      withLocalGameAction(game => declareTickLocal(game, playerIdRef.current!));
       return;
     }
     sendAction('TICK');
-  }, [sendAction, isOffline]);
+  }, [sendAction, isOffline, withLocalGameAction]);
 
   const endTurn = useCallback(() => {
     if (isOffline) {
-      const game = localGameRef.current;
-      if (game) {
-        try {
-          endTurnLocal(game, playerIdRef.current!);
-          saveAndBroadcastLocalGame(game);
-        } catch (e: any) {
-          setError(e.message);
-          setTimeout(() => setError(null), 4000);
-        }
-      }
+      withLocalGameAction(game => endTurnLocal(game, playerIdRef.current!));
       return;
     }
     sendAction('END_TURN');
-  }, [sendAction, isOffline]);
+  }, [sendAction, isOffline, withLocalGameAction]);
 
   const markReady = useCallback(() => {
     if (isOffline) {
@@ -795,6 +780,7 @@ export const useWebSocket = () => {
     if (!trimmed) return;
 
     if (isOffline) {
+      // In offline mode, only update local state — no STOMP broker is running
       const newMsg: ChatMessage = {
         id: Math.random().toString(36).substring(2, 9),
         playerId: playerIdRef.current!,

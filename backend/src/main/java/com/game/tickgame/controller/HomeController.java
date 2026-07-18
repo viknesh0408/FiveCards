@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class HomeController {
 
-    @GetMapping("/status")
+    @GetMapping("/")
     public String home() {
-        return "FiveCards Backend Running";
+        return "FiveCards Backend is Running";
     }
 }
